@@ -1,0 +1,9 @@
+.env
+*.env
+.idea
+/shelf/
+/workspace.xml
+/spacehunters.egg-info
+__pycache__/
+*.py[cod]
+db.sqlite3

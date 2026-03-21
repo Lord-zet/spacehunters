@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Planeta: {{ planet.name }}</h1>
+
+    <h2>Twoje planety:</h2>
+    <ul>
+      {% for p in request.user.planets.all %}
+        <li>
+          {{ p.name }} ({{ p.x }}, {{ p.y }})
+          {% if p.id == planet.id %}
+            (aktywna)
+          {% else %}
+            <a href="{% url 'game:switch_planet' p.id %}">przełącz</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+
+</body>
+</html>

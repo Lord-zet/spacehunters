@@ -19,11 +19,11 @@ class Planet(models.Model):
     metal_mine_level = models.PositiveIntegerField(default=1)
     crystal_mine_level = models.PositiveIntegerField(default=0)
     is_homeland = models.BooleanField(default=False)
-    last_update_time = models.DateTimeField(auto_now_add=True)
+    last_resource_update = models.DateTimeField(auto_now_add=True)
 
     def update_resources(self):
         now = timezone.now()
-        elapsed_seconds = (now - self.last_update_time).total_seconds()
+        elapsed_seconds = (now - self.last_resource_update).total_seconds()
 
         if elapsed_seconds <= 0:
             return
@@ -35,7 +35,7 @@ class Planet(models.Model):
             current_amount = getattr(self, resource, 0)
             setattr(self, resource, current_amount + gain)
 
-        self.last_update_time = now
+        self.last_resource_update = now
 
     def get_production_per_hour(self):
         total = {}

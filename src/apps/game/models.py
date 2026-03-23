@@ -51,5 +51,52 @@ class Planet(models.Model):
                 total[resource] = total.get(resource, 0) + amount
         return total
 
+    def upgrade_building(self, building_name):
+        config = self.get_building_config(building_name)
+        if not config:
+            return False, "Nieznany budynek."
+
+        cost = self.calculate_upgrade_cost(config)
+
+        if not self.has_enough_resources(cost):
+            return False, "Za mało surowców."
+
+        self.spend_resources(cost)
+        current_level = self.get_building_level(config)
+        setattr(self, config["level_field"], current_level + 1)
+        self.save()
+
+        return True, f"Rozpoczęto rozbudowę {building_name}."
+
+    def get_building_config(self, building_name):
+        return BUILDINGS.get(building_name)
+
+    def get_building_level(self, config):
+        return getattr(self, config["level_field"])
+
+    def calculate_upgrade_cost(self, config):
+        level = self.get_building_level(config)
+        return {
+            resource: base * level
+            for resource, base in config["base_cost"].items()
+        }
+
+    def get_upgrade_cost(self, building_name):
+        config = self.get_building_config(building_name)
+        if not config:
+            return None
+        return self.calculate_upgrade_cost(config)
+
+    def has_enough_resources(self, cost):
+        for resource, amount in cost.items():
+            if getattr(self, resource) < amount:
+                return False
+        return True
+
+    def spend_resources(self, cost):
+        for resource, amount in cost.items():
+            total = getattr(self, resource) - amount
+            setattr(self, resource, total)
+
     def __str__(self):
         return self.name

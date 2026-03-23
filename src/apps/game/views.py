@@ -1,6 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+
 from .models import Planet
+from .buildings import BUILDINGS
 
 
 def get_active_planet(request):
@@ -26,9 +29,26 @@ def planet_detail(request, pk):
     planet.save()
 
     request.session["active_planet_id"] = planet.id
+
+    if request.method == "POST":
+        building_name = request.POST.get("building")
+        success, msg = planet.upgrade_building(building_name)
+        if success:
+            messages.success(request, msg)
+        else:
+            messages.error(request, msg)
+
+        return redirect("game:planet_detail", pk=planet.pk)
+
+    building_costs = {
+        name: planet.get_upgrade_cost(name)
+        for name in BUILDINGS.keys()
+    }
+
     context = {
         "planet": planet,
         "production": planet.get_production_per_hour(),
+        "building_costs": building_costs,
     }
     return render(request, "game/planet_detail.html", context)
 

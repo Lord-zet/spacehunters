@@ -6,6 +6,14 @@
 </head>
 <body>
     <h1>Planeta: {{ planet.name }}</h1>
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
     <h2>Surowce:</h2>
     <p>Metal: {{ planet.metal }}</p>
     <p>Kryształ: {{ planet.crystal }}</p>
@@ -13,11 +21,23 @@
     <h2>Budynki</h2>
     <h3>Kopalnia metalu</h3>
     <p>Poziom: {{ planet.metal_mine_level }}</p>
+    <p>Koszt rozbudowy: {{ building_costs.metal_mine.metal }}</p>
     <p>Wydobycie: {{ production.metal }}/h</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button name="building" value="metal_mine">Rozbuduj</button>
+    </form>
 
     <h3>Kopalnia kryształu</h3>
     <p>Poziom: {{ planet.crystal_mine_level }}</p>
+    <p>Koszt rozbudowy: {{ building_costs.crystal_mine.metal }}</p>
     <p>Wydobycie: {{ production.crystal }}/h</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button name="building" value="crystal_mine">Rozbuduj</button>
+    </form>
 
     <h2>Twoje planety:</h2>
     <ul>

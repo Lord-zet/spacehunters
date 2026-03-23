@@ -26,7 +26,11 @@ def planet_detail(request, pk):
     planet.save()
 
     request.session["active_planet_id"] = planet.id
-    return render(request, "game/planet_detail.html", {"planet": planet})
+    context = {
+        "planet": planet,
+        "production": planet.get_production_per_hour(),
+    }
+    return render(request, "game/planet_detail.html", context)
 
 @login_required
 def switch_planet(request, pk):

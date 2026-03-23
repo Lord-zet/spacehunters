@@ -22,6 +22,9 @@ def dashboard(request):
 @login_required
 def planet_detail(request, pk):
     planet = get_object_or_404(Planet, pk=pk, owner=request.user)
+    planet.update_resources()
+    planet.save()
+
     request.session["active_planet_id"] = planet.id
     return render(request, "game/planet_detail.html", {"planet": planet})
 

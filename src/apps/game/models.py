@@ -135,3 +135,28 @@ class Planet(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Fleet(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="fleets"
+    )
+    source_planet = models.ForeignKey(
+        Planet,
+        on_delete=models.CASCADE,
+        related_name="outgoing_fleets"
+    )
+    target_planet = models.ForeignKey(
+        Planet,
+        on_delete=models.CASCADE,
+        related_name="incoming_fleets"
+    )
+    transporter_count = models.BigIntegerField()
+    metal = models.BigIntegerField(default=0)
+    crystal = models.BigIntegerField(default=0)
+    departure_time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.source_planet} -> {self.target_planet}"

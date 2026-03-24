@@ -53,6 +53,7 @@ def planet_detail(request, pk):
         "planet": planet,
         "production": planet.get_production_per_hour(),
         "building_costs": building_costs,
+        "building_in_progress": planet.is_building_in_progress(),
     }
     return render(request, "game/planet_detail.html", context)
 

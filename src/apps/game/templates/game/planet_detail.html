@@ -13,6 +13,16 @@
             {% endfor %}
         </ul>
     {% endif %}
+    <hr>
+    {% if building_in_progress %}
+        <p>
+            Trwa budowa: {{ planet.building_type }}<br>
+            Koniec: {{ planet.building_ends_at }}
+        </p>
+    {% else %}
+        <p>Brak aktywnej budowy.</p>
+    {% endif %}
+    <hr>
 
     <h2>Surowce:</h2>
     <p>Metal: {{ planet.metal }}</p>
@@ -26,7 +36,10 @@
 
     <form method="post">
         {% csrf_token %}
-        <button name="building" value="metal_mine">Rozbuduj</button>
+        <button name="building" value="metal_mine"
+            {% if building_in_progress %}disabled{% endif %}>
+            Rozbuduj
+        </button>
     </form>
 
     <h3>Kopalnia kryształu</h3>
@@ -36,7 +49,10 @@
 
     <form method="post">
         {% csrf_token %}
-        <button name="building" value="crystal_mine">Rozbuduj</button>
+        <button name="building" value="crystal_mine"
+            {% if building_in_progress %}disabled{% endif %}>
+            Rozbuduj
+        </button>
     </form>
 
     <h2>Twoje planety:</h2>

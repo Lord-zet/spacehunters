@@ -20,6 +20,9 @@ class Planet(models.Model):
     crystal_mine_level = models.PositiveIntegerField(default=0)
     is_homeland = models.BooleanField(default=False)
     last_resource_update = models.DateTimeField(auto_now_add=True)
+    building_type = models.CharField(max_length=50, blank=True, default="")
+    building_ends_at = models.DateTimeField(null=True, blank=True)
+
 
     def update_resources(self):
         now = timezone.now()

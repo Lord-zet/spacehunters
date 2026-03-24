@@ -30,9 +30,13 @@ def planet_detail(request, pk):
 
     request.session["active_planet_id"] = planet.id
 
+    finished = planet.finish_building_if_ready()
+    if finished:
+        messages.success(request, "Budowa została zakończona.")
+
     if request.method == "POST":
         building_name = request.POST.get("building")
-        success, msg = planet.upgrade_building(building_name)
+        success, msg = planet.start_upgrade(building_name)
         if success:
             messages.success(request, msg)
         else:

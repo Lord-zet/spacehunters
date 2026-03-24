@@ -24,6 +24,7 @@ class Planet(models.Model):
     last_resource_update = models.DateTimeField(auto_now_add=True)
     building_type = models.CharField(max_length=50, blank=True, default="")
     building_ends_at = models.DateTimeField(null=True, blank=True)
+    transporter_count = models.PositiveIntegerField(default=0)
 
 
     def update_resources(self):

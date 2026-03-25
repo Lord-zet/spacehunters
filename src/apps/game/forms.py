@@ -12,12 +12,14 @@ class SendFleetForm(forms.Form):
         label="Ilość metalu",
         required=False,
         min_value=0,
+        initial=0,
         widget=forms.NumberInput(),
     )
     crystal_to_send = forms.IntegerField(
         label="Ilość kryształu",
         required=False,
         min_value=0,
+        initial=0,
         widget=forms.NumberInput(),
     )
     target_planet = forms.ModelChoiceField(
@@ -34,3 +36,9 @@ class SendFleetForm(forms.Form):
         )
         self.user = user
         self.source_planet = source_planet
+
+    def clean_metal_to_send(self):
+        return self.cleaned_data.get("metal_to_send") or 0
+
+    def clean_crystal_to_send(self):
+        return self.cleaned_data.get("crystal_to_send") or 0

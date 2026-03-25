@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 
 from .models import Planet, Fleet
+from .forms import SendFleetForm
 from .buildings import BUILDINGS
 
 def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, user):
@@ -101,3 +102,39 @@ def switch_planet(request, pk):
     planet = get_object_or_404(Planet, pk=pk, owner=request.user)
     request.session["active_planet_id"] = planet.id
     return redirect("game:planet_detail", pk=planet.pk)
+
+@login_required
+def send_fleet(request, pk):
+    source_planet = get_object_or_404(Planet, pk=pk, owner=request.user)
+    source_planet.update_resources()
+    source_planet.save()
+
+    if request.method == "POST":
+        form = SendFleetForm(request.POST, user=request.user, source_planet=source_planet)
+
+        if form.is_valid():
+            tc = form.cleaned_data.get("transporter_count")
+            target_planet = form.cleaned_data.get("target_planet")
+            metal_to_send = form.cleaned_data.get("metal_to_send")
+            crystal_to_send = form.cleaned_data.get("crystal_to_send")
+
+            try:
+                success, message = send_transport_fleet(source_planet, target_planet, tc, metal_to_send, crystal_to_send, request.user)
+            except Planet.DoesNotExist:
+                messages.error(request, "Nie znaleziono planety")
+                return redirect("game:send_fleet", pk=source_planet.pk)
+
+            if success:
+                messages.success(request, message)
+            else:
+                messages.error(request, message)
+            return redirect("game:send_fleet", pk=source_planet.pk)
+    else:
+        form = SendFleetForm(user=request.user, source_planet=source_planet)
+    source_planet.save()
+    context = {
+        "form": form,
+        "available_transporters": source_planet.transporter_count,
+        "metal": source_planet.metal,
+    }
+    return render(request, "game/send_fleet.html", context)

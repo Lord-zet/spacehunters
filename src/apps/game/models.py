@@ -152,6 +152,11 @@ class Planet(models.Model):
 
 
 class Fleet(models.Model):
+    class Status(models.TextChoices):
+        OUTBOUND = "outbound", "Outbound"
+        RETURNING = "returning", "Returning"
+        COMPLETED = "completed", "Completed"
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -170,7 +175,11 @@ class Fleet(models.Model):
     transporter_count = models.BigIntegerField()
     metal = models.BigIntegerField(default=0)
     crystal = models.BigIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OUTBOUND)
     departure_time = models.DateTimeField(auto_now_add=True)
+    arrival_time = models.DateTimeField()
+    return_time = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.source_planet} -> {self.target_planet}"

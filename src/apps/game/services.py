@@ -35,6 +35,8 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
         transporter_count=transporter_count,
         metal=metal,
         crystal=crystal,
-        departure_time=timezone.now()
+        status=Fleet.Status.OUTBOUND,
+        departure_time=timezone.now(),
+        arrival_time=timezone.now() + timedelta(minutes=1),
     )
     return True, f"Wysłano flotę ({transporter_count} szt) transportową z planety {source_planet.name} na {target_planet.name}."

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>Wysyłanie floty</h1>
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+  <p>Metal: {{ metal }}</p>
+  <h3>Dostępne statki</h3>
+  <p>Transporter: {{ available_transporters }}</p>
+
+  <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+    <p>
+        {{ form.transporter_count.label_tag }}
+        {{ form.transporter_count }}
+        {{ form.transporter_count.errors }}
+    </p>
+
+    <p>
+        {{ form.metal_to_send.label_tag }}
+        {{ form.metal_to_send }}
+        {{ form.metal_to_send.errors }}
+    </p>
+
+    <p>
+        {{ form.crystal_to_send.label_tag }}
+        {{ form.crystal_to_send }}
+        {{ form.crystal_to_send.errors }}
+    </p>
+
+    <p>
+        {{ form.target_planet.label_tag }}
+        {{ form.target_planet }}
+        {{ form.target_planet.errors }}
+    </p>
+
+      <button type="submit" name="action" value="send">Wyślij</button>
+  </form>
+
+</body>
+</html>

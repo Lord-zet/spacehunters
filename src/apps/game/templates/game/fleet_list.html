@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h1>Ruch floty</h1>
+    {% if fleets %}
+    <table border="1" cellpadding="6">
+        <thead>
+        <tr>
+            <th>Źródło</th>
+            <th>Cel</th>
+            <th>Status</th>
+            <th>Transportowce</th>
+            <th>Metal</th>
+            <th>Kryształ</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for fleet in fleets %}
+        <tr>
+            <td>{{ fleet.source_planet.name }}</td>
+            <td>{{ fleet.target_planet.name }}</td>
+            <td>{{ fleet.get_status_display }}</td>
+            <td>{{ fleet.transporter_count }}</td>
+            <td>{{ fleet.metal }}</td>
+            <td>{{ fleet.crystal }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>Brak ruchu flot.</p>
+    {% endif %}
+</body>
+</html>

@@ -2,10 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
-from .models import Planet
+from .models import Planet, Fleet
 from .forms import SendFleetForm
 from .buildings import BUILDINGS
-from .services import send_transport_fleet
+from .services import send_transport_fleet, process_fleets_for_user
 
 
 def get_active_planet(request):
@@ -101,3 +101,9 @@ def send_fleet(request, pk):
         "metal": source_planet.metal,
     }
     return render(request, "game/send_fleet.html", context)
+
+@login_required
+def fleet_list(request):
+    process_fleets_for_user(request.user)
+    fleets = Fleet.objects.filter(owner=request.user)
+    return render(request, "game/fleet_list.html", {"fleets": fleets})

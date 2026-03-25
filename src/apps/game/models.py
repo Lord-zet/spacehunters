@@ -6,6 +6,8 @@ from django.utils import timezone
 
 from .buildings import BUILDINGS
 
+TRANSPORTER_CAPACITY = 1000
+
 
 class Planet(models.Model):
     owner = models.ForeignKey(
@@ -132,6 +134,18 @@ class Planet(models.Model):
         self.building_ends_at = None
         self.save()
         return True
+
+    def has_enough_resources_for_transport(self, metal, crystal):
+        return self.metal >= metal and self.crystal >= crystal
+
+    def has_enough_transporters(self, count):
+        return self.transporter_count >= count
+
+    def transport_capacity(self, transporter_count):
+        return TRANSPORTER_CAPACITY * transporter_count
+
+    def can_carry_resources(self, transporter_count, metal, crystal):
+        return (metal + crystal) <= self.transport_capacity(transporter_count)
 
     def __str__(self):
         return self.name

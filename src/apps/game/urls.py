@@ -6,4 +6,5 @@ urlpatterns = [
     path("", views.dashboard, name="dashboard"),
     path("planet/<int:pk>/", views.planet_detail, name="planet_detail"),
     path("planet/<int:pk>/switch/", views.switch_planet, name="switch_planet"),
+    path("planet/<int:pk>/send-fleet/", views.send_fleet, name="send_fleet"),
 ]

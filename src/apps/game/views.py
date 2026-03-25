@@ -95,6 +95,7 @@ def send_fleet(request, pk):
         form = SendFleetForm(user=request.user, source_planet=source_planet)
     source_planet.save()
     context = {
+        "planet": source_planet,
         "form": form,
         "available_transporters": source_planet.transporter_count,
         "metal": source_planet.metal,

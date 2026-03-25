@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.utils import timezone
 from .models import Fleet
 
@@ -23,11 +25,6 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     source_planet.crystal -= crystal
     source_planet.save()
 
-    target_planet.transporter_count += transporter_count
-    target_planet.metal += metal
-    target_planet.crystal += crystal
-    target_planet.save()
-
     Fleet.objects.create(
         owner=user,
         source_planet=source_planet,
@@ -40,3 +37,26 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
         arrival_time=timezone.now() + timedelta(minutes=1),
     )
     return True, f"Wysłano flotę ({transporter_count} szt) transportową z planety {source_planet.name} na {target_planet.name}."
+
+def process_fleets_for_user(user):
+    now = timezone.now()
+
+    outbound_fleets = Fleet.objects.filter(
+        owner=user,
+        status=Fleet.Status.OUTBOUND,
+        arrival_time__lte=now,
+    )
+
+    for fleet in outbound_fleets:
+        target_planet = fleet.target_planet
+        target_planet.update_resources()
+
+        target_planet.metal += fleet.metal
+        target_planet.crystal += fleet.crystal
+        target_planet.save()
+
+        fleet.metal = 0
+        fleet.crystal = 0
+        fleet.status = Fleet.Status.RETURNING
+        fleet.return_time = now + timedelta(minutes=1)
+        fleet.save()

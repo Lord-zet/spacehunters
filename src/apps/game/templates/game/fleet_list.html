@@ -12,10 +12,12 @@
         <tr>
             <th>Źródło</th>
             <th>Cel</th>
-            <th>Status</th>
+            <th>Start</th>
             <th>Transportowce</th>
             <th>Metal</th>
             <th>Kryształ</th>
+            <th>Powrót</th>
+            <th>Status</th>
         </tr>
         </thead>
         <tbody>
@@ -23,10 +25,12 @@
         <tr>
             <td>{{ fleet.source_planet.name }}</td>
             <td>{{ fleet.target_planet.name }}</td>
-            <td>{{ fleet.get_status_display }}</td>
+            <td>{{ fleet.departure_time }}</td>
             <td>{{ fleet.transporter_count }}</td>
             <td>{{ fleet.metal }}</td>
             <td>{{ fleet.crystal }}</td>
+            <td>{{ fleet.completed_at }}</td>
+            <td>{{ fleet.get_status_display }}</td>
         </tr>
         {% endfor %}
         </tbody>

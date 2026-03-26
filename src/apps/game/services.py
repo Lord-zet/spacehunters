@@ -60,3 +60,20 @@ def process_fleets_for_user(user):
         fleet.status = Fleet.Status.RETURNING
         fleet.return_time = now + timedelta(minutes=1)
         fleet.save()
+
+    returning_fleets = Fleet.objects.filter(
+        owner=user,
+        status=Fleet.Status.RETURNING,
+        return_time__lte=now,
+    )
+
+    for fleet in returning_fleets:
+        source_planet = fleet.source_planet
+        source_planet.update_resources()
+
+        source_planet.transporter_count += fleet.transporter_count
+        source_planet.save()
+
+        fleet.status = Fleet.Status.COMPLETED
+        fleet.completed_at = now
+        fleet.save()

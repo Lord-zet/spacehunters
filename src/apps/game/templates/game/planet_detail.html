@@ -1,4 +1,5 @@
 {% extends "game/base.html" %}
+{% load time_extras %}
 
 {% block title %}
 {{ planet.name }}
@@ -23,7 +24,7 @@
                 {% if building_in_progress %}
                     <div class="building-active">
                         W budowie: <strong>{{ planet.building_type }}</strong><br>
-                        Pozostało: {{ planet.building_ends_at|timeuntil }}
+                        Pozostało: {{ planet.building_ends_at|time_remaining }}
                     </div>
                 {% else %}
                     <div class="building-idle">

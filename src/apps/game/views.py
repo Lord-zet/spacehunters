@@ -118,7 +118,7 @@ def send_fleet(request, pk):
 @login_required
 def fleet_list(request, pk):
     process_fleets_for_user(request.user)
-    fleets = Fleet.objects.filter(owner=request.user)
+    fleets = Fleet.objects.filter(owner=request.user).order_by("-departure_time")
     planet = get_object_or_404(Planet, pk=pk, owner=request.user)
 
     background = get_planet_background(planet)

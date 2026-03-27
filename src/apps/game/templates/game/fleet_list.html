@@ -45,17 +45,17 @@
             </span>
             <span class="time">
 
-                {% if fleet.status == "outbound" %}
-                    Arrives in:
-                    {{ fleet.arrival_time|timeuntil:now }}
+            {% if fleet.status == "outbound" %}
+                Arrives in:
+                {{ fleet.arrival_time|timeuntil:now }}
 
-                {% elif fleet.status == "returning" %}
-                    Returns in:
-                    {{ fleet.return_time|timeuntil:now }}
+            {% elif fleet.status == "returning" %}
+                Returns in:
+                {{ fleet.return_time|timeuntil:now }}
 
-                {% else %}
-                    Completed
-                {% endif %}
+            {% else %}
+                [{{ fleet.completed_at|date:"Y-m-d H:i" }}]
+            {% endif %}
             </span>
 
         </div>

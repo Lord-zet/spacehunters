@@ -222,6 +222,10 @@ td, th {
     align-items: center;
 }
 
+.fleet-item.completed {
+    opacity: 0.7;
+}
+
 /* ROUTE */
 .fleet-route {
     font-size: 14px;
@@ -264,6 +268,13 @@ td, th {
     background: #2ecc71;
 }
 
+.status-completed {
+    background: #109010;
+}
+.status-outbound {
+    background: #333399;
+}
+
 /* SHIPS */
 .ships {
     font-size: 14px;
@@ -296,3 +307,5 @@ td, th {
     border: 1px solid #e74c3c;
     color: #e74c3c;
 }
+
+

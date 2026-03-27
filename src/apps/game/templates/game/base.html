@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}My Game{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'game/style.css' %}">
+</head>
+
+<body class="game-body" style="background-image: url('{% static background %}');">
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <h2>🚀 Space Hunters</h2>
+
+        <nav>
+            <ul>
+                <li><a href="{% url 'game:planet_detail' pk=planet.id %}">Home</a></li>
+                <li><a href="{% url 'game:send_fleet' pk=planet.id %}">Fleet</a></li>
+                <li><a href="{% url 'game:fleet_list' pk=planet.id %}">Missions</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+    <div class="topbar">
+
+        <!-- RESOURCES -->
+        <div class="resources">
+            <div>Metal: {{ planet.metal }}</div>
+            <div>💎 Kryształ: {{ planet.crystal }}</div>
+        </div>
+
+        <!-- PLANET SWITCHER -->
+        <div class="planet-switcher">
+            <select onchange="location = this.value;">
+                {% for p in user.planets.all %}
+                    <option value="{% url 'game:planet_detail' pk=p.id %}"
+                        {% if p.id == planet.id %}selected{% endif %}>
+                        {{ p.name }} ({{ p.x }}:{{ p.y }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+    </div>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- CONTENT -->
+        <main class="content">
+            {% block content %}
+            {% endblock %}
+        </main>
+
+    </div>
+
+</div>
+<script>
+    setTimeout(() => {
+        document.querySelectorAll('.message').forEach(el => {
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 300);
+        });
+    }, 3000);
+</script>
+</body>
+</html>
+

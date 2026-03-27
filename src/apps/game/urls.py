@@ -7,5 +7,5 @@ urlpatterns = [
     path("planet/<int:pk>/", views.planet_detail, name="planet_detail"),
     path("planet/<int:pk>/switch/", views.switch_planet, name="switch_planet"),
     path("planet/<int:pk>/send-fleet/", views.send_fleet, name="send_fleet"),
-    path("planet/fleets/", views.fleet_list, name="fleet_list"),
+    path("planet/<int:pk>/fleets/", views.fleet_list, name="fleet_list"),
 ]

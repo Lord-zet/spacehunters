@@ -1,75 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard</title>
-</head>
-<body>
-    <h1>Planeta: {{ planet.name }}</h1>
-    {% if messages %}
-        <ul>
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    <hr>
-    {% if building_in_progress %}
-        <p>
-            Trwa budowa: {{ planet.building_type }}<br>
-            Koniec: {{ planet.building_ends_at }}
-        </p>
-    {% else %}
-        <p>Brak aktywnej budowy.</p>
-    {% endif %}
-    <hr>
+{% extends "game/base.html" %}
 
-    <h2>Surowce:</h2>
-    <p>Metal: {{ planet.metal }}</p>
-    <p>Kryształ: {{ planet.crystal }}</p>
+{% block title %}
+{{ planet.name }}
+{% endblock %}
 
-    <h2>Budynki</h2>
-    <h3>Kopalnia metalu</h3>
-    <p>Poziom: {{ planet.metal_mine_level }}</p>
-    <p>Koszt rozbudowy: {{ building_costs.metal_mine.metal }}</p>
-    <p>Wydobycie: {{ production.metal }}/h</p>
+{% block content %}
 
-    <form method="post">
-        {% csrf_token %}
-        <button name="building" value="metal_mine"
-            {% if building_in_progress %}disabled{% endif %}>
-            Rozbuduj
-        </button>
-    </form>
+    <div class="dashboard">
 
-    <h3>Kopalnia kryształu</h3>
-    <p>Poziom: {{ planet.crystal_mine_level }}</p>
-    <p>Koszt rozbudowy: {{ building_costs.crystal_mine.metal }}</p>
-    <p>Wydobycie: {{ production.crystal }}/h</p>
+        <!-- LEFT PANEL -->
+        <div class="panel">
+            <h2>{{ planet.name }}</h2>
+            <p>Coordinates: {{ planet.x }} : {{ planet.y }}</p>
+        </div>
 
-    <form method="post">
-        {% csrf_token %}
-        <button name="building" value="crystal_mine"
-            {% if building_in_progress %}disabled{% endif %}>
-            Rozbuduj
-        </button>
-    </form>
+            <!-- BUILDINGS -->
+        <div class="panel">
+            <h3>Buildings</h3>
 
-    <h2>Twoje planety:</h2>
-    <ul>
-      {% for p in request.user.planets.all %}
-        <li>
-          {{ p.name }} ({{ p.x }}, {{ p.y }})
-          {% if p.id == planet.id %}
-            (aktywna)
-          {% else %}
-            <a href="{% url 'game:switch_planet' p.id %}">przełącz</a>
-          {% endif %}
-        </li>
-      {% endfor %}
-    </ul>
+            <!-- METAL MINE -->
+            <div class="building">
+                <div>
+                    Metal Mine (lvl {{ planet.metal_mine_level }})
+                </div>
 
-    <a href="{% url 'game:send_fleet' pk=planet.id %}">Flota</a>
-    <a href="{% url 'game:fleet_list' %}">Ruch floty</a>
-</body>
-</html>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="building" value="metal_mine">
+                    <button type="submit">Upgrade</button>
+                </form>
+            </div>
+
+            <!-- CRYSTAL MINE -->
+            <div class="building">
+                <div>
+                    Crystal Mine (lvl {{ planet.crystal_mine_level }})
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="building" value="crystal_mine">
+                    <button type="submit">Upgrade</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+
+{% endblock %}

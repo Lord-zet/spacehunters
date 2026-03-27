@@ -1,12 +1,18 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.utils import timezone
 
 from .models import Planet, Fleet
 from .forms import SendFleetForm
 from .buildings import BUILDINGS
 from .services import send_transport_fleet, process_fleets_for_user
 
+def get_planet_background(planet):
+    backgrounds = [
+        "game/backgrounds/bg1.jpg",
+    ]
+    return backgrounds[planet.id % len(backgrounds)]
 
 def get_active_planet(request):
     planet_id = request.session.get("active_planet_id")
@@ -51,11 +57,14 @@ def planet_detail(request, pk):
         for name in BUILDINGS.keys()
     }
 
+    background = get_planet_background(planet)
+
     context = {
         "planet": planet,
         "production": planet.get_production_per_hour(),
         "building_costs": building_costs,
         "building_in_progress": planet.is_building_in_progress(),
+        "background": background,
     }
     return render(request, "game/planet_detail.html", context)
 
@@ -94,16 +103,30 @@ def send_fleet(request, pk):
     else:
         form = SendFleetForm(user=request.user, source_planet=source_planet)
     source_planet.save()
+
+    background = get_planet_background(source_planet)
+
     context = {
         "planet": source_planet,
         "form": form,
         "available_transporters": source_planet.transporter_count,
         "metal": source_planet.metal,
+        "background": background,
     }
     return render(request, "game/send_fleet.html", context)
 
 @login_required
-def fleet_list(request):
+def fleet_list(request, pk):
     process_fleets_for_user(request.user)
     fleets = Fleet.objects.filter(owner=request.user)
-    return render(request, "game/fleet_list.html", {"fleets": fleets})
+    planet = get_object_or_404(Planet, pk=pk, owner=request.user)
+
+    background = get_planet_background(planet)
+
+    context = {
+        "fleets": fleets,
+        "planet": planet,
+        "background": background,
+        "now": timezone.now(),
+    }
+    return render(request, "game/fleet_list.html", context)

@@ -1,42 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-    <h1>Ruch floty</h1>
-    {% if fleets %}
-    <table border="1" cellpadding="6">
-        <thead>
-        <tr>
-            <th>Źródło</th>
-            <th>Cel</th>
-            <th>Start</th>
-            <th>Transportowce</th>
-            <th>Metal</th>
-            <th>Kryształ</th>
-            <th>Powrót</th>
-            <th>Status</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for fleet in fleets %}
-        <tr>
-            <td>{{ fleet.source_planet.name }}</td>
-            <td>{{ fleet.target_planet.name }}</td>
-            <td>{{ fleet.departure_time }}</td>
-            <td>{{ fleet.transporter_count }}</td>
-            <td>{{ fleet.metal }}</td>
-            <td>{{ fleet.crystal }}</td>
-            <td>{{ fleet.completed_at }}</td>
-            <td>{{ fleet.get_status_display }}</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-        <p>Brak ruchu flot.</p>
-    {% endif %}
-</body>
-</html>
+{% extends "game/base.html" %}
+
+{% block content %}
+<div class="panel fleet-list">
+
+    <h2>Fleet Movements</h2>
+
+    {% for fleet in fleets %}
+    <div class="fleet-item">
+
+        <!-- ROUTE -->
+        <div class="fleet-route">
+
+            <span class="planet">
+                {{ fleet.source_planet.name }}
+                ({{ fleet.source_planet.x }}:{{ fleet.source_planet.y }})
+            </span>
+
+            <!-- DIRECTION -->
+            <span class="arrow">
+                {% if fleet.status == "outbound" %}
+                    →
+                {% elif fleet.status == "returning" %}
+                    ←
+                {% else %}
+                    ✓
+                {% endif %}
+            </span>
+
+            <span class="planet">
+                {{ fleet.target_planet.name }}
+                ({{ fleet.target_planet.x }}:{{ fleet.target_planet.y }})
+            </span>
+
+        </div>
+
+        <!-- DETAILS -->
+        <div class="fleet-details">
+            <span class="status status-{{ fleet.status }}">
+                {{ fleet.get_status_display }}
+            </span>
+
+            <span class="ships">
+                {{ fleet.transporter_count }}
+            </span>
+            <span class="time">
+
+                {% if fleet.status == "outbound" %}
+                    Arrives in:
+                    {{ fleet.arrival_time|timeuntil:now }}
+
+                {% elif fleet.status == "returning" %}
+                    Returns in:
+                    {{ fleet.return_time|timeuntil:now }}
+
+                {% else %}
+                    Completed
+                {% endif %}
+            </span>
+
+        </div>
+
+    </div>
+    {% empty %}
+    <p>No fleets in motion.</p>
+    {% endfor %}
+
+</div>
+{% endblock %}

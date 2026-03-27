@@ -1,53 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-<h1>Wysyłanie floty</h1>
-    {% if messages %}
-        <ul>
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-  <p>Metal: {{ metal }}</p>
-  <h3>Dostępne statki</h3>
-  <p>Transporter: {{ available_transporters }}</p>
+{% extends "game/base.html" %}
 
-  <form method="post">
-      {% csrf_token %}
-      {{ form.non_field_errors }}
-    <p>
-        {{ form.transporter_count.label_tag }}
-        {{ form.transporter_count }}
-        {{ form.transporter_count.errors }}
-    </p>
+{% block content %}
+<div class="panel fleet-panel">
 
-    <p>
-        {{ form.metal_to_send.label_tag }}
-        {{ form.metal_to_send }}
-        {{ form.metal_to_send.errors }}
-    </p>
+    <h2>Send Fleet</h2>
 
-    <p>
-        {{ form.crystal_to_send.label_tag }}
-        {{ form.crystal_to_send }}
-        {{ form.crystal_to_send.errors }}
-    </p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
 
-    <p>
-        {{ form.target_planet.label_tag }}
-        {{ form.target_planet }}
-        {{ form.target_planet.errors }}
-    </p>
+        <!-- SHIPS -->
+        <div class="form-section">
+            <h3>Ships</h3>
 
-      <button type="submit" name="action" value="send">Wyślij</button>
-  </form>
+            <div class="form-row">
+                <label>
+                    {{ form.transporter_count.label }}
+                    <span class="available">
+                        (available: {{ planet.transporter_count }})
+                    </span>
+                </label>
 
-  <a href="{% url 'game:planet_detail' pk=planet.id %}">Strona główna</a>
+                {{ form.transporter_count }}
+                {{ form.transporter_count.errors }}
+            </div>
+        </div>
 
-</body>
-</html>
+        <!-- RESOURCES -->
+        <div class="form-section">
+            <h3>Cargo</h3>
+
+            <div class="form-row">
+                <label>{{ form.metal_to_send.label }}</label>
+                {{ form.metal_to_send }}
+                {{ form.metal_to_send.errors }}
+            </div>
+
+            <div class="form-row">
+                <label>{{ form.crystal_to_send.label }}</label>
+                {{ form.crystal_to_send }}
+                {{ form.crystal_to_send.errors }}
+            </div>
+        </div>
+
+        <!-- TARGET -->
+        <div class="form-section">
+            <h3>Target</h3>
+
+            <div class="form-row">
+                <label>{{ form.target_planet.label }}</label>
+                {{ form.target_planet }}
+                {{ form.target_planet.errors }}
+            </div>
+        </div>
+
+        <!-- ACTION -->
+        <div class="form-actions">
+            <button type="submit" name="action" value="send">
+                Send Fleet
+            </button>
+        </div>
+
+    </form>
+
+</div>
+{% endblock %}

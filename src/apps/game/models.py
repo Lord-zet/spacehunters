@@ -131,7 +131,6 @@ class Planet(models.Model):
         setattr(self, level_field, current_level + 1)
 
         self.building_type = ""
-        self.building_ends_at = None
         self.save()
         return True
 

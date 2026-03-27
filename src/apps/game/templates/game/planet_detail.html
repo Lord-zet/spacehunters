@@ -11,36 +11,36 @@
         <!-- LEFT PANEL -->
         <div class="panel">
             <h2>{{ planet.name }}</h2>
-            <p>Coordinates: {{ planet.x }} : {{ planet.y }}</p>
+            <p>Pozycja: [{{ planet.x }} : {{ planet.y }}]</p>
         </div>
 
             <!-- BUILDINGS -->
         <div class="panel">
-            <h3>Buildings</h3>
+            <h3>Budynki</h3>
 
             <!-- METAL MINE -->
             <div class="building">
                 <div>
-                    Metal Mine (lvl {{ planet.metal_mine_level }})
+                    Kopalnia metalu [poziom {{ planet.metal_mine_level }}]
                 </div>
 
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="building" value="metal_mine">
-                    <button type="submit">Upgrade</button>
+                    <button type="submit">Ulepsz</button>
                 </form>
             </div>
 
             <!-- CRYSTAL MINE -->
             <div class="building">
                 <div>
-                    Crystal Mine (lvl {{ planet.crystal_mine_level }})
+                    Kopalnia kryształu [poziom {{ planet.crystal_mine_level }}]
                 </div>
 
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="building" value="crystal_mine">
-                    <button type="submit">Upgrade</button>
+                    <button type="submit">Ulepsz</button>
                 </form>
             </div>
         </div>

@@ -3,7 +3,7 @@
 {% block content %}
 <div class="panel fleet-panel">
 
-    <h2>Send Fleet</h2>
+    <h2>Wyślij flotę</h2>
 
     <form method="post">
         {% csrf_token %}
@@ -11,13 +11,11 @@
 
         <!-- SHIPS -->
         <div class="form-section">
-            <h3>Ships</h3>
-
             <div class="form-row">
                 <label>
                     {{ form.transporter_count.label }}
                     <span class="available">
-                        (available: {{ planet.transporter_count }})
+                        (dostępne: {{ planet.transporter_count }})
                     </span>
                 </label>
 
@@ -28,7 +26,7 @@
 
         <!-- RESOURCES -->
         <div class="form-section">
-            <h3>Cargo</h3>
+            <h3>Ładunek</h3>
 
             <div class="form-row">
                 <label>{{ form.metal_to_send.label }}</label>
@@ -45,7 +43,7 @@
 
         <!-- TARGET -->
         <div class="form-section">
-            <h3>Target</h3>
+            <h3>Cel</h3>
 
             <div class="form-row">
                 <label>{{ form.target_planet.label }}</label>
@@ -57,7 +55,7 @@
         <!-- ACTION -->
         <div class="form-actions">
             <button type="submit" name="action" value="send">
-                Send Fleet
+                Wyślij
             </button>
         </div>
 

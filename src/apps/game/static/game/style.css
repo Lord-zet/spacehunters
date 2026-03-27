@@ -189,6 +189,11 @@ td, th {
     font-size: 14px;
 }
 
+.building-panel {
+    max-width: 600px;
+    width: 100%;
+}
+
 /* DISABLED BUTTON */
 button:disabled {
     background: #555;
@@ -340,5 +345,3 @@ button:disabled {
     border: 1px solid #e74c3c;
     color: #e74c3c;
 }
-
-

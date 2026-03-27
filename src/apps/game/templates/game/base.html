@@ -19,6 +19,7 @@
         <nav>
             <ul>
                 <li><a href="{% url 'game:planet_detail' pk=planet.id %}">Home</a></li>
+                <li><a href="{% url 'game:buildings' pk=planet.id %}">Budynki</a></li>
                 <li><a href="{% url 'game:send_fleet' pk=planet.id %}">Flota</a></li>
                 <li><a href="{% url 'game:fleet_list' pk=planet.id %}">Ruch floty</a></li>
             </ul>

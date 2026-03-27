@@ -38,6 +38,22 @@ def planet_detail(request, pk):
 
     request.session["active_planet_id"] = planet.id
 
+    background = get_planet_background(planet)
+
+    context = {
+        "planet": planet,
+        "background": background,
+    }
+    return render(request, "game/planet_detail.html", context)
+
+@login_required
+def planet_buildings(request, pk):
+    planet = get_object_or_404(Planet, pk=pk, owner=request.user)
+    planet.update_resources()
+    planet.save()
+
+    request.session["active_planet_id"] = planet.id
+
     finished = planet.finish_building_if_ready()
     if finished:
         messages.success(request, "Budowa została zakończona.")
@@ -66,7 +82,8 @@ def planet_detail(request, pk):
         "building_in_progress": planet.is_building_in_progress(),
         "background": background,
     }
-    return render(request, "game/planet_detail.html", context)
+    return render(request, "game/buildings.html", context)
+
 
 @login_required
 def switch_planet(request, pk):

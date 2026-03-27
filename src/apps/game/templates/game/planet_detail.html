@@ -18,31 +18,70 @@
         <div class="panel">
             <h3>Budynki</h3>
 
+                <!-- INFO -->
+            <div class="building-status">
+                {% if building_in_progress %}
+                    <div class="building-active">
+                        W budowie: <strong>{{ planet.building_type }}</strong><br>
+                        Pozostało: {{ planet.building_ends_at|timeuntil }}
+                    </div>
+                {% else %}
+                    <div class="building-idle">
+                        Brak aktywnej budowy
+                    </div>
+                {% endif %}
+            </div>
+
             <!-- METAL MINE -->
             <div class="building">
-                <div>
-                    Kopalnia metalu [poziom {{ planet.metal_mine_level }}]
+                <div class="building-info">
+                    <strong>Kopalnia metalu</strong><br>
+                    Poziom: {{ planet.metal_mine_level }}<br>
+                    Produkcja: {{ production.metal }} / h<br>
+
+                    Koszt:
+                    {{ building_costs.metal_mine.metal }} metal
+                    {% if building_costs.metal_mine.crystal %}
+                        {{ building_costs.metal_mine.crystal }} kryształ
+                    {% endif %}
                 </div>
 
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="building" value="metal_mine">
-                    <button type="submit">Ulepsz</button>
+
+                    <button type="submit"
+                        {% if building_in_progress %}disabled{% endif %}>
+                        Ulepsz
+                    </button>
                 </form>
             </div>
 
             <!-- CRYSTAL MINE -->
             <div class="building">
-                <div>
-                    Kopalnia kryształu [poziom {{ planet.crystal_mine_level }}]
+                <div class="building-info">
+                    <strong>Kopalnia kryształu</strong><br>
+                    Poziom: {{ planet.crystal_mine_level }}<br>
+                    Produkcja: {{ production.crystal }} / h<br>
+
+                    Koszt:
+                    {{ building_costs.crystal_mine.metal }} metal
+                    {% if building_costs.crystal_mine.crystal %}
+                        {{ building_costs.crystal_mine.crystal }} kryształ
+                    {% endif %}
                 </div>
 
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="building" value="crystal_mine">
-                    <button type="submit">Ulepsz</button>
+
+                    <button type="submit"
+                        {% if building_in_progress %}disabled{% endif %}>
+                        Ulepsz
+                    </button>
                 </form>
             </div>
+
         </div>
 
     </div>

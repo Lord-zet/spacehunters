@@ -1,24 +1,24 @@
 from datetime import timedelta
 
 from django.utils import timezone
+from django.db import transaction
+from django.db.models import Q
+
 from .models import Fleet
 
 
+@transaction.atomic
 def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, user):
     if source_planet.id == target_planet.id:
-        source_planet.save()
         return False, "Nie można wysłać floty na tę samą planetę."
 
     if not source_planet.has_enough_transporters(transporter_count):
-        source_planet.save()
         return False, "Nie masz wystarczającej liczby transportowców."
 
     if not source_planet.has_enough_resources_for_transport(metal, crystal):
-        source_planet.save()
         return False, "Nie masz wystarczających zasobów."
 
     if not source_planet.can_carry_resources(transporter_count, metal, crystal):
-        source_planet.save()
         return False, "Ładunek nie mieści się w pojemności transportowców."
 
     source_planet.transporter_count -= transporter_count
@@ -47,11 +47,12 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     return True, f"Wysłano flotę ({transporter_count} szt) transportową z planety {source_planet.name} na {target_planet.name}."
 
 
+@transaction.atomic
 def process_fleets_for_user(user):
     now = timezone.now()
 
-    outbound_fleets = Fleet.objects.filter(
-        owner=user,
+    outbound_fleets = Fleet.objects.select_for_update().filter(
+        Q(owner=user) | Q(target_planet__owner=user),
         status=Fleet.Status.OUTBOUND,
         arrival_time__lte=now,
     )
@@ -69,7 +70,7 @@ def process_fleets_for_user(user):
         fleet.status = Fleet.Status.RETURNING
         fleet.save()
 
-    returning_fleets = Fleet.objects.filter(
+    returning_fleets = Fleet.objects.select_for_update().filter(
         owner=user,
         status=Fleet.Status.RETURNING,
         return_time__lte=now,

@@ -22,12 +22,23 @@ class Planet(models.Model):
     crystal = models.BigIntegerField(default=200)
     metal_mine_level = models.PositiveIntegerField(default=1)
     crystal_mine_level = models.PositiveIntegerField(default=0)
+    metal_storage_level = models.PositiveIntegerField(default=1)
+    crystal_storage_level = models.PositiveIntegerField(default=1)
     is_homeland = models.BooleanField(default=False)
     last_resource_update = models.DateTimeField(auto_now_add=True)
     building_type = models.CharField(max_length=50, blank=True, default="")
     building_ends_at = models.DateTimeField(null=True, blank=True)
     transporter_count = models.PositiveIntegerField(default=0)
 
+    def get_storage_capacity(self, resource):
+        storage_levels = {
+            "metal": self.metal_storage_level,
+            "crystal": self.crystal_storage_level,
+        }
+        level = storage_levels.get(resource, 0)
+
+        base_capacity = 1000
+        return int(base_capacity * (1.5 ** level))
 
     def update_resources(self):
         now = timezone.now()
@@ -41,7 +52,9 @@ class Planet(models.Model):
         for resource, per_hour in production.items():
             gain = int(per_hour * elapsed_seconds / 3600)
             current_amount = getattr(self, resource, 0)
-            setattr(self, resource, current_amount + gain)
+            capacity = self.get_storage_capacity(resource)
+            new_amount = min(current_amount + gain, capacity)
+            setattr(self, resource, new_amount)
 
         self.last_resource_update = now
 

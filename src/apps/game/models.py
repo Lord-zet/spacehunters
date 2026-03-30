@@ -178,7 +178,6 @@ class Fleet(models.Model):
     departure_time = models.DateTimeField(auto_now_add=True)
     arrival_time = models.DateTimeField()
     return_time = models.DateTimeField(null=True, blank=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.source_planet} -> {self.target_planet}"

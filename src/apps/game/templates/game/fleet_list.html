@@ -54,7 +54,7 @@
                 {{ fleet.return_time }}
 
             {% else %}
-                [{{ fleet.completed_at|date:"Y-m-d H:i" }}]
+                [{{ fleet.return_time|date:"Y-m-d H:i" }}]
             {% endif %}
             </span>
 

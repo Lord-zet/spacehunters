@@ -20,4 +20,14 @@ BUILDINGS = {
         "build_time": 90,
         "production_fn": crystal_mine_production,
     },
+    "metal_storage": {
+        "level_field": "metal_storage_level",
+        "base_cost": {"metal": 120, "crystal": 40},
+        "build_time": 75,
+    },
+    "crystal_storage": {
+        "level_field": "crystal_storage_level",
+        "base_cost": {"metal": 120, "crystal": 80},
+        "build_time": 75,
+    },
 }

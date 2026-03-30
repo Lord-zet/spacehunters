@@ -47,11 +47,11 @@
 
             {% if fleet.status == "outbound" %}
                 Arrives in:
-                {{ fleet.arrival_time|timeuntil:now }}
+                {{ fleet.arrival_time }}
 
             {% elif fleet.status == "returning" %}
                 Returns in:
-                {{ fleet.return_time|timeuntil:now }}
+                {{ fleet.return_time }}
 
             {% else %}
                 [{{ fleet.completed_at|date:"Y-m-d H:i" }}]

@@ -3,15 +3,17 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}My Game{% endblock %}</title>
+    <title>{% block title %}Space Hunters{% endblock %}</title>
 
     <link rel="stylesheet" href="{% static 'game/style.css' %}">
 </head>
 
-<body class="game-body" style="background-image: url('{% static background %}');">
+<body class="game-body {% if not planet %}auth-body{% endif %}"
+      style="background-image: url('{% static background|default:"game/backgrounds/bg1.jpg" %}');">
 
 <div class="layout">
 
+    {% if planet %}
     <!-- SIDEBAR -->
     <aside class="sidebar">
         <h2>🚀 Space Hunters</h2>
@@ -25,17 +27,19 @@
             </ul>
         </nav>
     </aside>
+    {% endif %}
 
     <!-- MAIN -->
     <div class="main">
 
+    {% if planet %}
         <!-- TOPBAR -->
     <div class="topbar">
 
         <!-- RESOURCES -->
         <div class="resources">
             <div>Metal: {{ planet.metal }}</div>
-            <div>💎 Kryształ: {{ planet.crystal }}</div>
+            <div>Kryształ: {{ planet.crystal }}</div>
         </div>
 
         <!-- PLANET SWITCHER -->
@@ -51,6 +55,7 @@
         </div>
 
     </div>
+    {% endif %}
 
         {% if messages %}
         <div class="messages">

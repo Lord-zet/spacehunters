@@ -345,3 +345,18 @@ button:disabled {
     border: 1px solid #e74c3c;
     color: #e74c3c;
 }
+
+/* LOGIN PAGE */
+.login-panel {
+    max-width: 400px;
+    margin: auto;
+    margin-top: 100px;
+}
+
+.auth-body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+}

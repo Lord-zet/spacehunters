@@ -51,10 +51,15 @@ class Planet(models.Model):
 
         for resource, per_hour in production.items():
             gain = int(per_hour * elapsed_seconds / 3600)
+            if gain <= 0:
+                continue
+
             current_amount = getattr(self, resource, 0)
             capacity = self.get_storage_capacity(resource)
-            new_amount = min(current_amount + gain, capacity)
-            setattr(self, resource, new_amount)
+            free_space = max(capacity - current_amount, 0)
+
+            actual_gain = min(gain, free_space)
+            setattr(self, resource, current_amount + actual_gain)
 
         self.last_resource_update = now
 

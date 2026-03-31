@@ -75,12 +75,18 @@ def planet_buildings(request, pk):
 
     background = get_planet_background(planet)
 
+    storage_capacities = {
+        "metal": planet.get_storage_capacity("metal"),
+        "crystal": planet.get_storage_capacity("crystal"),
+    }
+
     context = {
         "planet": planet,
         "production": planet.get_production_per_hour(),
         "building_costs": building_costs,
         "building_in_progress": planet.is_building_in_progress(),
         "background": background,
+        "storage_capacities": storage_capacities,
     }
     return render(request, "game/buildings.html", context)
 

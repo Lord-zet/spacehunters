@@ -75,6 +75,54 @@
                 </form>
             </div>
 
+            <!-- METAL STORAGE -->
+            <div class="building">
+                <div class="building-info">
+                    <strong>Magazyn metalu</strong><br>
+                    Poziom: {{ planet.metal_storage_level }}<br>
+
+                    Koszt:
+                    {{ building_costs.metal_storage.metal }} metal
+                    {% if building_costs.metal_storage.crystal %}
+                        | {{ building_costs.metal_storage.crystal }} kryształ
+                    {% endif %}
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="building" value="metal_storage">
+
+                    <button type="submit"
+                        {% if building_in_progress %}disabled{% endif %}>
+                        Ulepsz
+                    </button>
+                </form>
+            </div>
+
+            <!-- CRYSTAL STORAGE -->
+            <div class="building">
+                <div class="building-info">
+                    <strong>Magazyn kryształu</strong><br>
+                    Poziom: {{ planet.crystal_storage_level }}<br>
+
+                    Koszt:
+                    {{ building_costs.crystal_storage.metal }} metal
+                    {% if building_costs.crystal_storage.crystal %}
+                        | {{ building_costs.crystal_storage.crystal }} kryształ
+                    {% endif %}
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="building" value="crystal_storage">
+
+                    <button type="submit"
+                        {% if building_in_progress %}disabled{% endif %}>
+                        Ulepsz
+                    </button>
+                </form>
+            </div>
+
         </div>
 
 

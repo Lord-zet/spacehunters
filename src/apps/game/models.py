@@ -37,7 +37,7 @@ class Planet(models.Model):
         }
         level = storage_levels.get(resource, 0)
 
-        base_capacity = 1000
+        base_capacity = 5000
         return int(base_capacity * (1.5 ** level))
 
     def update_resources(self):

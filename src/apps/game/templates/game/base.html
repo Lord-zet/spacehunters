@@ -54,6 +54,13 @@
             </select>
         </div>
 
+        <div>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">Wyloguj</button>
+            </form>
+        </div>
+
     </div>
     {% endif %}
 

@@ -38,8 +38,12 @@
 
         <!-- RESOURCES -->
         <div class="resources">
-            <div>Metal: {{ planet.metal }}</div>
-            <div>Kryształ: {{ planet.crystal }}</div>
+            <div class="{% if planet.metal >= storage_capacities.metal %}resource-full{% endif %}">
+                Metal: {{ planet.metal }}
+            </div>
+            <div class="{% if planet.crystal >= storage_capacities.crystal %}resource-full{% endif %}">
+                Kryształ: {{ planet.crystal }}
+            </div>
         </div>
 
         <!-- PLANET SWITCHER -->

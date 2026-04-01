@@ -14,6 +14,12 @@ def get_planet_background(planet):
     ]
     return backgrounds[planet.id % len(backgrounds)]
 
+def get_storage_capacities(planet):
+    return {
+        "metal": planet.get_storage_capacity("metal"),
+        "crystal": planet.get_storage_capacity("crystal"),
+    }
+
 def get_active_planet(request):
     planet_id = request.session.get("active_planet_id")
     if planet_id:
@@ -43,6 +49,7 @@ def planet_detail(request, pk):
     context = {
         "planet": planet,
         "background": background,
+        "storage_capacities": get_storage_capacities(planet),
     }
     return render(request, "game/planet_detail.html", context)
 
@@ -75,18 +82,13 @@ def planet_buildings(request, pk):
 
     background = get_planet_background(planet)
 
-    storage_capacities = {
-        "metal": planet.get_storage_capacity("metal"),
-        "crystal": planet.get_storage_capacity("crystal"),
-    }
-
     context = {
         "planet": planet,
         "production": planet.get_production_per_hour(),
         "building_costs": building_costs,
         "building_in_progress": planet.is_building_in_progress(),
         "background": background,
-        "storage_capacities": storage_capacities,
+        "storage_capacities": get_storage_capacities(planet),
     }
     return render(request, "game/buildings.html", context)
 

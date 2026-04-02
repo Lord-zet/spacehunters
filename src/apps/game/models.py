@@ -2,6 +2,8 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from .buildings import BUILDINGS
@@ -29,6 +31,24 @@ class Planet(models.Model):
     building_type = models.CharField(max_length=50, blank=True, default="")
     building_ends_at = models.DateTimeField(null=True, blank=True)
     transporter_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner"],
+                condition=Q(is_homeland=True),
+                name="unique_homeland_per_owner",
+            )
+        ]
+
+    def clean(self):
+        if self.is_homeland:
+            qs = Planet.objects.filter(owner=self.owner, is_homeland=True)
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                raise ValidationError("User can only have one main planet.")
+
 
     def get_storage_capacity(self, resource):
         storage_levels = {

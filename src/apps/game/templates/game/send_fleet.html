@@ -1,65 +1,103 @@
 {% extends "game/base.html" %}
 
+{% block title %}Flota | {{ planet.name }}{% endblock %}
+
 {% block content %}
-<div class="panel fleet-panel">
+<div class="max-w-5xl mx-auto space-y-6 font-mono text-white">
 
-    <h2>Wyślij flotę</h2>
+    <!-- NAGŁÓWEK SEKCJI -->
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="font-scifi text-2xl text-accent-cyan tracking-widest uppercase">Dowodzenie Flotą</h2>
+            <p class="text-xs text-white/40 uppercase tracking-tight">Zarządzanie jednostkami międzygwiezdnymi</p>
+        </div>
+    </div>
 
-    <form method="post">
+    <!-- ZESTAWIENIE POSIADANYCH STATKÓW -->
+    <div class="glass-panel p-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 border-b-2 border-accent-cyan/30">
+        <div class="text-center p-2 border border-white/5 rounded bg-white/5">
+            <p class="text-[10px] text-white/40 uppercase">Transporter</p>
+            <p class="text-lg font-scifi text-accent-cyan">{{ available_transporters|default:"0" }}</p>
+        </div>
+
+    </div>
+
+    <!-- FORMULARZ MISJI -->
+    <form action="" method="POST" class="glass-panel hud-border p-8">
         {% csrf_token %}
-        {{ form.non_field_errors }}
 
-        <!-- SHIPS -->
-        <div class="form-section">
-            <div class="form-row">
-                <label>
-                    {{ form.transporter_count.label }}
-                    <span class="available">
-                        (dostępne: {{ planet.transporter_count }})
-                    </span>
-                </label>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                {{ form.transporter_count }}
-                {{ form.transporter_count.errors }}
-            </div>
-        </div>
+            <!-- SEKCJA 1: WYBÓR STATKÓW -->
+            <div class="space-y-4">
+                <h3 class="text-accent-cyan text-xs uppercase border-b border-white/10 pb-2 mb-4">1. Formowanie Eskadry</h3>
 
-        <!-- RESOURCES -->
-        <div class="form-section">
-            <h3>Ładunek</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between group">
+                        <label class="text-sm text-white/70">Transporter</label>
+                        <div class="flex items-center space-x-2">
+                            {{ form.transporter_count }}
+                            <button type="button" class="text-[10px] text-accent-cyan hover:text-white uppercase">Max</button>
+                        </div>
+                    </div>
 
-            <div class="form-row">
-                <label>{{ form.metal_to_send.label }}</label>
-                {{ form.metal_to_send }}
-                {{ form.metal_to_send.errors }}
+                </div>
             </div>
 
-            <div class="form-row">
-                <label>{{ form.crystal_to_send.label }}</label>
-                {{ form.crystal_to_send }}
-                {{ form.crystal_to_send.errors }}
+            <!-- SEKCJA 2: CEL I MISJA -->
+            <div class="space-y-4">
+                <h3 class="text-accent-cyan text-xs uppercase border-b border-white/10 pb-2 mb-4">2. Parametry Misji</h3>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] text-white/40 uppercase mb-1">Planeta Docelowa</label>
+                        {{ form.target_planet }}
+                    </div>
+
+                </div>
             </div>
-        </div>
 
-        <!-- TARGET -->
-        <div class="form-section">
-            <h3>Cel</h3>
+            <!-- SEKCJA 3: ŁADUNEK -->
+            <div class="lg:col-span-2 mt-4">
+                <h3 class="text-accent-orange text-xs uppercase border-b border-white/10 pb-2 mb-4">3. Załadunek Surowców</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-white/40 uppercase">Metal</span>
+                            <span class="text-accent-cyan">Dostępne: {{ metal|default:"0" }}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            {{ form.metal_to_send }}
+                            <button type="button" class="bg-white/5 px-2 py-2 text-[10px] border border-white/10 hover:text-accent-cyan uppercase">Max</button>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-white/40 uppercase">Kryształ</span>
+                            <span class="text-white/80">Dostępne: {{ crystal|default:"0" }}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            {{ form.crystal_to_send }}
+                            <button type="button" class="bg-white/5 px-2 py-2 text-[10px] border border-white/10 hover:text-accent-cyan uppercase">Max</button>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="form-row">
-                <label>{{ form.target_planet.label }}</label>
-                {{ form.target_planet }}
-                {{ form.target_planet.errors }}
+                <div class="mt-6 flex items-center justify-between p-4 bg-accent-cyan/5 border border-accent-cyan/20 rounded">
+                    <button type="submit" class="bg-accent-cyan hover:bg-cyan-400 text-black px-10 py-2 font-scifi uppercase tracking-widest text-sm transition-all transform hover:scale-105">
+                        Wyślij Flotę
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <!-- ACTION -->
-        <div class="form-actions">
-            <button type="submit" name="action" value="send">
-                Wyślij
-            </button>
         </div>
-
     </form>
+
+    <!-- DOLNA INFORMACJA -->
+    <div class="glass-panel p-3 flex items-center space-x-3 text-[10px] text-white/40 uppercase">
+        <span class="w-2 h-2 bg-accent-cyan rounded-full animate-pulse"></span>
+        <p>System obliczeniowy gotowy do wyznaczenia trajektorii skoku</p>
+    </div>
 
 </div>
 {% endblock %}

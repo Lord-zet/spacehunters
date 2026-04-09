@@ -23,6 +23,17 @@ class CustomAuthenticationForm(AuthenticationForm):
         })
 
 
+TAILWIND_FLEET_RESOURCE_INPUT = (
+    "flex-1 bg-black/40 border border-white/10 rounded px-3 py-2 text-sm outline-none focus:border-accent-orange"
+)
+TAILWIND_FLEET_SHIP_INPUT = (
+    "w-24 bg-black/40 border border-white/10 rounded px-2 py-1 text-xs focus:border-accent-cyan outline-none transition-all"
+)
+
+TAILWIND_FLEET_TARGET_INPUT = (
+    "w-full bg-black/60 border border-white/10 rounded px-3 py-2 text-sm focus:border-accent-cyan outline-none appearance-none cursor-pointer"
+)
+
 class SendFleetForm(forms.Form):
     transporter_count = forms.IntegerField(
         label="Ilość transporterów",
@@ -51,6 +62,23 @@ class SendFleetForm(forms.Form):
 
     def __init__(self, *args, user=None, source_planet=None, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.fields["transporter_count"].widget.attrs.update({
+            "class": TAILWIND_FLEET_SHIP_INPUT,
+            "placeholder": "0",
+        })
+        self.fields["metal_to_send"].widget.attrs.update({
+            "class": TAILWIND_FLEET_RESOURCE_INPUT,
+            "placeholder": "0",
+        })
+        self.fields["crystal_to_send"].widget.attrs.update({
+            "class": TAILWIND_FLEET_RESOURCE_INPUT,
+            "placeholder": "0",
+        })
+        self.fields["target_planet"].widget.attrs.update({
+            "class": TAILWIND_FLEET_TARGET_INPUT,
+            "placeholder": "0",
+        })
 
         self.fields["target_planet"].queryset = Planet.objects.exclude(
             pk=getattr(source_planet, "pk", None)

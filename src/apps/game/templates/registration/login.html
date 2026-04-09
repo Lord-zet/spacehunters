@@ -1,27 +1,139 @@
-{% extends "game/base.html" %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autoryzacja | Space Hunters</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'scifi': ['Orbitron', 'sans-serif'],
+                        'mono': ['Roboto Mono', 'monospace'],
+                    },
+                    colors: {
+                        'accent-cyan': '#00f2ff',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(rgba(10, 25, 47, 0.8), rgba(10, 25, 47, 0.8)), 
+                        url("/static/game/backgrounds/background_main.jfif");
+            background-size: cover;
+            background-position: center;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: screen;
+            height: 100vh;
+            margin: 0;
+        }
 
-{% block content %}
-<div class="panel login-panel">
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
 
-    <h2>Login</h2>
+        .hud-border {
+            position: relative;
+        }
 
-    <form method="post">
-        {% csrf_token %}
+        .hud-border::before {
+            content: "";
+            position: absolute;
+            top: -2px; left: -2px; width: 20px; height: 20px;
+            border-top: 2px solid #00f2ff; border-left: 2px solid #00f2ff;
+        }
 
-        {{ form.non_field_errors }}
+        .hud-border::after {
+            content: "";
+            position: absolute;
+            bottom: -2px; right: -2px; width: 20px; height: 20px;
+            border-bottom: 2px solid #00f2ff; border-right: 2px solid #00f2ff;
+        }
 
-        <div class="form-row">
-            {{ form.username.label_tag }}
-            {{ form.username }}
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body class="font-mono overflow-hidden">
+
+    <div class="w-full max-w-md p-1 px-4">
+        <!-- LOGO / TYTUŁ -->
+        <div class="text-center mb-8">
+            <h1 class="font-scifi text-3xl text-accent-cyan tracking-[0.4em] uppercase">Space Hunters</h1>
+            <p class="text-[10px] text-white/40 mt-2 uppercase tracking-widest">Authorization Required</p>
         </div>
 
-        <div class="form-row">
-            {{ form.password.label_tag }}
-            {{ form.password }}
+        <!-- FORMULARZ LOGOWANIA -->
+        <div class="glass-panel p-8 hud-border relative">
+            <div class="absolute top-2 right-4">
+                <span class="text-[8px] text-accent-cyan/50 animate-pulse font-scifi">SECURE LINE 01</span>
+            </div>
+
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Użytkownik -->
+                <div class="space-y-1">
+                    <label for="username" class="text-[10px] text-accent-cyan uppercase tracking-tighter">Identyfikator Dowódcy</label>
+                    <div class="relative">
+                        {{ form.username }}
+                    </div>
+                </div>
+
+                <!-- Hasło -->
+                <div class="space-y-1">
+                    <label for="password" class="text-[10px] text-accent-cyan uppercase tracking-tighter">Klucz Dostępu</label>
+                    <div class="relative">
+                        {{ form.password }}
+                    </div>
+                </div>
+
+                <!-- Przycisk -->
+                <div class="pt-4">
+                    <button type="submit" 
+                        class="w-full bg-accent-cyan/10 hover:bg-accent-cyan hover:text-black border border-accent-cyan text-accent-cyan py-3 px-6 font-scifi uppercase tracking-widest text-sm transition-all duration-300 transform active:scale-95">
+                        Zaloguj
+                    </button>
+                </div>
+            </form>
+
+            <!-- Błędy logowania -->
+            {% if messages %}
+                <div class="mt-4 space-y-2">
+                    {% for message in messages %}
+                        <p class="text-[10px] text-red-400 text-center uppercase tracking-tighter italic">
+                            Error: {{ message }}
+                        </p>
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
 
-        <button type="submit">Login</button>
-    </form>
+        <!-- STOPKA LOGOWANIA -->
+        <div class="mt-8 text-center space-y-2">
+            <p class="text-[9px] text-white/20 uppercase tracking-[0.2em]">Oczekiwanie na autoryzację...</p>
+            <div class="flex justify-center space-x-1">
+                <div class="w-1 h-1 bg-accent-cyan/30 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                <div class="w-1 h-1 bg-accent-cyan/30 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                <div class="w-1 h-1 bg-accent-cyan/30 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+            </div>
+        </div>
+    </div>
 
-</div>
-{% endblock %}
+</body>
+</html>

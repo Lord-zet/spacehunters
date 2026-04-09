@@ -1,16 +1,23 @@
 {% extends "game/base.html" %}
 {% load time_extras %}
-
-{% block title %}
-{{ planet.name }}
-{% endblock %}
+{% block title %}Dashboard | {{ planet.name }}{% endblock %}
 
 {% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full font-mono">
 
-        <div class="panel">
-            <h2>{{ planet.name }}</h2>
-            <p>Pozycja: [{{ planet.x }} : {{ planet.y }}]</p>
+    <!-- CENTRALNY OBSZAR: WIZUALIZACJA (OPEN LAYOUT) -->
+    <div class="lg:col-span-6 flex flex-col items-center justify-center relative min-h-[400px]">
+        <div class="absolute inset-0 flex items-center justify-center -z-10 opacity-30">
+             <!-- Tu można wstawić SVG orbitującej planety -->
+             <div class="w-64 h-64 rounded-full border border-accent-cyan/20 animate-[spin_20s_linear_infinite]"></div>
+             <div class="absolute w-80 h-80 rounded-full border border-white/10 animate-[spin_40s_linear_infinite_reverse]"></div>
         </div>
 
+        <div class="text-center">
+            <h3 class="font-scifi text-2xl tracking-[0.3em] uppercase mb-2">{{ planet.name|default:"Alfa Prime" }}</h3>
+            <p class="text-xs text-accent-cyan tracking-widest">[ SEKTOR 1-105-09 ]</p>
+        </div>
+    </div>
 
+</div>
 {% endblock %}

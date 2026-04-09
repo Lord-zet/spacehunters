@@ -1,5 +1,26 @@
+from django.contrib.auth.forms import AuthenticationForm
 from django import forms
 from .models import Planet
+
+
+TAILWIND_INPUT = (
+    "w-full bg-black/40 border border-white/10 rounded px-4 py-3 text-sm "
+    "focus:border-accent-cyan outline-none transition-all text-white"
+)
+
+class CustomAuthenticationForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["username"].widget.attrs.update({
+            "class": TAILWIND_INPUT,
+            "placeholder": "Wprowadź identyfikator...",
+        })
+
+        self.fields["password"].widget.attrs.update({
+            "class": TAILWIND_INPUT,
+            "placeholder": "••••••••",
+        })
 
 
 class SendFleetForm(forms.Form):

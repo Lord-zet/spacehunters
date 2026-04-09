@@ -1,131 +1,227 @@
 {% extends "game/base.html" %}
 {% load time_extras %}
 
-{% block title %}
-{{ planet.name }}
-{% endblock %}
+{% block title %}Budynki | {{ planet.name }}{% endblock %}
 
 {% block content %}
+<div class="max-w-5xl mx-auto space-y-6 font-mono">
 
-      <!-- BUILDINGS -->
-        <div class="panel">
-            <h3>Budynki</h3>
+    <!-- NAGŁÓWEK SEKCJI -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h2 class="font-scifi text-2xl text-accent-cyan tracking-widest uppercase">Infrastruktura</h2>
+            <p class="text-xs text-white/40 uppercase tracking-tight">Zarządzanie wydobyciem i składowaniem surowców</p>
+        </div>
+        <div class="text-right">
+            <span class="text-[10px] block text-white/30 uppercase">Wolne pola</span>
+            <span class="text-lg text-accent-orange">163 / 163</span>
+        </div>
+    </div>
 
-                <!-- INFO -->
-            <div class="building-status">
-                {% if building_in_progress %}
-                    <div class="building-active">
-                        W budowie: <strong>{{ planet.building_type }}</strong><br>
-                        Pozostało: {{ planet.building_ends_at|time_remaining }}
+    <!-- PANEL STATUSU BUDOWY -->
+    <div class="glass-panel border-l-2 border-accent-cyan p-4 flex items-center justify-between overflow-hidden relative">
+        <div class="flex items-center space-x-4">
+            <div class="relative">
+                <div class="w-10 h-10 rounded-full border-2 border-accent-cyan/20 flex items-center justify-center">
+                    {% if building_in_progress %}
+                        <div class="w-6 h-6 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin"></div>
+                    {% else %}
+                        <div class="w-6 h-6 border-2 border-white/20 rounded-full flex items-center justify-center">
+                            <div class="w-2 h-2 bg-white/20 rounded-full"></div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <p class="text-[10px] text-white/40 uppercase tracking-widest">Status Inżynieryjny</p>
+                <h3 class="text-sm font-scifi uppercase">
+                    {% if building_in_progress %}
+                        W budowie: <span class="text-accent-cyan">{{ planet.building_type }}</span>
+                    {% else %}
+                        <span class="text-white/60">Brak aktywnej budowy</span>
+                    {% endif %}
+                </h3>
+            </div>
+        </div>
+
+        {% if building_in_progress %}
+        <div class="text-right">
+            <p class="text-[10px] text-white/40 uppercase tracking-widest">Pozostały czas</p>
+            <p class="text-sm font-scifi text-accent-orange">{{ planet.building_ends_at|time_remaining }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Dekoracyjne tło dla panelu -->
+        <div class="absolute right-0 top-0 h-full w-32 bg-gradient-to-l from-accent-cyan/5 to-transparent pointer-events-none"></div>
+    </div>
+
+    <!-- GŁÓWNY PANEL BUDYNKÓW -->
+    <div class="glass-panel hud-border p-1">
+        <div class="divide-y divide-white/10">
+
+            <!-- KOPALNIA METALU -->
+            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
+                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+                    <img src="#" alt="Kopalnia Metalu" class="w-full h-full object-cover">
+                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet.metal_mine_level|default:"0" }}</span>
+                </div>
+
+                <div class="flex-1 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Kopalnia Metalu</h3>
+                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Głębokie odwierty w skorupie planety pozwalające na wydobycie podstawowych rud żelaza niezbędnych do budowy floty i struktur.</p>
                     </div>
-                {% else %}
-                    <div class="building-idle">
-                        Brak aktywnej budowy
+
+                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
+                            <p class="text-sm text-white">+{{ production.metal|default:"0" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.metal_mine.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.metal_mine.crystal|default:"0" }}</span></p>
+                        </div>
+                        <div class="flex items-end justify-end">
+                            <form method="post">
+                            {% csrf_token %}
+                                <input type="hidden" name="building" value="metal_mine">
+                                <button type="submit"
+                                    {% if building_in_progress %}disabled{% endif %}
+                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
+                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                {% endif %}
+                </div>
             </div>
 
-            <!-- METAL MINE -->
-            <div class="building">
-                <div class="building-info">
-                    <strong>Kopalnia metalu</strong><br>
-                    Poziom: {{ planet.metal_mine_level }}<br>
-                    Produkcja: {{ production.metal }} / h<br>
-
-                    Koszt:
-                    {{ building_costs.metal_mine.metal }} metal
-                    {% if building_costs.metal_mine.crystal %}
-                        {{ building_costs.metal_mine.crystal }} kryształ
-                    {% endif %}
+            <!-- KOPALNIA KRYSZTAŁU -->
+            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
+                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+                    <img src="#" alt="Kopalnia Kryształu" class="w-full h-full object-cover">
+                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet.crystal_mine_level|default:"0" }}</span>
                 </div>
 
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="building" value="metal_mine">
+                <div class="flex-1 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Kopalnia Kryształu</h3>
+                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Kryształy są głównym nośnikiem energii w obwodach elektronicznych. Wydobywane z rzadkich formacji kwarcowych.</p>
+                    </div>
 
-                    <button type="submit"
-                        {% if building_in_progress %}disabled{% endif %}>
-                        Ulepsz
-                    </button>
-                </form>
+                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
+                            <p class="text-sm text-white">+{{ production.crystal|default:"0" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.crystal_mine.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.crystal_mine.crystal|default:"0" }}</span></p>
+                        </div>
+                        <div class="flex items-end justify-end">
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="building" value="crystal_mine">
+                                <button type="submit"
+                                    {% if building_in_progress %}disabled{% endif %}
+                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
+                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- CRYSTAL MINE -->
-            <div class="building">
-                <div class="building-info">
-                    <strong>Kopalnia kryształu</strong><br>
-                    Poziom: {{ planet.crystal_mine_level }}<br>
-                    Produkcja: {{ production.crystal }} / h<br>
-
-                    Koszt:
-                    {{ building_costs.crystal_mine.metal }} metal
-                    {% if building_costs.crystal_mine.crystal %}
-                        {{ building_costs.crystal_mine.crystal }} kryształ
-                    {% endif %}
+            <!-- MAGAZYN METALU -->
+            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
+                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+                    <img src="#" alt="Magazyn Metalu" class="w-full h-full object-cover">
+                    <span class="absolute top-1 left-1 z-20 bg-accent-orange/80 text-black text-[10px] px-1 font-bold">LVL {{ planet.metal_storage_level|default:"0" }}</span>
                 </div>
 
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="building" value="crystal_mine">
+                <div class="flex-1 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Magazyn Metalu</h3>
+                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Ogromne silosy przeznaczone do bezpiecznego przechowywania rudy. Zwiększa limit maksymalnego składowania metalu.</p>
+                    </div>
 
-                    <button type="submit"
-                        {% if building_in_progress %}disabled{% endif %}>
-                        Ulepsz
-                    </button>
-                </form>
+                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
+                            <p class="text-sm text-white">{{ storage_capacities.metal|default:"0" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.metal_storage.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.metal_storage.crystal|default:"0" }}</span></p>
+                        </div>
+                        <div class="flex items-end justify-end">
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="building" value="metal_storage">
+                                <button type="submit"
+                                    {% if building_in_progress %}disabled{% endif %}
+                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
+                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- METAL STORAGE -->
-            <div class="building">
-                <div class="building-info">
-                    <strong>Magazyn metalu</strong><br>
-                    Poziom: {{ planet.metal_storage_level }}<br>
-                    Limit: {{ storage_capacities.metal }}<br>
-
-                    Koszt:
-                    {{ building_costs.metal_storage.metal }} metal
-                    {% if building_costs.metal_storage.crystal %}
-                        | {{ building_costs.metal_storage.crystal }} kryształ
-                    {% endif %}
+            <!-- MAGAZYN KRYSZTAŁU -->
+            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
+                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+                    <img src="#" alt="Magazyn Kryształu" class="w-full h-full object-cover">
+                    <span class="absolute top-1 left-1 z-20 bg-accent-orange/80 text-black text-[10px] px-1 font-bold">LVL {{ planet.crystal_storage_level|default:"0" }}</span>
                 </div>
 
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="building" value="metal_storage">
+                <div class="flex-1 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Magazyn Kryształu</h3>
+                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Termicznie izolowane komory chroniące strukturę krystaliczną przed degradacją spowodowaną wahaniami temperatur.</p>
+                    </div>
 
-                    <button type="submit"
-                        {% if building_in_progress %}disabled{% endif %}>
-                        Ulepsz
-                    </button>
-                </form>
-            </div>
-
-            <!-- CRYSTAL STORAGE -->
-            <div class="building">
-                <div class="building-info">
-                    <strong>Magazyn kryształu</strong><br>
-                    Poziom: {{ planet.crystal_storage_level }}<br>
-                    Limit: {{ storage_capacities.crystal }}<br>
-
-                    Koszt:
-                    {{ building_costs.crystal_storage.metal }} metal
-                    {% if building_costs.crystal_storage.crystal %}
-                        | {{ building_costs.crystal_storage.crystal }} kryształ
-                    {% endif %}
+                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
+                            <p class="text-sm text-white">{{ storage_capacities.crystal|default:"5.000" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.crystal_storage.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.crystal_storage.crystal|default:"0" }}</span></p>
+                        </div>
+                        <div class="flex items-end justify-end">
+                            <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="building" value="crystal_storage">
+                                <button type="submit"
+                                    {% if building_in_progress %}disabled{% endif %}
+                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
+                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="building" value="crystal_storage">
-
-                    <button type="submit"
-                        {% if building_in_progress %}disabled{% endif %}>
-                        Ulepsz
-                    </button>
-                </form>
             </div>
 
         </div>
+    </div>
 
-
+    <!-- PANEL INFORMACYJNY (DOLNY) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="glass-panel p-4 text-[11px] text-white/50 italic border-l-2 border-accent-cyan">
+            * Kolejna rozbudowa możliwa dopiero po zakończeniu aktualnej budowy.
+        </div>
+        <div class="glass-panel p-4 text-[11px] text-white/50 text-right border-r-2 border-accent-orange uppercase tracking-widest">
+            Status: <span class="text-accent-cyan">Operacyjny</span>
+        </div>
+    </div>
+</div>
 {% endblock %}

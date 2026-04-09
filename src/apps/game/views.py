@@ -73,7 +73,7 @@ def planet_buildings(request, pk):
         else:
             messages.error(request, msg)
 
-        return redirect("game:planet_detail", pk=planet.pk)
+        return redirect("game:buildings", pk=planet.pk)
 
     building_costs = {
         name: planet.get_upgrade_cost(name)
@@ -131,11 +131,16 @@ def send_fleet(request, pk):
 
     background = get_planet_background(source_planet)
 
+    # context = {
+    #     "planet": source_planet,
+    #     "form": form,
+    #     "available_transporters": source_planet.transporter_count,
+    #     "metal": source_planet.metal,
+    #     "background": background,
+    # }
     context = {
         "planet": source_planet,
         "form": form,
-        "available_transporters": source_planet.transporter_count,
-        "metal": source_planet.metal,
         "background": background,
     }
     return render(request, "game/send_fleet.html", context)

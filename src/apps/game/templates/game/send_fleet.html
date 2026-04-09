@@ -17,7 +17,7 @@
     <div class="glass-panel p-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 border-b-2 border-accent-cyan/30">
         <div class="text-center p-2 border border-white/5 rounded bg-white/5">
             <p class="text-[10px] text-white/40 uppercase">Transporter</p>
-            <p class="text-lg font-scifi text-accent-cyan">{{ available_transporters|default:"0" }}</p>
+            <p class="text-lg font-scifi text-accent-cyan">{{ planet.transporter_count|default:"0" }}</p>
         </div>
 
     </div>
@@ -64,7 +64,7 @@
                     <div class="space-y-2">
                         <div class="flex justify-between text-[10px]">
                             <span class="text-white/40 uppercase">Metal</span>
-                            <span class="text-accent-cyan">Dostępne: {{ metal|default:"0" }}</span>
+                            <span class="text-accent-cyan">Dostępne: {{ planet.metal|default:"0" }}</span>
                         </div>
                         <div class="flex items-center space-x-2">
                             {{ form.metal_to_send }}
@@ -74,7 +74,7 @@
                     <div class="space-y-2">
                         <div class="flex justify-between text-[10px]">
                             <span class="text-white/40 uppercase">Kryształ</span>
-                            <span class="text-white/80">Dostępne: {{ crystal|default:"0" }}</span>
+                            <span class="text-white/80">Dostępne: {{ planet.crystal|default:"0" }}</span>
                         </div>
                         <div class="flex items-center space-x-2">
                             {{ form.crystal_to_send }}

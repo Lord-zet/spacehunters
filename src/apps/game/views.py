@@ -131,13 +131,6 @@ def send_fleet(request, pk):
 
     background = get_planet_background(source_planet)
 
-    # context = {
-    #     "planet": source_planet,
-    #     "form": form,
-    #     "available_transporters": source_planet.transporter_count,
-    #     "metal": source_planet.metal,
-    #     "background": background,
-    # }
     context = {
         "planet": source_planet,
         "form": form,

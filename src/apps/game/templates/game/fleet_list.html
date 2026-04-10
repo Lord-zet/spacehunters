@@ -1,69 +1,200 @@
 {% extends "game/base.html" %}
 
+{% block title %}Ruch floty | {{ planet.name }}{% endblock %}
+
 {% block content %}
-<div class="panel fleet-list">
+<div class="max-w-6xl mx-auto space-y-6 font-mono">
 
-    <h2>Ruch floty</h2>
-
-    {% for fleet in fleets %}
-    <div class="fleet-item">
-
-        <!-- ROUTE -->
-        <div class="fleet-route">
-
-            <span class="planet">
-                {{ fleet.source_planet.name }}
-                ({{ fleet.source_planet.x }}:{{ fleet.source_planet.y }})
-            </span>
-
-            <!-- DIRECTION -->
-            <span class="arrow">
-                {% if fleet.status == "outbound" %}
-                    →
-                {% elif fleet.status == "returning" %}
-                    ←
-                {% else %}
-                    ✓
-                {% endif %}
-            </span>
-
-            <span class="planet">
-                {{ fleet.target_planet.name }}
-                ({{ fleet.target_planet.x }}:{{ fleet.target_planet.y }})
-            </span>
-
+    <!-- NAGŁÓWEK -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h2 class="font-scifi text-2xl text-accent-cyan tracking-widest uppercase">Centrum Dowodzenia Flotą</h2>
+            <p class="text-xs text-white/40 uppercase tracking-tight">Monitorowanie wszystkich aktywnych i archiwalnych operacji w sektorze</p>
         </div>
-
-        <!-- DETAILS -->
-        <div class="fleet-details">
-            <span class="status status-{{ fleet.status }}">
-                {{ fleet.get_status_display }}
-            </span>
-
-            <span class="ships">
-                {{ fleet.transporter_count }}
-            </span>
-            <span class="time">
-
-            {% if fleet.status == "outbound" %}
-                Arrives in:
-                {{ fleet.arrival_time }}
-
-            {% elif fleet.status == "returning" %}
-                Returns in:
-                {{ fleet.return_time }}
-
-            {% else %}
-                [{{ fleet.return_time|date:"Y-m-d H:i" }}]
-            {% endif %}
-            </span>
-
+        <div class="text-right">
+            <span class="text-[10px] block text-white/30 uppercase">Aktywne sloty</span>
+            <span class="text-lg text-accent-cyan">{{ active_fleets_count|default:"-" }} / {{ max_fleet_slots|default:"-" }}</span>
         </div>
-
     </div>
-    {% empty %}
-    <p>No fleets in motion.</p>
-    {% endfor %}
 
+    <!-- GŁÓWNA TABELA RUCHÓW -->
+    <div class="glass-panel overflow-hidden border-t-2 border-accent-cyan/50 shadow-2xl">
+        <div class="bg-accent-cyan/10 px-6 py-3 flex justify-between items-center border-b border-white/10">
+            <span class="text-xs font-scifi tracking-widest uppercase text-accent-cyan">Rejestr Operacji Przesunięć</span>
+            <div class="flex space-x-4">
+                <span class="text-[10px] flex items-center text-accent-cyan">
+                    <span class="w-2 h-2 bg-accent-cyan rounded-full animate-pulse mr-2"></span> W LOCIE
+                </span>
+                <span class="text-[10px] flex items-center text-white/40">
+                    <span class="w-2 h-2 bg-white/20 rounded-full mr-2"></span> ZAKOŃCZONE
+                </span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="text-white/40 border-b border-white/10 uppercase tracking-tighter bg-black/20">
+                        <th class="p-4 font-normal">Misja / Status</th>
+                        <th class="p-4 font-normal">Pochodzenie</th>
+                        <th class="p-4 font-normal">Cel</th>
+                        <th class="p-4 font-normal">Statki</th>
+                        <th class="p-4 font-normal">Czas</th>
+                        <th class="p-4 font-normal w-10"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fleet in fleets %}
+                    <!-- WIERSZ GŁÓWNY (KLIKALNY) -->
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
+                        onclick="document.getElementById('details-{{ forloop.counter }}').classList.toggle('hidden')">
+
+                        <td class="p-4">
+                            <div class="flex flex-col">
+                                <span class="text-accent-cyan font-bold uppercase tracking-wider">{{ fleet.mission_type }}</span>
+                                <div class="flex items-center mt-1">
+                                    {% if fleet.status == 'outbound' %}
+                                        <span class="text-[9px] text-accent-cyan uppercase">Wylot</span>
+                                        <span class="flex space-x-0.5 ml-2">
+                                            <span class="w-1 h-1 bg-accent-cyan rounded-full animate-[pulse_1s_infinite_0ms]"></span>
+                                            <span class="w-1 h-1 bg-accent-cyan rounded-full animate-[pulse_1s_infinite_200ms]"></span>
+                                            <span class="w-1 h-1 bg-accent-cyan rounded-full animate-[pulse_1s_infinite_400ms]"></span>
+                                        </span>
+                                    {% elif fleet.status == 'returning' %}
+                                        <span class="text-[9px] text-accent-orange uppercase">Powrót</span>
+                                        <span class="flex space-x-0.5 ml-2">
+                                            <span class="w-1 h-1 bg-accent-orange rounded-full animate-[pulse_1s_infinite_400ms]"></span>
+                                            <span class="w-1 h-1 bg-accent-orange rounded-full animate-[pulse_1s_infinite_200ms]"></span>
+                                            <span class="w-1 h-1 bg-accent-orange rounded-full animate-[pulse_1s_infinite_0ms]"></span>
+                                        </span>
+                                    {% else %}
+                                        <span class="text-[9px] text-white/30 uppercase">Zakończono</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="p-4 font-mono text-white/80">{{ fleet.source_planet.name }}</td>
+                        <td class="p-4 font-mono text-white/80">{{ fleet.target_planet.name }}</td>
+                        <td class="p-4">
+                            <span class="bg-white/5 border border-white/10 px-2 py-1 rounded text-accent-cyan">
+                                {{ fleet.transporter_count }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-accent-orange font-bold font-mono">
+                            {% if fleet.status == 'outbound' %}
+                                {{ fleet.arrival_time|date:"m.d H:i:s" }}
+
+                            {% else %}
+                                {{ fleet.return_time|date:"m.d H:i:s" }}
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-right">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white/20 group-hover:text-accent-cyan transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </td>
+                    </tr>
+
+                    <!-- WIERSZ SZCZEGÓŁÓW (UKRYTY DOMYŚLNIE) -->
+                    <tr id="details-{{ forloop.counter }}" class="hidden bg-black/40 border-b border-white/10">
+                        <td colspan="6" class="p-0">
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- Kolumna Lewa: Skład i Czasy -->
+                            <div class="space-y-6">
+                                <!-- Skład Floty -->
+                                <div>
+                                    <h4 class="text-[10px] text-white/40 uppercase mb-3 tracking-[0.2em] border-b border-white/5 pb-1">Skład eskadry</h4>
+                                    <div class="space-y-2">
+                                        {% for ship in fleet.fleet_composition %}
+                                        <div class="flex justify-between items-center text-[11px]">
+                                            <span class="text-white/70">{{ ship.name }}</span>
+                                            <span class="text-accent-cyan font-mono">{{ ship.amount }}</span>
+                                        </div>
+                                        {% empty %}
+                                        <div class="flex justify-between items-center text-[11px]">
+                                            <span class="text-white/70">Transporter</span>
+                                            <span class="text-accent-cyan font-mono">{{ fleet.transporter_count }}</span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Logistyka Czasowa -->
+                                <div>
+                                    <h4 class="text-[10px] text-white/40 uppercase mb-3 tracking-[0.2em] border-b border-white/5 pb-1">Harmonogram lotu</h4>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between items-center text-[11px]">
+                                            <span class="text-white/50 italic">Start</span>
+                                            <span class="text-white/80 font-mono">{{ fleet.departure_time }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-[11px]">
+                                            <span class="text-white/50 italic">Osiągnięcie celu</span>
+                                            <span class="text-accent-cyan font-mono">{{ fleet.arrival_time }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-[11px]">
+                                            <span class="text-white/50 italic">Powrót</span>
+                                            <span class="text-accent-orange font-mono">{{ fleet.return_time }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                                <!-- Kolumna Prawa: Informacje o ładunku -->
+                                <div class="flex flex-col justify-between">
+                                <div>
+                                    <h4 class="text-[10px] text-white/40 uppercase mb-3 tracking-[0.2em] border-b border-white/5 pb-1">Transportowane zasoby</h4>
+                                    <div class="grid grid-cols-3 gap-2 text-center text-[10px]">
+                                        <div class="bg-white/5 p-2 rounded">
+                                            <p class="text-white/30 uppercase">Metal</p>
+                                            <p class="text-accent-cyan">{{ fleet.metal|default:"0" }}</p>
+                                        </div>
+                                        <div class="bg-white/5 p-2 rounded">
+                                            <p class="text-white/30 uppercase">Kryształ</p>
+                                            <p class="text-white">{{ fleet.crystal|default:"0" }}</p>
+                                        </div>
+                                    </div>
+                                    </div>
+
+                                    <div class="mt-4 flex justify-end space-x-2">
+                                        {% if fleet.status != 'completed' %}
+                                        <button class="px-3 py-1 border border-red-500/50 text-red-500 text-[9px] uppercase hover:bg-red-500/10 transition-colors">Przerwij misję</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-12 text-center text-white/20 italic tracking-[0.3em] uppercase">
+                            Brak zarejestrowanych ruchów floty w tym kwadrancie
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- LEGENDA / INFO -->
+    <div class="flex flex-col md:flex-row gap-4 opacity-60">
+        <div class="flex-1 glass-panel p-3 text-[10px] border-l-2 border-accent-cyan">
+            <span class="text-accent-cyan font-bold uppercase mr-2">Informacje:</span>
+            Wszystkie jednostki operują w czasie rzeczywistym.
+        </div>
+        <div class="flex-1 glass-panel p-3 text-[10px] border-l-2 border-accent-orange">
+            <span class="text-accent-orange font-bold uppercase mr-2">Uwagi:</span>
+            &bull;&bull;&bull;
+        </div>
+    </div>
 </div>
+
+<style>
+    /* Dodatkowe animacje dla kropek pulsujących */
+    @keyframes pulse {
+        0%, 100% { opacity: 0.2; transform: scale(0.8); }
+        50% { opacity: 1; transform: scale(1.2); }
+    }
+</style>
 {% endblock %}

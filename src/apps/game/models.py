@@ -40,6 +40,7 @@ class Planet(models.Model):
                 name="unique_homeland_per_owner",
             )
         ]
+        ordering = ["x", "y"]
 
     def clean(self):
         if self.is_homeland:

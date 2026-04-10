@@ -80,9 +80,12 @@ class SendFleetForm(forms.Form):
             "placeholder": "0",
         })
 
-        self.fields["target_planet"].queryset = Planet.objects.exclude(
-            pk=getattr(source_planet, "pk", None)
-        )
+        queryset = Planet.objects.none()
+        if user is not None:
+            queryset = Planet.objects.filter(owner=user)
+            if source_planet is not None:
+                queryset = queryset.exclude(pk=source_planet.pk)
+        self.fields["target_planet"].queryset = queryset
         self.user = user
         self.source_planet = source_planet
 

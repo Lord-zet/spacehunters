@@ -3,10 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 
-from .models import Planet, Fleet
+from .models import Planet
 from .forms import SendFleetForm
 from .buildings import BUILDINGS
-from .services import send_transport_fleet, process_fleets_for_user
+from .services import send_transport_fleet, process_fleets_for_user, user_fleets_qs, active_fleets_qs
+
 
 def get_planet_background(planet):
     backgrounds = [
@@ -42,6 +43,9 @@ def planet_detail(request, pk):
     planet.update_resources()
     planet.save()
 
+    process_fleets_for_user(request.user)
+    active_fleets = active_fleets_qs(request.user).order_by("-departure_time")
+
     request.session["active_planet_id"] = planet.id
 
     background = get_planet_background(planet)
@@ -50,6 +54,7 @@ def planet_detail(request, pk):
         "planet": planet,
         "background": background,
         "storage_capacities": get_storage_capacities(planet),
+        "active_fleets": active_fleets,
     }
     return render(request, "game/planet_detail.html", context)
 
@@ -141,7 +146,7 @@ def send_fleet(request, pk):
 @login_required
 def fleet_list(request, pk):
     process_fleets_for_user(request.user)
-    fleets = Fleet.objects.filter(owner=request.user).order_by("-departure_time")
+    fleets = user_fleets_qs(request.user).order_by("-departure_time")
     planet = get_object_or_404(Planet, pk=pk, owner=request.user)
 
     background = get_planet_background(planet)

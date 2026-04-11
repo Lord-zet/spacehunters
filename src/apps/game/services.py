@@ -86,3 +86,11 @@ def process_fleets_for_user(user):
         fleet.status = Fleet.Status.COMPLETED
         fleet.completed_at = now
         fleet.save()
+
+
+def user_fleets_qs(user):
+    return Fleet.objects.filter(owner=user)
+
+
+def active_fleets_qs(user):
+    return user_fleets_qs(user).filter(status__in=[Fleet.Status.OUTBOUND, Fleet.Status.RETURNING])

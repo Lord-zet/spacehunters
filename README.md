@@ -2,6 +2,11 @@
 
 Browser-based strategy game built with Django, focused on backend-driven game logic, time-based resource simulation, and state management.
 
+- [Overview](#Overview)
+- [Project Quick Start](#Project Quick Start Guide)
+  * [Requirements](#Requirements)
+
+
 ## Overview
 
 Space Hunters is a web application that implements non-trivial game mechanics such as:
@@ -22,7 +27,6 @@ Follow the steps below to run the project locally in a development environment.
 * Python **3.10+** 
 * pip 
 
----
 
 ### Installation & Setup
 
@@ -81,7 +85,6 @@ The project includes a custom management command for seeding data:
 python manage.py seed_game
 ```
 
----
 
 ## Running the Application
 
@@ -98,8 +101,6 @@ The application will be available at: [http://127.0.0.1:8000/](http://127.0.0.1:
 * **Credentials:** Use the users created in the system.
 
 
----
-
 ## Key technical aspects
 
 * Domain modeling in Django (Planets, Fleets, Resources)
@@ -108,7 +109,6 @@ The application will be available at: [http://127.0.0.1:8000/](http://127.0.0.1:
 * Server-side validation of all game actions
 * Deterministic simulation of game state
 
----
 
 ## Core mechanics
 
@@ -118,7 +118,6 @@ Resources are generated continuously based on building levels.
 
 Instead of using background jobs, the system calculates resource changes **on demand**, using timestamps and previous state.
 
----
 
 ### Building system
 
@@ -127,7 +126,6 @@ Player can upgrade planet's buildings:
 * costs are calculated dynamically
 * upgrades immediately affect production rates
 
----
 
 ### Fleet system
 
@@ -137,7 +135,6 @@ Player can send fleets between planets:
 * resource availability is enforced
 * travel time is calculated based on distance
 
----
 
 ### Time-based resolution
 
@@ -147,7 +144,6 @@ Fleet missions are resolved based on timestamps:
 * return → fleet restored
 * mission lifecycle tracked on backend
 
----
 
 ## Architecture
 
@@ -169,7 +165,6 @@ The project is built using classic Django (no REST API).
 * `services.py` — business logic (fleet handling, calculations)
 * `views.py` — request handling and rendering
 
----
 
 ## MVP scope
 
@@ -180,4 +175,10 @@ The project is built using classic Django (no REST API).
 * fleet transport system
 * time-based mission resolution
 
----
+
+## Contribution policy
+
+This repository is a portfolio/showcase project created for presentation purposes.
+I am not accepting external contributions, pull requests, or feature proposals for this repository.
+
+Please treat it as a read-only code sample demonstrating my Python and Django work.

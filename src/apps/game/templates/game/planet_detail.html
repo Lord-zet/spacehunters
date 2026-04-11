@@ -19,5 +19,45 @@
         </div>
     </div>
 
+    <!-- DOLNY PANEL: RUCHY FLOTY -->
+    <div class="lg:col-span-12">
+        <div class="glass-panel overflow-hidden border-t-2 border-accent-cyan/50">
+            <div class="bg-accent-cyan/10 px-4 py-2 flex justify-between items-center">
+                <span class="text-xs font-scifi tracking-widest uppercase">Aktywne Operacje Floty</span>
+                <span class="text-[10px] text-accent-cyan bg-black/40 px-2 py-0.5 rounded border border-accent-cyan/20">LIVE FEED</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-white/40 border-b border-white/10 uppercase tracking-tighter">
+                            <th class="p-4">Misja</th>
+                            <th class="p-4">Pochodzenie</th>
+                            <th class="p-4">Cel</th>
+                            <th class="p-4">Statki</th>
+                            <th class="p-4">Czas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fleet in active_fleets %}
+                        <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                            <td class="p-4 text-accent-cyan font-bold">Transport</td>
+                            <td class="p-4">{{ fleet.source_planet.name }}</td>
+                            <td class="p-4">{{ fleet.target_planet.name }}</td>
+                            <td class="p-4">{{ fleet.transporter_count }}</td>
+                            <td class="p-4 text-accent-orange font-bold">{{ fleet.return_time }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="p-8 text-center text-white/20 italic tracking-widest uppercase">
+                                Brak aktywnych sygnatur floty w przestrzeni
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

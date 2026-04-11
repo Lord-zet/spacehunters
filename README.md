@@ -13,6 +13,91 @@ Space Hunters is a web application that implements non-trivial game mechanics su
 
 The project emphasizes backend architecture, domain modeling, and handling time-dependent logic.
 
+## Project Quick Start Guide
+
+Follow the steps below to run the project locally in a development environment.
+
+
+### Requirements
+* Python **3.10+** 
+* pip 
+
+---
+
+### Installation & Setup
+
+### 1. Clone the repository
+
+```
+git clone https://github.com/Lord-zet/spacehunters
+cd spacehunters
+```
+
+### 2. Create and activate a virtual environment
+**Windows:**
+
+```
+python -m venv venv
+venv\Scripts\activate
+```
+
+### 3. Install dependencies
+```
+pip install -r requirements.txt
+```
+
+### 4. Install the application
+This project uses a src-layout, so the application must be installed as a package:
+```
+pip install -e .
+```
+
+### 5. Environment variables configuration
+Copy the example configuration file:
+```
+cp .env.example .env
+```
+
+[!IMPORTANT]
+Edit .env file and provide your database credentials and any required environment variables. The application will not start without a properly configured .env file. The .env file should not be committed to the repository.
+
+---
+
+## Database & Initial Data
+### 6. Apply database migrations
+```
+python manage.py migrate
+```
+
+### 7. Create a superuser
+```
+python manage.py createsuperuser
+```
+
+### 8. Seed initial data
+The project includes a custom management command for seeding data:
+
+```
+python manage.py seed_game
+```
+
+---
+
+## Running the Application
+
+### 9. Run the development server
+
+```
+python manage.py runserver
+```
+
+The application will be available at: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+
+### Authentication
+* **Login page:** [http://127.0.0.1:8000/login/](http://127.0.0.1:8000/login/)
+* **Credentials:** Use the users created in the system.
+
+
 ---
 
 ## Key technical aspects

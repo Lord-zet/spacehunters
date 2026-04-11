@@ -10,9 +10,9 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 DEBUG = os.environ["DEBUG"]
 
-LOGIN_REDIRECT_URL = "/game/"
-LOGOUT_REDIRECT_URL = "/login/"
-LOGIN_URL = "/login/"
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "game:dashboard"
+LOGOUT_REDIRECT_URL = "login"
 
 ALLOWED_HOSTS = []
 

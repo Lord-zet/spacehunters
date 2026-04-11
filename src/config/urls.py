@@ -17,9 +17,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.shortcuts import redirect
 from apps.game.forms import CustomAuthenticationForm
 
+def root_redirect(request):
+    if request.user.is_authenticated:
+        return redirect("game:dashboard")
+    return redirect("login")
+
 urlpatterns = [
+    path("", root_redirect, name="root"),
     path('admin/', admin.site.urls),
     path("login/", auth_views.LoginView.as_view(template_name="registration/login.html", authentication_form=CustomAuthenticationForm), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),

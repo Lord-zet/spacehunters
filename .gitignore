@@ -1,9 +1,11 @@
 .env
 *.env
 .idea
+venv/
 /shelf/
 /workspace.xml
-/spacehunters.egg-info
+spacehunters.egg-info
 __pycache__/
 *.py[cod]
 db.sqlite3
+src/apps/game/migrations

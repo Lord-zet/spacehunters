@@ -4,6 +4,7 @@ Browser-based strategy game built with Django, focused on backend-driven game lo
 and state management.
 
 - [Overview](#Overview)
+- [Screenshots](#screenshots)
 - [Core Mechanics](#core-mechanics)
 - [Project Start Guide](#Project-Start-Guide)
   * [Requirements](#Requirements)
@@ -23,6 +24,11 @@ focuses on a single-player experience with multiple planets and deterministic st
 
 The project emphasizes backend architecture, domain modeling, and handling time-dependent logic 
 without relying on external background workers (like Celery).
+
+
+## Screenshots
+![dashboard](https://github.com/user-attachments/assets/58de7beb-2745-4c1f-a525-4214c2ce45e6)
+
 
 ## Core Mechanics
 

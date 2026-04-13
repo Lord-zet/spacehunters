@@ -6,12 +6,10 @@ from django.utils import timezone
 from .models import Planet
 from .forms import SendFleetForm
 from .buildings import BUILDINGS
-from .services import send_transport_fleet, process_fleets_for_user, user_fleets_qs, active_fleets_qs
-from .domain_services.resources import (
-    synchronize_resources,
-    get_production_per_hour,
-    get_storage_capacity,
-)
+from .services import send_transport_fleet, user_fleets_qs, active_fleets_qs
+from .domain_services.resources import get_production_per_hour, get_storage_capacity
+from .domain_services.sync import synchronize_planet_state, synchronize_user_state
+
 
 def get_planet_background(planet):
     backgrounds = [
@@ -44,9 +42,9 @@ def dashboard(request):
 @login_required
 def planet_detail(request, pk):
     planet = get_object_or_404(Planet, pk=pk, owner=request.user)
-    synchronize_resources(planet, save=True)
+    synchronize_user_state(request.user)
+    planet, _ = synchronize_planet_state(planet)
 
-    process_fleets_for_user(request.user)
     active_fleets = active_fleets_qs(request.user).order_by("-departure_time")
 
     request.session["active_planet_id"] = planet.id
@@ -64,11 +62,10 @@ def planet_detail(request, pk):
 @login_required
 def planet_buildings(request, pk):
     planet = get_object_or_404(Planet, pk=pk, owner=request.user)
-    synchronize_resources(planet, save=True)
+    planet, finished = synchronize_planet_state(planet)
 
     request.session["active_planet_id"] = planet.id
 
-    finished = planet.finish_building_if_ready()
     if finished:
         messages.success(request, "Budowa została zakończona.")
 
@@ -109,7 +106,7 @@ def switch_planet(request, pk):
 @login_required
 def send_fleet(request, pk):
     source_planet = get_object_or_404(Planet, pk=pk, owner=request.user)
-    synchronize_resources(source_planet, save=True)
+    source_planet, _ = synchronize_planet_state(source_planet)
 
     if request.method == "POST":
         form = SendFleetForm(request.POST, user=request.user, source_planet=source_planet)
@@ -133,7 +130,6 @@ def send_fleet(request, pk):
             return redirect("game:send_fleet", pk=source_planet.pk)
     else:
         form = SendFleetForm(user=request.user, source_planet=source_planet)
-    source_planet.save()
 
     background = get_planet_background(source_planet)
 
@@ -146,7 +142,8 @@ def send_fleet(request, pk):
 
 @login_required
 def fleet_list(request, pk):
-    process_fleets_for_user(request.user)
+    synchronize_user_state(request.user)
+
     fleets = user_fleets_qs(request.user).order_by("-departure_time")
     planet = get_object_or_404(Planet, pk=pk, owner=request.user)
 

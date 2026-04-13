@@ -1,43 +1,71 @@
 # Space Hunters
 
-Browser-based strategy game built with Django, focused on backend-driven game logic, time-based resource simulation, and state management.
+Browser-based strategy game built with Django, focused on backend-driven game logic, time-based resource simulation, 
+and state management.
 
 - [Overview](#Overview)
-- [Project Quick Start](#Project Quick Start Guide)
+- [Core Mechanics](#core-mechanics)
+- [Project Start Guide](#Project-Start-Guide)
   * [Requirements](#Requirements)
+  * [Installation & Setup](#Installation-&-Setup)
+  * [Database & Initial Data](#Database-&-Initial-Data)
+  * [Running the Application](#Running-the-Application)
+  * [Authentication](#Authentication)
+- [Architecture and Technical Aspects](#Architecture-and-Technical-Aspects)
+- [Contribution policy](#Contribution-policy)
 
 
 ## Overview
 
-Space Hunters is a web application that implements non-trivial game mechanics such as:
+Space Hunters is a web application that implements non-trivial game mechanics such as time-based 
+resource production, build progression systems, and fleet movement resolution. The current version 
+focuses on a single-player experience with multiple planets and deterministic state calculation.
 
-* time-based resource production
-* build progression systems
-* fleet movement and resolution
-* server-side state calculation without background workers
+The project emphasizes backend architecture, domain modeling, and handling time-dependent logic 
+without relying on external background workers (like Celery).
 
-The project emphasizes backend architecture, domain modeling, and handling time-dependent logic.
+## Core Mechanics
 
-## Project Quick Start Guide
+### Resource Production
+
+* Resources (metal, crystal) are generated continuously based on building levels.
+* The system calculates resource changes on demand using timestamps and the previous state, ensuring high performance and simplified infrastructure.
+
+### Building System
+
+* Players can upgrade planet infrastructure.
+* Costs are calculated dynamically based on current levels.
+* Upgrades immediately affect production rates and storage capacities.
+
+### Fleet System
+
+* Transport fleets between owned or neutral planets.
+* Real-time validation of cargo capacity and resource availability.
+* Travel time is calculated based on distance between coordinates.
+* Missions (arrival, resource transfer, return) are resolved based on arrival timestamps.
+
+
+## Project Start Guide
 
 Follow the steps below to run the project locally in a development environment.
 
 
 ### Requirements
 * Python **3.10+** 
-* pip 
+* pip
+* PostgreSQL (must be installed, configured, with a dedicated database and user created)
 
 
 ### Installation & Setup
 
-### 1. Clone the repository
+#### 1. Clone the repository
 
 ```
 git clone https://github.com/Lord-zet/spacehunters
 cd spacehunters
 ```
 
-### 2. Create and activate a virtual environment
+#### 2. Create and activate a virtual environment
 **Windows:**
 
 ```
@@ -45,50 +73,69 @@ python -m venv venv
 venv\Scripts\activate
 ```
 
-### 3. Install dependencies
+**Linux:**
+```
+python -m venv venv
+source venv/bin/activate
+```
+
+#### 3. Install dependencies
 ```
 pip install -r requirements.txt
 ```
 
-### 4. Install the application
+#### 4. Install the application
 This project uses a src-layout, so the application must be installed as a package:
 ```
 pip install -e .
 ```
 
-### 5. Environment variables configuration
+#### 5. Environment variables configuration
 Copy the example configuration file:
+
+**Windows:**
+```
+xcopy .env.example .env
+```
+
+**Linux:**
 ```
 cp .env.example .env
 ```
 
 [!IMPORTANT]
-Edit .env file and provide your database credentials and any required environment variables. The application will not start without a properly configured .env file. The .env file should not be committed to the repository.
+Edit the `.env` file and provide your PostgreSQL database credentials, any required environment variables, and a secure Django secret key.
 
----
+You can generate a new Django secret key by running this command in your terminal:
+`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`
 
-## Database & Initial Data
-### 6. Apply database migrations
+The application will not start without a properly configured .env file. The .env file should not be committed to the repository.
+
+
+### Database & Initial Data
+#### 6. Apply database migrations
 ```
+cd src
 python manage.py migrate
 ```
 
-### 7. Create a superuser
+#### 7. Create a superuser
 ```
 python manage.py createsuperuser
 ```
 
-### 8. Seed initial data
-The project includes a custom management command for seeding data:
+#### 8. Seed initial data
+The project includes a custom management command for seeding data. This will generate initial game objects and 
+a default test user:
 
 ```
 python manage.py seed_game
 ```
 
 
-## Running the Application
+### Running the Application
 
-### 9. Run the development server
+#### 9. Run the development server
 
 ```
 python manage.py runserver
@@ -98,82 +145,26 @@ The application will be available at: [http://127.0.0.1:8000/](http://127.0.0.1:
 
 ### Authentication
 * **Login page:** [http://127.0.0.1:8000/login/](http://127.0.0.1:8000/login/)
-* **Credentials:** Use the users created in the system.
+* **Credentials:** If you ran seed_game, use the test account:
+  * **Username**: `user1`
+  * **Password**: `Test1234`
+
+(Alternatively, use the superuser account you created in step 7).
 
 
-## Key technical aspects
+## Architecture and Technical Aspects
 
-* Domain modeling in Django (Planets, Fleets, Resources)
-* Time-based state computation (no Celery / cron jobs)
-* Business logic separated into service layer
-* Server-side validation of all game actions
-* Deterministic simulation of game state
+### Technical Highlights
 
+* Deterministic Simulation: All game states are calculated based on time deltas, ensuring consistency without cron jobs.
+* Service Layer Pattern: Business logic is encapsulated in a dedicated service layer, keeping models focused on data and views focused on request handling.
+* Server-side Validation: All game actions (building, moving fleets) are strictly validated on the server.
 
-## Core mechanics
+### Project Structure
 
-### Resource production
-
-Resources are generated continuously based on building levels.
-
-Instead of using background jobs, the system calculates resource changes **on demand**, using timestamps and previous state.
-
-
-### Building system
-
-Player can upgrade planet's buildings:
-
-* costs are calculated dynamically
-* upgrades immediately affect production rates
-
-
-### Fleet system
-
-Player can send fleets between planets:
-
-* transport capacity is validated
-* resource availability is enforced
-* travel time is calculated based on distance
-
-
-### Time-based resolution
-
-Fleet missions are resolved based on timestamps:
-
-* arrival → resource transfer
-* return → fleet restored
-* mission lifecycle tracked on backend
-
-
-## Architecture
-
-The project is built using classic Django (no REST API).
-
-### Main domain models
-
-* **Planet**
-
-  * resources, buildings, coordinates, last update timestamp
-
-* **Fleet**
-
-  * cargo, timing (departure / arrival / return), status
-
-### Structure
-
-* `models.py` — core domain models
-* `services.py` — business logic (fleet handling, calculations)
-* `views.py` — request handling and rendering
-
-
-## MVP scope
-
-* single-player system
-* multiple planets
-* resource system (metal, crystal)
-* building upgrades
-* fleet transport system
-* time-based mission resolution
+* `models.py` — Core domain models (Planet, Fleet, Resources) using a "fat models" approach where appropriate for data integrity.
+* `services.py` — Service Layer handling complex business logic such as fleet mission resolution and production math.
+* `views.py` — Thin controllers handling routing and template rendering.
 
 
 ## Contribution policy

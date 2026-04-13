@@ -7,7 +7,11 @@ from .models import Planet
 from .forms import SendFleetForm
 from .buildings import BUILDINGS
 from .services import send_transport_fleet, process_fleets_for_user, user_fleets_qs, active_fleets_qs
-
+from .domain_services.resources import (
+    synchronize_resources,
+    get_production_per_hour,
+    get_storage_capacity,
+)
 
 def get_planet_background(planet):
     backgrounds = [
@@ -17,8 +21,8 @@ def get_planet_background(planet):
 
 def get_storage_capacities(planet):
     return {
-        "metal": planet.get_storage_capacity("metal"),
-        "crystal": planet.get_storage_capacity("crystal"),
+        "metal": get_storage_capacity(planet, "metal"),
+        "crystal": get_storage_capacity(planet, "crystal"),
     }
 
 def get_active_planet(request):
@@ -40,8 +44,7 @@ def dashboard(request):
 @login_required
 def planet_detail(request, pk):
     planet = get_object_or_404(Planet, pk=pk, owner=request.user)
-    planet.update_resources()
-    planet.save()
+    synchronize_resources(planet, save=True)
 
     process_fleets_for_user(request.user)
     active_fleets = active_fleets_qs(request.user).order_by("-departure_time")
@@ -61,8 +64,7 @@ def planet_detail(request, pk):
 @login_required
 def planet_buildings(request, pk):
     planet = get_object_or_404(Planet, pk=pk, owner=request.user)
-    planet.update_resources()
-    planet.save()
+    synchronize_resources(planet, save=True)
 
     request.session["active_planet_id"] = planet.id
 
@@ -89,7 +91,7 @@ def planet_buildings(request, pk):
 
     context = {
         "planet": planet,
-        "production": planet.get_production_per_hour(),
+        "production": get_production_per_hour(planet),
         "building_costs": building_costs,
         "building_in_progress": planet.is_building_in_progress(),
         "background": background,
@@ -107,8 +109,7 @@ def switch_planet(request, pk):
 @login_required
 def send_fleet(request, pk):
     source_planet = get_object_or_404(Planet, pk=pk, owner=request.user)
-    source_planet.update_resources()
-    source_planet.save()
+    synchronize_resources(source_planet, save=True)
 
     if request.method == "POST":
         form = SendFleetForm(request.POST, user=request.user, source_planet=source_planet)

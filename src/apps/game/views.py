@@ -6,7 +6,7 @@ from django.utils import timezone
 from .models import Planet
 from .forms import SendFleetForm
 from .buildings import BUILDINGS
-from .services import send_transport_fleet, user_fleets_qs, active_fleets_qs
+from .domain_services.fleet import send_transport_fleet, user_fleets_qs, active_fleets_qs
 from .domain_services.buildings import start_building_upgrade, get_upgrade_cost
 from .domain_services.resources import get_production_per_hour, get_storage_capacity
 from .domain_services.sync import synchronize_planet_state, synchronize_user_state

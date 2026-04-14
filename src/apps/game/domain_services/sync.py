@@ -17,5 +17,5 @@ def synchronize_planet_state(planet, *, save=True, at=None):
 
 @transaction.atomic
 def synchronize_user_state(user):
-    from ..services import process_fleets_for_user
+    from .fleet import process_fleets_for_user
     process_fleets_for_user(user)

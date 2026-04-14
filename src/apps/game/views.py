@@ -30,7 +30,7 @@ def get_active_planet(request):
         planet = Planet.objects.filter(pk=planet_id, owner=request.user).first()
         if planet:
             return planet
-    return request.user.planets.filter(is_main=True).first()
+    return request.user.planets.filter(is_homeland=True).first()
 
 @login_required
 def dashboard(request):

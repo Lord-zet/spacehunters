@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -98,80 +96,8 @@ class Planet(models.Model):
                 total[resource] = total.get(resource, 0) + amount
         return total
 
-    def get_building_config(self, building_name):
-        return BUILDINGS.get(building_name)
-
-    def get_building_level(self, config):
-        return getattr(self, config["level_field"])
-
-    def calculate_upgrade_cost(self, config):
-        level = self.get_building_level(config)
-        return {
-            resource: base * level
-            for resource, base in config["base_cost"].items()
-        }
-
-    def get_upgrade_cost(self, building_name):
-        config = self.get_building_config(building_name)
-        if not config:
-            return None
-        return self.calculate_upgrade_cost(config)
-
-    def has_enough_resources(self, cost):
-        for resource, amount in cost.items():
-            if getattr(self, resource) < amount:
-                return False
-        return True
-
-    def spend_resources(self, cost):
-        for resource, amount in cost.items():
-            total = getattr(self, resource) - amount
-            setattr(self, resource, total)
-
     def is_building_in_progress(self):
         return self.building_ends_at is not None and self.building_ends_at > timezone.now()
-
-    def start_upgrade(self, building_name):
-        if self.is_building_in_progress():
-            return False, "Na tej planecie trwa już budowa."
-
-        config = self.get_building_config(building_name)
-        if not config:
-            return False, "Nieznany budynek."
-
-        cost = self.calculate_upgrade_cost(config)
-
-        if not self.has_enough_resources(cost):
-            return False, "Za mało surowców."
-
-        self.spend_resources(cost)
-
-        self.building_type = building_name
-        self.building_ends_at = timezone.now() + timedelta(seconds=config["build_time"])
-        self.save()
-        return True, f"Rozpoczęto rozbudowę {building_name}."
-
-    def finish_building_if_ready(self):
-        if not self.building_ends_at:
-            return False
-
-        if self.building_ends_at > timezone.now():
-            return False
-
-        config = self.get_building_config(self.building_type)
-        if not config:
-            self.building_type = ""
-            self.building_ends_at = None
-            self.save()
-            return False
-
-        level_field = config["level_field"]
-        current_level = getattr(self, level_field)
-        setattr(self, level_field, current_level + 1)
-
-        self.building_type = ""
-        self.save()
-        return True
 
     def has_enough_resources_for_transport(self, metal, crystal):
         return self.metal >= metal and self.crystal >= crystal

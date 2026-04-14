@@ -4,31 +4,61 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
 
-from apps.game.models import Fleet
+from apps.game.models import Fleet, Planet
+from .resources import synchronize_resources
+
+TRANSPORTER_CAPACITY = 1000
+
+
+def transport_capacity(transporter_count: int) -> int:
+    return TRANSPORTER_CAPACITY * transporter_count
+
+
+def can_carry_resources(transporter_count: int, metal: int, crystal: int) -> bool:
+    return (metal + crystal) <= transport_capacity(transporter_count)
+
+
+def has_enough_transporters(planet, transporter_count: int) -> bool:
+    return planet.transporter_count >= transporter_count
+
+
+def has_enough_resources_for_transport(planet, metal: int, crystal: int) -> bool:
+    return planet.metal >= metal and planet.crystal >= crystal
 
 
 @transaction.atomic
 def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, user):
+    now = timezone.now()
+
+    source_planet = Planet.objects.select_for_update().get(pk=source_planet.pk)
+    target_planet = Planet.objects.select_for_update().get(pk=target_planet.pk)
+
+    synchronize_resources(source_planet, at=now, save=False)
+
     if source_planet.id == target_planet.id:
         return False, "Nie można wysłać floty na tę samą planetę."
 
-    if not source_planet.has_enough_transporters(transporter_count):
+    if transporter_count <= 0:
+        return False, "Liczba transportowców musi być większa od zera."
+
+    if metal < 0 or crystal < 0:
+        return False, "Nie można wysłać ujemnej ilości surowców."
+
+    if not has_enough_transporters(source_planet, transporter_count):
         return False, "Nie masz wystarczającej liczby transportowców."
 
-    if not source_planet.has_enough_resources_for_transport(metal, crystal):
+    if not has_enough_resources_for_transport(source_planet, metal, crystal):
         return False, "Nie masz wystarczających zasobów."
 
-    if not source_planet.can_carry_resources(transporter_count, metal, crystal):
+    if not can_carry_resources(transporter_count, metal, crystal):
         return False, "Ładunek nie mieści się w pojemności transportowców."
 
     source_planet.transporter_count -= transporter_count
     source_planet.metal -= metal
     source_planet.crystal -= crystal
-    source_planet.save()
+    source_planet.save(update_fields=["transporter_count", "metal", "crystal", "last_resource_update"])
 
-    now = timezone.now()
     flight_duration = timedelta(minutes=1)
-
     arrival_time = now + flight_duration
     return_time = arrival_time + flight_duration
 
@@ -44,48 +74,61 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
         arrival_time=arrival_time,
         return_time=return_time,
     )
-    return True, f"Wysłano flotę ({transporter_count} szt) transportową z planety {source_planet.name} na {target_planet.name}."
+
+    return True, (
+        f"Wysłano flotę ({transporter_count} szt.) transportową "
+        f"z planety {source_planet.name} na {target_planet.name}."
+    )
 
 
 @transaction.atomic
-def process_fleets_for_user(user):
-    now = timezone.now()
+def process_fleets_for_user(user, *, at=None):
+    now = at or timezone.now()
 
-    outbound_fleets = Fleet.objects.select_for_update().filter(
-        Q(owner=user) | Q(target_planet__owner=user),
-        status=Fleet.Status.OUTBOUND,
-        arrival_time__lte=now,
+    outbound_fleets = (
+        Fleet.objects
+        .select_for_update()
+        .select_related("target_planet", "source_planet")
+        .filter(
+            Q(owner=user) | Q(target_planet__owner=user),
+            status=Fleet.Status.OUTBOUND,
+            arrival_time__lte=now,
+        )
     )
 
     for fleet in outbound_fleets:
-        target_planet = fleet.target_planet
-        target_planet.update_resources()
+        target_planet = Planet.objects.select_for_update().get(pk=fleet.target_planet_id)
+        synchronize_resources(target_planet, at=now, save=False)
 
         target_planet.metal += fleet.metal
         target_planet.crystal += fleet.crystal
-        target_planet.save()
+        target_planet.save(update_fields=["metal", "crystal", "last_resource_update"])
 
         fleet.metal = 0
         fleet.crystal = 0
         fleet.status = Fleet.Status.RETURNING
-        fleet.save()
+        fleet.save(update_fields=["metal", "crystal", "status"])
 
-    returning_fleets = Fleet.objects.select_for_update().filter(
-        owner=user,
-        status=Fleet.Status.RETURNING,
-        return_time__lte=now,
+    returning_fleets = (
+        Fleet.objects
+        .select_for_update()
+        .select_related("source_planet")
+        .filter(
+            owner=user,
+            status=Fleet.Status.RETURNING,
+            return_time__lte=now,
+        )
     )
 
     for fleet in returning_fleets:
-        source_planet = fleet.source_planet
-        source_planet.update_resources()
+        source_planet = Planet.objects.select_for_update().get(pk=fleet.source_planet_id)
+        synchronize_resources(source_planet, at=now, save=False)
 
         source_planet.transporter_count += fleet.transporter_count
-        source_planet.save()
+        source_planet.save(update_fields=["transporter_count", "last_resource_update"])
 
         fleet.status = Fleet.Status.COMPLETED
-        fleet.completed_at = now
-        fleet.save()
+        fleet.save(update_fields=["status"])
 
 
 def user_fleets_qs(user):
@@ -93,4 +136,6 @@ def user_fleets_qs(user):
 
 
 def active_fleets_qs(user):
-    return user_fleets_qs(user).filter(status__in=[Fleet.Status.OUTBOUND, Fleet.Status.RETURNING])
+    return user_fleets_qs(user).filter(
+        status__in=[Fleet.Status.OUTBOUND, Fleet.Status.RETURNING]
+    )

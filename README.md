@@ -1,19 +1,17 @@
 # Space Hunters
 
-Browser-based strategy game built with Django, focused on backend-driven game logic, time-based resource simulation, 
-and state management.
 
-- [Overview](#Overview)
+- [Overview](#overview)
 - [Screenshots](#screenshots)
 - [Core Mechanics](#core-mechanics)
-- [Project Start Guide](#Project-Start-Guide)
-  * [Requirements](#Requirements)
-  * [Installation & Setup](#Installation-&-Setup)
-  * [Database & Initial Data](#Database-&-Initial-Data)
-  * [Running the Application](#Running-the-Application)
-  * [Authentication](#Authentication)
-- [Architecture and Technical Aspects](#Architecture-and-Technical-Aspects)
-- [Contribution policy](#Contribution-policy)
+- [Project Start Guide](#project-start-guide)
+  * [Requirements](#requirements)
+  * [Installation & Setup](#installation--setup)
+  * [Database & Initial Data](#database--initial-data)
+  * [Running the Application](#running-the-application)
+  * [Authentication](#authentication)
+- [Architecture & Technical Aspects](#architecture--technical-aspects)
+- [Contribution policy](#contribution-policy)
 
 
 ## Overview
@@ -109,7 +107,7 @@ xcopy .env.example .env
 cp .env.example .env
 ```
 
-[!IMPORTANT]
+**[IMPORTANT]**
 Edit the `.env` file and provide your PostgreSQL database credentials, any required environment variables, and a secure Django secret key.
 
 You can generate a new Django secret key by running this command in your terminal:
@@ -158,7 +156,7 @@ The application will be available at: [http://127.0.0.1:8000/](http://127.0.0.1:
 (Alternatively, use the superuser account you created in step 7).
 
 
-## Architecture and Technical Aspects
+## Architecture & Technical Aspects
 
 ### Technical Highlights
 

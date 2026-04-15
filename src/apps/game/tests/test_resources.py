@@ -15,7 +15,7 @@ class SynchronizeResourcesTests(TestCase):
 
         planet = Planet.objects.create(
             owner=user,
-            name="Planet1",
+            name="Earth",
             x=1,
             y=1,
             metal=500,
@@ -50,7 +50,7 @@ class SynchronizeResourcesTests(TestCase):
 
         planet = Planet.objects.create(
             owner=user,
-            name="Planet1",
+            name="Mars",
             x=2,
             y=3,
             metal=7400,
@@ -74,3 +74,61 @@ class SynchronizeResourcesTests(TestCase):
         self.assertEqual(planet.metal, metal_capacity)
         self.assertEqual(planet.crystal, crystal_capacity)
         self.assertEqual(planet.last_resource_update, target_time)
+
+    def test_synchronize_resources_does_nothing_when_no_time_has_elapsed(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="tester", password="secret")
+
+        start_time = timezone.now()
+
+        planet = Planet.objects.create(
+            owner=user,
+            name="Venus",
+            x=4,
+            y=5,
+            metal=1200,
+            crystal=800,
+            metal_mine_level=3,
+            crystal_mine_level=2,
+            metal_storage_level=5,
+            crystal_storage_level=5,
+            is_homeland=True,
+            last_resource_update=start_time,
+        )
+
+        synchronize_resources(planet, at=start_time, save=True)
+        planet.refresh_from_db()
+
+        self.assertEqual(planet.metal, 1200)
+        self.assertEqual(planet.crystal, 800)
+        self.assertEqual(planet.last_resource_update, start_time)
+
+    def test_synchronize_resources_does_nothing_when_time_is_earlier_than_last_update(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="tester2", password="secret")
+
+        start_time = timezone.now()
+
+        planet = Planet.objects.create(
+            owner=user,
+            name="Jupiter",
+            x=6,
+            y=7,
+            metal=1500,
+            crystal=900,
+            metal_mine_level=4,
+            crystal_mine_level=3,
+            metal_storage_level=5,
+            crystal_storage_level=5,
+            is_homeland=True,
+            last_resource_update=start_time,
+        )
+
+        earlier_time = start_time - timezone.timedelta(minutes=10)
+
+        synchronize_resources(planet, at=earlier_time, save=True)
+        planet.refresh_from_db()
+
+        self.assertEqual(planet.metal, 1500)
+        self.assertEqual(planet.crystal, 900)
+        self.assertEqual(planet.last_resource_update, start_time)

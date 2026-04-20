@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.game.domain_services.buildings import start_building_upgrade, get_upgrade_cost
+from apps.game.domain_services.buildings import start_building_upgrade, get_upgrade_cost, finish_building_if_ready
 from .helpers import PlanetTestMixin
 
 
@@ -123,5 +123,89 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
 
         self.assertFalse(success)
         self.assertEqual(message, "Nieznany budynek.")
+        self.assertEqual(planet.building_type, "")
+        self.assertIsNone(planet.building_ends_at)
+
+
+class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
+    def test_finish_building_if_ready_increases_level_and_clears_building_state(self):
+        user = self.create_user("finisher1")
+        now = timezone.now()
+
+        planet = self.create_planet(
+            owner=user,
+            last_resource_update=now,
+            metal_mine_level=3,
+            building_type="metal_mine",
+            building_ends_at=now - timezone.timedelta(seconds=1),
+        )
+
+        finished = finish_building_if_ready(planet, at=now)
+        planet.refresh_from_db()
+
+        self.assertTrue(finished)
+        self.assertEqual(planet.metal_mine_level, 4)
+        self.assertEqual(planet.building_type, "")
+        self.assertIsNone(planet.building_ends_at)
+
+    def test_finish_building_if_ready_returns_false_when_no_building_end_time(self):
+        user = self.create_user("finisher2")
+        now = timezone.now()
+
+        planet = self.create_planet(
+            owner=user,
+            last_resource_update=now,
+            metal_mine_level=3,
+            building_type="",
+            building_ends_at=None,
+        )
+
+        finished = finish_building_if_ready(planet, at=now)
+        planet.refresh_from_db()
+
+        self.assertFalse(finished)
+        self.assertEqual(planet.metal_mine_level, 3)
+        self.assertEqual(planet.building_type, "")
+        self.assertIsNone(planet.building_ends_at)
+
+    def test_finish_building_if_ready_returns_false_when_building_is_still_in_progress(self):
+        user = self.create_user("finisher3")
+        now = timezone.now()
+
+        future_end = now + timezone.timedelta(minutes=5)
+
+        planet = self.create_planet(
+            owner=user,
+            last_resource_update=now,
+            metal_mine_level=3,
+            building_type="metal_mine",
+            building_ends_at=future_end,
+        )
+
+        finished = finish_building_if_ready(planet, at=now)
+        planet.refresh_from_db()
+
+        self.assertFalse(finished)
+        self.assertEqual(planet.metal_mine_level, 3)
+        self.assertEqual(planet.building_type, "metal_mine")
+        self.assertEqual(planet.building_ends_at, future_end)
+
+    def test_finish_building_if_ready_clears_invalid_building_type(self):
+        user = self.create_user("finisher4")
+        now = timezone.now()
+
+        planet = self.create_planet(
+            owner=user,
+            last_resource_update=now,
+            metal_mine_level=3,
+            building_type="unknown_building",
+            building_ends_at=now - timezone.timedelta(seconds=1),
+        )
+
+        finished = finish_building_if_ready(planet, at=now)
+        planet.refresh_from_db()
+
+        self.assertFalse(finished)
+        self.assertEqual(planet.metal_mine_level, 3)
         self.assertEqual(planet.building_type, "")
         self.assertIsNone(planet.building_ends_at)

@@ -1,7 +1,8 @@
 from django.test import TestCase
+from django.utils import timezone
 
 from apps.game.models import Fleet
-from apps.game.domain_services.fleet import send_transport_fleet
+from apps.game.domain_services.fleet import send_transport_fleet, process_fleets_for_user
 from .helpers import PlanetTestMixin
 
 
@@ -194,3 +195,204 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         self.assertEqual(source_planet.metal, 100)
         self.assertEqual(source_planet.crystal, 50)
         self.assertEqual(Fleet.objects.count(), 0)
+
+class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
+    def test_process_fleets_for_user_delivers_resources_to_target_and_sets_returning_status(self):
+        user = self.create_user("process1")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Earth",
+            x=1,
+            y=1,
+            metal=5000,
+            crystal=3000,
+            transporter_count=7,
+            last_resource_update=now,
+        )
+        target_planet = self.create_planet(
+            owner=user,
+            name="Mars",
+            x=2,
+            y=2,
+            metal=100,
+            crystal=50,
+            transporter_count=0,
+            is_homeland=False,
+            last_resource_update=now,
+        )
+
+        fleet = Fleet.objects.create(
+            owner=user,
+            source_planet=source_planet,
+            target_planet=target_planet,
+            transporter_count=3,
+            metal=1000,
+            crystal=500,
+            status=Fleet.Status.OUTBOUND,
+            departure_time=now - timezone.timedelta(minutes=2),
+            arrival_time=now - timezone.timedelta(seconds=1),
+            return_time=now + timezone.timedelta(minutes=1),
+        )
+
+        process_fleets_for_user(user, at=now)
+
+        fleet.refresh_from_db()
+        target_planet.refresh_from_db()
+        source_planet.refresh_from_db()
+
+        self.assertEqual(target_planet.metal, 1100)
+        self.assertEqual(target_planet.crystal, 550)
+        self.assertEqual(fleet.status, Fleet.Status.RETURNING)
+        self.assertEqual(fleet.metal, 0)
+        self.assertEqual(fleet.crystal, 0)
+
+        # Transportowce jeszcze nie wróciły
+        self.assertEqual(source_planet.transporter_count, 7)
+
+    def test_process_fleets_for_user_returns_transporters_to_source_and_completes_fleet(self):
+        user = self.create_user("process2")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Earth",
+            x=1,
+            y=1,
+            metal=5000,
+            crystal=3000,
+            transporter_count=7,
+            last_resource_update=now,
+        )
+        target_planet = self.create_planet(
+            owner=user,
+            name="Mars",
+            x=2,
+            y=2,
+            metal=100,
+            crystal=50,
+            transporter_count=0,
+            is_homeland=False,
+            last_resource_update=now,
+        )
+
+        fleet = Fleet.objects.create(
+            owner=user,
+            source_planet=source_planet,
+            target_planet=target_planet,
+            transporter_count=3,
+            metal=0,
+            crystal=0,
+            status=Fleet.Status.RETURNING,
+            departure_time=now - timezone.timedelta(minutes=4),
+            arrival_time=now - timezone.timedelta(minutes=2),
+            return_time=now - timezone.timedelta(seconds=1),
+        )
+
+        process_fleets_for_user(user, at=now)
+
+        fleet.refresh_from_db()
+        source_planet.refresh_from_db()
+
+        self.assertEqual(fleet.status, Fleet.Status.COMPLETED)
+        self.assertEqual(source_planet.transporter_count, 10)
+
+    def test_process_fleets_for_user_does_nothing_for_outbound_fleet_that_has_not_arrived_yet(self):
+        user = self.create_user("process3")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Earth",
+            x=1,
+            y=1,
+            metal=5000,
+            crystal=3000,
+            transporter_count=7,
+            last_resource_update=now,
+        )
+        target_planet = self.create_planet(
+            owner=user,
+            name="Mars",
+            x=2,
+            y=2,
+            metal=100,
+            crystal=50,
+            transporter_count=0,
+            is_homeland=False,
+            last_resource_update=now,
+        )
+
+        fleet = Fleet.objects.create(
+            owner=user,
+            source_planet=source_planet,
+            target_planet=target_planet,
+            transporter_count=3,
+            metal=1000,
+            crystal=500,
+            status=Fleet.Status.OUTBOUND,
+            departure_time=now - timezone.timedelta(seconds=10),
+            arrival_time=now + timezone.timedelta(minutes=1),
+            return_time=now + timezone.timedelta(minutes=2),
+        )
+
+        process_fleets_for_user(user, at=now)
+
+        fleet.refresh_from_db()
+        target_planet.refresh_from_db()
+        source_planet.refresh_from_db()
+
+        self.assertEqual(fleet.status, Fleet.Status.OUTBOUND)
+        self.assertEqual(fleet.metal, 1000)
+        self.assertEqual(fleet.crystal, 500)
+        self.assertEqual(target_planet.metal, 100)
+        self.assertEqual(target_planet.crystal, 50)
+        self.assertEqual(source_planet.transporter_count, 7)
+
+    def test_process_fleets_for_user_does_nothing_for_returning_fleet_that_has_not_returned_yet(self):
+        user = self.create_user("process4")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Earth",
+            x=1,
+            y=1,
+            metal=5000,
+            crystal=3000,
+            transporter_count=7,
+            last_resource_update=now,
+        )
+        target_planet = self.create_planet(
+            owner=user,
+            name="Mars",
+            x=2,
+            y=2,
+            metal=100,
+            crystal=50,
+            transporter_count=0,
+            is_homeland=False,
+            last_resource_update=now,
+        )
+
+        fleet = Fleet.objects.create(
+            owner=user,
+            source_planet=source_planet,
+            target_planet=target_planet,
+            transporter_count=3,
+            metal=0,
+            crystal=0,
+            status=Fleet.Status.RETURNING,
+            departure_time=now - timezone.timedelta(minutes=4),
+            arrival_time=now - timezone.timedelta(minutes=2),
+            return_time=now + timezone.timedelta(minutes=1),
+        )
+
+        process_fleets_for_user(user, at=now)
+
+        fleet.refresh_from_db()
+        source_planet.refresh_from_db()
+
+        self.assertEqual(fleet.status, Fleet.Status.RETURNING)
+        self.assertEqual(source_planet.transporter_count, 7)

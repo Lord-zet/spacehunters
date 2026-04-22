@@ -121,15 +121,24 @@ def send_fleet(request, pk):
             crystal_to_send = form.cleaned_data.get("crystal_to_send")
 
             try:
-                success, message = send_transport_fleet(source_planet, target_planet, tc, metal_to_send, crystal_to_send, request.user)
+                fleet = send_transport_fleet(
+                    source_planet,
+                    target_planet,
+                    tc,
+                    metal_to_send,
+                    crystal_to_send,
+                    request.user,
+                )
+                messages.success(
+                    request,
+                    f"Wysłano flotę ({fleet.transporter_count} szt.) transportową "
+                    f"z planety {fleet.source_planet.name} na {fleet.target_planet.name}."
+                )
             except Planet.DoesNotExist:
-                messages.error(request, "Nie znaleziono planety")
-                return redirect("game:send_fleet", pk=source_planet.pk)
+                messages.error(request, "Nie znaleziono planety.")
+            except DomainError as e:
+                messages.error(request, str(e))
 
-            if success:
-                messages.success(request, message)
-            else:
-                messages.error(request, message)
             return redirect("game:send_fleet", pk=source_planet.pk)
     else:
         form = SendFleetForm(user=request.user, source_planet=source_planet)

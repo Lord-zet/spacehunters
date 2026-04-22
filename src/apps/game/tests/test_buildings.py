@@ -2,6 +2,11 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.game.domain_services.buildings import start_building_upgrade, get_upgrade_cost, finish_building_if_ready
+from apps.game.domain.exceptions import (
+    BuildingAlreadyInProgressError,
+    NotEnoughResourcesError,
+    UnknownBuildingError,
+)
 from .helpers import PlanetTestMixin
 
 
@@ -23,7 +28,7 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
         building_name = "metal_mine"
         cost = get_upgrade_cost(planet, building_name)
 
-        success, message = start_building_upgrade(
+        start_building_upgrade(
             planet,
             building_name,
             at=start_time,
@@ -31,14 +36,12 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
 
         planet.refresh_from_db()
 
-        self.assertTrue(success)
-        self.assertIn("Rozpoczęto rozbudowę", message)
         self.assertEqual(planet.building_type, building_name)
         self.assertIsNotNone(planet.building_ends_at)
         self.assertGreater(planet.building_ends_at, start_time)
         self.assertEqual(planet.metal, 10000 - cost["metal"])
 
-    def test_start_building_upgrade_returns_error_when_construction_is_already_in_progress(self):
+    def test_start_building_upgrade_raises_when_construction_is_already_in_progress(self):
         user = self.create_user("builder2")
         now = timezone.now()
 
@@ -57,22 +60,22 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
         old_building_type = planet.building_type
         old_building_ends_at = planet.building_ends_at
 
-        success, message = start_building_upgrade(
-            planet,
-            "crystal_mine",
-            at=now,
-        )
+        with self.assertRaises(BuildingAlreadyInProgressError) as ctx:
+            start_building_upgrade(
+                planet,
+                "crystal_mine",
+                at=now,
+            )
 
         planet.refresh_from_db()
 
-        self.assertFalse(success)
-        self.assertEqual(message, "Na tej planecie trwa już budowa.")
+        self.assertEqual(str(ctx.exception), "Na tej planecie trwa już budowa.")
         self.assertEqual(planet.metal, old_metal)
         self.assertEqual(planet.crystal, old_crystal)
         self.assertEqual(planet.building_type, old_building_type)
         self.assertEqual(planet.building_ends_at, old_building_ends_at)
 
-    def test_start_building_upgrade_returns_error_when_not_enough_resources(self):
+    def test_start_building_upgrade_raises_when_not_enough_resources(self):
         user = self.create_user("builder3")
         now = timezone.now()
 
@@ -86,22 +89,22 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
             crystal_mine_level=0,
         )
 
-        success, message = start_building_upgrade(
-            planet,
-            "metal_mine",
-            at=now,
-        )
+        with self.assertRaises(NotEnoughResourcesError) as ctx:
+            start_building_upgrade(
+                planet,
+                "metal_mine",
+                at=now,
+            )
 
         planet.refresh_from_db()
 
-        self.assertFalse(success)
-        self.assertEqual(message, "Za mało surowców.")
+        self.assertEqual(str(ctx.exception), "Za mało surowców.")
         self.assertEqual(planet.building_type, "")
         self.assertIsNone(planet.building_ends_at)
         self.assertEqual(planet.metal, 0)
         self.assertEqual(planet.crystal, 0)
 
-    def test_start_building_upgrade_returns_error_for_unknown_building(self):
+    def test_start_building_upgrade_raises_for_unknown_building(self):
         user = self.create_user("builder4")
         now = timezone.now()
 
@@ -113,16 +116,16 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
             crystal=10000,
         )
 
-        success, message = start_building_upgrade(
-            planet,
-            "unknown_building",
-            at=now,
-        )
+        with self.assertRaises(UnknownBuildingError) as ctx:
+            start_building_upgrade(
+                planet,
+                "unknown_building",
+                at=now,
+            )
 
         planet.refresh_from_db()
 
-        self.assertFalse(success)
-        self.assertEqual(message, "Nieznany budynek.")
+        self.assertEqual(str(ctx.exception), "Nieznany budynek.")
         self.assertEqual(planet.building_type, "")
         self.assertIsNone(planet.building_ends_at)
 

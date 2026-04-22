@@ -5,6 +5,13 @@ from django.db import transaction
 from django.db.models import Q
 
 from apps.game.models import Fleet, Planet
+from apps.game.domain.exceptions import (
+    FleetError,
+    CargoCapacityExceededError,
+    NotEnoughResourcesError,
+    NotEnoughTransportersError,
+    SamePlanetTransportError,
+)
 from .resources import synchronize_resources
 
 TRANSPORTER_CAPACITY = 1000
@@ -36,22 +43,22 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     synchronize_resources(source_planet, at=now, save=False)
 
     if source_planet.id == target_planet.id:
-        return False, "Nie można wysłać floty na tę samą planetę."
+        raise SamePlanetTransportError("Nie można wysłać floty na tę samą planetę.")
 
     if transporter_count <= 0:
-        return False, "Liczba transportowców musi być większa od zera."
+        raise FleetError("Liczba transportowców musi być większa od zera.")
 
     if metal < 0 or crystal < 0:
-        return False, "Nie można wysłać ujemnej ilości surowców."
+        raise FleetError("Nie można wysłać ujemnej ilości surowców.")
 
     if not has_enough_transporters(source_planet, transporter_count):
-        return False, "Nie masz wystarczającej liczby transportowców."
+        raise NotEnoughTransportersError("Nie masz wystarczającej liczby transportowców.")
 
     if not has_enough_resources_for_transport(source_planet, metal, crystal):
-        return False, "Nie masz wystarczających zasobów."
+        raise NotEnoughResourcesError("Nie masz wystarczających zasobów.")
 
     if not can_carry_resources(transporter_count, metal, crystal):
-        return False, "Ładunek nie mieści się w pojemności transportowców."
+        raise CargoCapacityExceededError("Ładunek nie mieści się w pojemności transportowców.")
 
     source_planet.transporter_count -= transporter_count
     source_planet.metal -= metal
@@ -62,7 +69,7 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     arrival_time = now + flight_duration
     return_time = arrival_time + flight_duration
 
-    Fleet.objects.create(
+    fleet = Fleet.objects.create(
         owner=user,
         source_planet=source_planet,
         target_planet=target_planet,
@@ -75,10 +82,7 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
         return_time=return_time,
     )
 
-    return True, (
-        f"Wysłano flotę ({transporter_count} szt.) transportową "
-        f"z planety {source_planet.name} na {target_planet.name}."
-    )
+    return fleet
 
 
 @transaction.atomic

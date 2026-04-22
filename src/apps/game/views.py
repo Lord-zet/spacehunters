@@ -10,6 +10,7 @@ from .domain_services.fleet import send_transport_fleet, user_fleets_qs, active_
 from .domain_services.buildings import start_building_upgrade, get_upgrade_cost
 from .domain_services.resources import get_production_per_hour, get_storage_capacity
 from .domain_services.sync import synchronize_planet_state, synchronize_user_state
+from apps.game.domain.exceptions import DomainError
 
 
 def get_planet_background(planet):
@@ -72,12 +73,12 @@ def planet_buildings(request, pk):
 
     if request.method == "POST":
         building_name = request.POST.get("building")
-        success, msg = start_building_upgrade(planet, building_name)
 
-        if success:
-            messages.success(request, msg)
-        else:
-            messages.error(request, msg)
+        try:
+            start_building_upgrade(planet, building_name)
+            messages.success(request, f"Rozpoczęto rozbudowę {building_name}.")
+        except DomainError as e:
+            messages.error(request, str(e))
 
         return redirect("game:buildings", pk=planet.pk)
 

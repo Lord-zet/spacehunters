@@ -16,3 +16,19 @@ class UnknownBuildingError(BuildingError):
 
 class NotEnoughResourcesError(BuildingError):
     pass
+
+
+class FleetError(DomainError):
+    pass
+
+
+class SamePlanetTransportError(FleetError):
+    pass
+
+
+class NotEnoughTransportersError(FleetError):
+    pass
+
+
+class CargoCapacityExceededError(FleetError):
+    pass

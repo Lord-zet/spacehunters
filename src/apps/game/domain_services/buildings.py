@@ -3,6 +3,11 @@ from datetime import timedelta
 from django.db import transaction
 from django.utils import timezone
 
+from apps.game.domain.exceptions import (
+    BuildingAlreadyInProgressError,
+    NotEnoughResourcesError,
+    UnknownBuildingError,
+)
 from ..buildings import BUILDINGS
 from .resources import synchronize_resources
 
@@ -50,18 +55,18 @@ def start_building_upgrade(planet, building_name, *, at=None):
     synchronize_resources(planet, at=now, save=False)
 
     if planet.is_building_in_progress():
-        return False, "Na tej planecie trwa już budowa."
+        raise BuildingAlreadyInProgressError("Na tej planecie trwa już budowa.")
 
     config = get_building_config(building_name)
     if not config:
-        return False, "Nieznany budynek."
+        raise UnknownBuildingError("Nieznany budynek.")
 
     cost = get_upgrade_cost(planet, building_name)
     if cost is None:
-        return False, "Nieznany budynek."
+        raise UnknownBuildingError("Nieznany budynek.")
 
     if not has_enough_resources(planet, cost):
-        return False, "Za mało surowców."
+        raise NotEnoughResourcesError("Za mało surowców.")
 
     spend_resources(planet, cost)
 
@@ -69,7 +74,7 @@ def start_building_upgrade(planet, building_name, *, at=None):
     planet.building_ends_at = now + timedelta(seconds=config["build_time"])
     planet.save()
 
-    return True, f"Rozpoczęto rozbudowę {building_name}."
+    return planet
 
 
 @transaction.atomic

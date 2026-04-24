@@ -48,6 +48,19 @@ def spend_resources(planet, cost):
         setattr(planet, resource, getattr(planet, resource) - amount)
 
 
+def calculate_upgrade_time(current_level, base_build_time, multiplier=1.3):
+    return int(base_build_time * (multiplier ** current_level))
+
+def get_upgrade_time(planet, building_name):
+    config = get_building_config(building_name)
+    if not config:
+        return None
+
+    current_level = get_building_level(planet, config)
+    multiplier = config.get("build_time_multiplier", 1.3)
+    return calculate_upgrade_time(current_level, config["build_time"], multiplier)
+
+
 @transaction.atomic
 def start_building_upgrade(planet, building_name, *, at=None):
     now = at or timezone.now()
@@ -71,7 +84,8 @@ def start_building_upgrade(planet, building_name, *, at=None):
     spend_resources(planet, cost)
 
     planet.building_type = building_name
-    planet.building_ends_at = now + timedelta(seconds=config["build_time"])
+    upgrade_time = get_upgrade_time(planet, building_name)
+    planet.building_ends_at = now + timedelta(seconds=upgrade_time)
     planet.save()
 
     return planet

@@ -6,11 +6,17 @@ from django.utils import timezone
 from .models import Planet
 from .forms import SendFleetForm
 from .buildings import BUILDINGS
-from .domain_services.fleet import send_transport_fleet, user_fleets_qs, active_fleets_qs
+from .domain_services.fleet import send_transport_fleet
 from .domain_services.buildings import start_building_upgrade, get_upgrade_cost
 from .domain_services.resources import get_production_per_hour, get_storage_capacity
 from .domain_services.sync import synchronize_planet_state, synchronize_user_state
 from apps.game.domain.exceptions import DomainError
+from .selectors import (
+    get_active_fleets_for_user,
+    get_user_fleets,
+    get_user_homeland,
+    get_user_planet_or_404,
+)
 
 
 def get_planet_background(planet):
@@ -25,17 +31,10 @@ def get_storage_capacities(planet):
         "crystal": get_storage_capacity(planet, "crystal"),
     }
 
-def get_active_planet(request):
-    planet_id = request.session.get("active_planet_id")
-    if planet_id:
-        planet = Planet.objects.filter(pk=planet_id, owner=request.user).first()
-        if planet:
-            return planet
-    return request.user.planets.filter(is_homeland=True).first()
 
 @login_required
 def dashboard(request):
-    planet = request.user.planets.filter(is_homeland=True).first()
+    planet = get_user_homeland(request.user)
     if not planet:
         return redirect("login")
     request.session["active_planet_id"] = planet.id
@@ -43,11 +42,12 @@ def dashboard(request):
 
 @login_required
 def planet_detail(request, pk):
-    planet = get_object_or_404(Planet, pk=pk, owner=request.user)
+    planet = get_user_planet_or_404(request.user, pk)
+
     synchronize_user_state(request.user)
     planet, _ = synchronize_planet_state(planet)
 
-    active_fleets = active_fleets_qs(request.user).order_by("-departure_time")
+    active_fleets = get_active_fleets_for_user(request.user)
 
     request.session["active_planet_id"] = planet.id
 
@@ -63,7 +63,7 @@ def planet_detail(request, pk):
 
 @login_required
 def planet_buildings(request, pk):
-    planet = get_object_or_404(Planet, pk=pk, owner=request.user)
+    planet = get_user_planet_or_404(request.user, pk)
     planet, finished = synchronize_planet_state(planet)
 
     request.session["active_planet_id"] = planet.id
@@ -102,13 +102,13 @@ def planet_buildings(request, pk):
 
 @login_required
 def switch_planet(request, pk):
-    planet = get_object_or_404(Planet, pk=pk, owner=request.user)
+    planet = get_user_planet_or_404(request.user, pk)
     request.session["active_planet_id"] = planet.id
     return redirect("game:planet_detail", pk=planet.pk)
 
 @login_required
 def send_fleet(request, pk):
-    source_planet = get_object_or_404(Planet, pk=pk, owner=request.user)
+    source_planet = get_user_planet_or_404(request.user, pk)
     source_planet, _ = synchronize_planet_state(source_planet)
 
     if request.method == "POST":
@@ -149,6 +149,7 @@ def send_fleet(request, pk):
         "planet": source_planet,
         "form": form,
         "background": background,
+        "storage_capacities": get_storage_capacities(source_planet),
     }
     return render(request, "game/send_fleet.html", context)
 
@@ -156,8 +157,8 @@ def send_fleet(request, pk):
 def fleet_list(request, pk):
     synchronize_user_state(request.user)
 
-    fleets = user_fleets_qs(request.user).order_by("-departure_time")
-    planet = get_object_or_404(Planet, pk=pk, owner=request.user)
+    fleets = get_user_fleets(request.user)
+    planet = get_user_planet_or_404(request.user, pk)
 
     background = get_planet_background(planet)
 

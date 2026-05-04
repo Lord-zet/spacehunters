@@ -12,6 +12,7 @@ from apps.game.domain.exceptions import (
     NotEnoughTransportersError,
     SamePlanetTransportError,
 )
+from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
 from .resources import synchronize_resources
 
 TRANSPORTER_CAPACITY = 1000
@@ -65,7 +66,9 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     source_planet.crystal -= crystal
     source_planet.save(update_fields=["transporter_count", "metal", "crystal", "last_resource_update"])
 
-    flight_duration = timedelta(minutes=1)
+    flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet)
+    flight_duration = timedelta(seconds=flight_time_seconds)
+
     arrival_time = now + flight_duration
     return_time = arrival_time + flight_duration
 

@@ -1,9 +1,18 @@
 from django.contrib.auth import get_user_model
 
-from apps.game.models import Planet
+from apps.game.models import Planet, PlanetBuildings
 
 
 class PlanetTestMixin:
+    BUILDING_FIELDS = {
+        "metal_mine_level",
+        "crystal_mine_level",
+        "metal_storage_level",
+        "crystal_storage_level",
+        "building_type",
+        "building_ends_at",
+    }
+
     def create_user(self, username="tester"):
         User = get_user_model()
         return User.objects.create_user(username=username, password="secret")
@@ -12,30 +21,41 @@ class PlanetTestMixin:
         if owner is None:
             owner = self.create_user()
 
-        data = {
+        planet_data = {
             "owner": owner,
             "name": "Test Planet",
             "x": 1,
             "y": 1,
             "metal": 500,
             "crystal": 200,
+            "is_homeland": True,
+            "transporter_count": 0,
+        }
+
+        buildings_data = {
             "metal_mine_level": 2,
             "crystal_mine_level": 1,
             "metal_storage_level": 10,
             "crystal_storage_level": 10,
-            "is_homeland": True,
             "building_type": "",
             "building_ends_at": None,
-            "transporter_count": 0,
         }
-        data.update(overrides)
 
-        planet = Planet.objects.create(**data)
+        for key in list(overrides.keys()):
+            if key in self.BUILDING_FIELDS:
+                buildings_data[key] = overrides.pop(key)
+
+        planet_data.update(overrides)
+
+        planet = Planet.objects.create(**planet_data)
+        PlanetBuildings.objects.create(planet=planet, **buildings_data)
 
         if last_resource_update is not None:
             Planet.objects.filter(pk=planet.pk).update(
                 last_resource_update=last_resource_update
             )
-            planet.refresh_from_db()
 
-        return planet
+        return self.reload_planet(planet)
+
+    def reload_planet(self, planet):
+        return Planet.objects.select_related("buildings").get(pk=planet.pk)

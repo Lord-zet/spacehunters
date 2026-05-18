@@ -51,6 +51,27 @@ class Planet(models.Model):
         return self.name
 
 
+class PlanetBuildings(models.Model):
+    planet = models.OneToOneField(
+        Planet,
+        on_delete=models.CASCADE,
+        related_name="buildings",
+    )
+    metal_mine_level = models.PositiveIntegerField(default=1)
+    crystal_mine_level = models.PositiveIntegerField(default=0)
+    metal_storage_level = models.PositiveIntegerField(default=1)
+    crystal_storage_level = models.PositiveIntegerField(default=1)
+    building_type = models.CharField(max_length=50, blank=True, default="")
+    building_ends_at = models.DateTimeField(null=True, blank=True)
+
+    def is_building_in_progress(self, *, at=None):
+        now = at or timezone.now()
+        return self.building_ends_at is not None and self.building_ends_at > now
+
+    def __str__(self):
+        return f"Buildings<{self.planet_id}>"
+
+
 class Fleet(models.Model):
     class Status(models.TextChoices):
         OUTBOUND = "outbound", "Outbound"

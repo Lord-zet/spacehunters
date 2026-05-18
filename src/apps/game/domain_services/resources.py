@@ -4,9 +4,11 @@ from ..buildings import BUILDINGS
 
 
 def get_storage_capacity(planet, resource: str) -> int:
+    buildings = planet.get_buildings()
+
     storage_levels = {
-        "metal": planet.metal_storage_level,
-        "crystal": planet.crystal_storage_level,
+        "metal": buildings.metal_storage_level,
+        "crystal": buildings.crystal_storage_level,
     }
     level = storage_levels.get(resource, 0)
 
@@ -15,10 +17,11 @@ def get_storage_capacity(planet, resource: str) -> int:
 
 
 def get_production_per_hour(planet) -> dict:
+    buildings = planet.get_buildings()
     total = {}
 
     for _, config in BUILDINGS.items():
-        level = getattr(planet, config["level_field"])
+        level = getattr(buildings, config["level_field"])
 
         production_fn = config.get("production_fn")
         if not production_fn:

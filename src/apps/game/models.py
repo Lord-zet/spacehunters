@@ -16,20 +16,8 @@ class Planet(models.Model):
     y = models.IntegerField()
     metal = models.BigIntegerField(default=500)
     crystal = models.BigIntegerField(default=200)
-
-    # LEGACY FIELDS - Zostają tymczasowo do następnego commita z migracją danych.
-    metal_mine_level = models.PositiveIntegerField(default=1)
-    crystal_mine_level = models.PositiveIntegerField(default=0)
-    metal_storage_level = models.PositiveIntegerField(default=1)
-    crystal_storage_level = models.PositiveIntegerField(default=1)
-
     is_homeland = models.BooleanField(default=False)
     last_resource_update = models.DateTimeField(auto_now_add=True)
-
-    # LEGACY FIELDS - Zostają tymczasowo do następnego commita z migracją danych.
-    building_type = models.CharField(max_length=50, blank=True, default="")
-    building_ends_at = models.DateTimeField(null=True, blank=True)
-
     transporter_count = models.PositiveIntegerField(default=0)
 
     class Meta:

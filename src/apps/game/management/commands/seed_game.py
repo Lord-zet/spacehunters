@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from apps.game.models import Planet
+
+from apps.game.models import Planet, PlanetBuildings
 
 User = get_user_model()
 
@@ -11,13 +12,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         user, _ = User.objects.get_or_create(
             username="user1",
-            defaults={"is_staff": False}
+            defaults={"is_staff": False},
         )
         user.set_password("Test1234")
         user.save()
 
-
-        Planet.objects.get_or_create(
+        planet1, _ = Planet.objects.get_or_create(
             owner=user,
             x=2,
             y=5,
@@ -25,14 +25,24 @@ class Command(BaseCommand):
                 "name": "Planet1",
                 "metal": 500,
                 "crystal": 300,
-                "metal_mine_level": 1,
-                "crystal_mine_level": 1,
                 "transporter_count": 2,
                 "is_homeland": True,
-            }
+            },
         )
 
-        Planet.objects.get_or_create(
+        PlanetBuildings.objects.get_or_create(
+            planet=planet1,
+            defaults={
+                "metal_mine_level": 1,
+                "crystal_mine_level": 1,
+                "metal_storage_level": 1,
+                "crystal_storage_level": 1,
+                "building_type": "",
+                "building_ends_at": None,
+            },
+        )
+
+        planet2, _ = Planet.objects.get_or_create(
             owner=user,
             x=2,
             y=12,
@@ -40,11 +50,21 @@ class Command(BaseCommand):
                 "name": "Planet2",
                 "metal": 500,
                 "crystal": 300,
-                "metal_mine_level": 1,
-                "crystal_mine_level": 1,
                 "transporter_count": 2,
                 "is_homeland": False,
-            }
+            },
+        )
+
+        PlanetBuildings.objects.get_or_create(
+            planet=planet2,
+            defaults={
+                "metal_mine_level": 1,
+                "crystal_mine_level": 1,
+                "metal_storage_level": 1,
+                "crystal_storage_level": 1,
+                "building_type": "",
+                "building_ends_at": None,
+            },
         )
 
         self.stdout.write(self.style.SUCCESS("Test data created."))

@@ -25,6 +25,7 @@ def get_planet_background(planet):
     ]
     return backgrounds[planet.id % len(backgrounds)]
 
+
 def get_storage_capacities(planet):
     return {
         "metal": get_storage_capacity(planet, "metal"),
@@ -39,6 +40,7 @@ def dashboard(request):
         return redirect("login")
     request.session["active_planet_id"] = planet.id
     return redirect("game:planet_detail", pk=planet.pk)
+
 
 @login_required
 def planet_detail(request, pk):
@@ -55,11 +57,13 @@ def planet_detail(request, pk):
 
     context = {
         "planet": planet,
+        "planet_buildings": planet.get_buildings(),
         "background": background,
         "storage_capacities": get_storage_capacities(planet),
         "active_fleets": active_fleets,
     }
     return render(request, "game/planet_detail.html", context)
+
 
 @login_required
 def planet_buildings(request, pk):
@@ -91,6 +95,7 @@ def planet_buildings(request, pk):
 
     context = {
         "planet": planet,
+        "planet_buildings": planet.get_buildings(),
         "production": get_production_per_hour(planet),
         "building_costs": building_costs,
         "building_in_progress": planet.is_building_in_progress(),
@@ -105,6 +110,7 @@ def switch_planet(request, pk):
     planet = get_user_planet_or_404(request.user, pk)
     request.session["active_planet_id"] = planet.id
     return redirect("game:planet_detail", pk=planet.pk)
+
 
 @login_required
 def send_fleet(request, pk):
@@ -147,11 +153,13 @@ def send_fleet(request, pk):
 
     context = {
         "planet": source_planet,
+        "planet_buildings": source_planet.get_buildings(),
         "form": form,
         "background": background,
         "storage_capacities": get_storage_capacities(source_planet),
     }
     return render(request, "game/send_fleet.html", context)
+
 
 @login_required
 def fleet_list(request, pk):
@@ -165,6 +173,7 @@ def fleet_list(request, pk):
     context = {
         "fleets": fleets,
         "planet": planet,
+        "planet_buildings": planet.get_buildings(),
         "background": background,
         "now": timezone.now(),
     }

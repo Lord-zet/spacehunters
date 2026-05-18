@@ -36,7 +36,7 @@
                 <p class="text-[10px] text-white/40 uppercase tracking-widest">Status Inżynieryjny</p>
                 <h3 class="text-sm font-scifi uppercase">
                     {% if building_in_progress %}
-                        W budowie: <span class="text-accent-cyan">{{ planet.building_type }}</span>
+                        W budowie: <span class="text-accent-cyan">{{ planet_buildings.building_type }}</span>
                     {% else %}
                         <span class="text-white/60">Brak aktywnej budowy</span>
                     {% endif %}
@@ -47,7 +47,7 @@
         {% if building_in_progress %}
         <div class="text-right">
             <p class="text-[10px] text-white/40 uppercase tracking-widest">Pozostały czas</p>
-            <p class="text-sm font-scifi text-accent-orange">{{ planet.building_ends_at|time_remaining }}</p>
+            <p class="text-sm font-scifi text-accent-orange">{{ planet_buildings.building_ends_at|time_remaining }}</p>
         </div>
         {% endif %}
 
@@ -64,7 +64,7 @@
                 <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                     <img src="#" alt="Kopalnia Metalu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet.metal_mine_level|default:"0" }}</span>
+                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.metal_mine_level|default:"0" }}</span>
                 </div>
 
                 <div class="flex-1 flex flex-col justify-between">
@@ -102,7 +102,7 @@
                 <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                     <img src="#" alt="Kopalnia Kryształu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet.crystal_mine_level|default:"0" }}</span>
+                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.crystal_mine_level|default:"0" }}</span>
                 </div>
 
                 <div class="flex-1 flex flex-col justify-between">
@@ -140,7 +140,7 @@
                 <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                     <img src="#" alt="Magazyn Metalu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-orange/80 text-black text-[10px] px-1 font-bold">LVL {{ planet.metal_storage_level|default:"0" }}</span>
+                    <span class="absolute top-1 left-1 z-20 bg-accent-orange/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.metal_storage_level|default:"0" }}</span>
                 </div>
 
                 <div class="flex-1 flex flex-col justify-between">
@@ -178,7 +178,7 @@
                 <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                     <img src="#" alt="Magazyn Kryształu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-orange/80 text-black text-[10px] px-1 font-bold">LVL {{ planet.crystal_storage_level|default:"0" }}</span>
+                    <span class="absolute top-1 left-1 z-20 bg-accent-orange/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.crystal_storage_level|default:"0" }}</span>
                 </div>
 
                 <div class="flex-1 flex flex-col justify-between">

@@ -3,19 +3,19 @@ from django.shortcuts import get_object_or_404
 from apps.game.models import Planet
 
 
-def get_user_planet_or_404(user, planet_id):
+def get_user_planet_or_404(user, pk):
     return get_object_or_404(
-        Planet.objects.select_related("owner"),
-        pk=planet_id,
+        Planet.objects.select_related("buildings"),
         owner=user,
+        pk=pk,
     )
 
 
 def get_user_homeland(user):
     return (
-        user.planets
-        .filter(is_homeland=True)
-        .order_by("id")
+        Planet.objects
+        .select_related("buildings")
+        .filter(owner=user, is_homeland=True)
         .first()
     )
 

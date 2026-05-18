@@ -2,7 +2,11 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.game.models import Planet
-from apps.game.domain_services.resources import synchronize_resources, get_production_per_hour, get_storage_capacity
+from apps.game.domain_services.resources import (
+    synchronize_resources,
+    get_production_per_hour,
+    get_storage_capacity,
+)
 from .helpers import PlanetTestMixin
 
 
@@ -24,7 +28,7 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
         target_time = start_time + timezone.timedelta(hours=2)
 
         synchronize_resources(planet, at=target_time, save=True)
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         expected_metal_gain = int(production["metal"] * 2)
         expected_crystal_gain = int(production["crystal"] * 2)
@@ -56,7 +60,7 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
         target_time = start_time + timezone.timedelta(hours=24)
 
         synchronize_resources(planet, at=target_time, save=True)
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         self.assertEqual(planet.metal, metal_capacity)
         self.assertEqual(planet.crystal, crystal_capacity)
@@ -81,7 +85,7 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
         )
 
         synchronize_resources(planet, at=start_time, save=True)
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         self.assertEqual(planet.metal, 1200)
         self.assertEqual(planet.crystal, 800)
@@ -108,7 +112,7 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
         earlier_time = start_time - timezone.timedelta(minutes=10)
 
         synchronize_resources(planet, at=earlier_time, save=True)
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         self.assertEqual(planet.metal, 1500)
         self.assertEqual(planet.crystal, 900)

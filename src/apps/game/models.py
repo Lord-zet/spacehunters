@@ -16,14 +16,20 @@ class Planet(models.Model):
     y = models.IntegerField()
     metal = models.BigIntegerField(default=500)
     crystal = models.BigIntegerField(default=200)
+
+    # LEGACY FIELDS - Zostają tymczasowo do następnego commita z migracją danych.
     metal_mine_level = models.PositiveIntegerField(default=1)
     crystal_mine_level = models.PositiveIntegerField(default=0)
     metal_storage_level = models.PositiveIntegerField(default=1)
     crystal_storage_level = models.PositiveIntegerField(default=1)
+
     is_homeland = models.BooleanField(default=False)
     last_resource_update = models.DateTimeField(auto_now_add=True)
+
+    # LEGACY FIELDS - Zostają tymczasowo do następnego commita z migracją danych.
     building_type = models.CharField(max_length=50, blank=True, default="")
     building_ends_at = models.DateTimeField(null=True, blank=True)
+
     transporter_count = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -44,8 +50,13 @@ class Planet(models.Model):
             if qs.exists():
                 raise ValidationError("User can only have one main planet.")
 
-    def is_building_in_progress(self):
-        return self.building_ends_at is not None and self.building_ends_at > timezone.now()
+    def get_buildings(self):
+        if hasattr(self, "buildings"):
+            return self.buildings
+        return PlanetBuildings.objects.create(planet=self)
+
+    def is_building_in_progress(self, *, at=None):
+        return self.get_buildings().is_building_in_progress(at=at)
 
     def __str__(self):
         return self.name
@@ -63,6 +74,9 @@ class PlanetBuildings(models.Model):
     crystal_storage_level = models.PositiveIntegerField(default=1)
     building_type = models.CharField(max_length=50, blank=True, default="")
     building_ends_at = models.DateTimeField(null=True, blank=True)
+
+    def get_level(self, level_field: str) -> int:
+        return getattr(self, level_field)
 
     def is_building_in_progress(self, *, at=None):
         now = at or timezone.now()

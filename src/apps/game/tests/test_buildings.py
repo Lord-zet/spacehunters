@@ -1,7 +1,11 @@
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.game.domain_services.buildings import start_building_upgrade, get_upgrade_cost, finish_building_if_ready
+from apps.game.domain_services.buildings import (
+    finish_building_if_ready,
+    start_building_upgrade,
+    get_upgrade_cost,
+)
 from apps.game.domain.exceptions import (
     BuildingAlreadyInProgressError,
     NotEnoughResourcesError,
@@ -34,11 +38,11 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
             at=start_time,
         )
 
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
-        self.assertEqual(planet.building_type, building_name)
-        self.assertIsNotNone(planet.building_ends_at)
-        self.assertGreater(planet.building_ends_at, start_time)
+        self.assertEqual(planet.buildings.building_type, building_name)
+        self.assertIsNotNone(planet.buildings.building_ends_at)
+        self.assertGreater(planet.buildings.building_ends_at, start_time)
         self.assertEqual(planet.metal, 10000 - cost["metal"])
 
     def test_start_building_upgrade_raises_when_construction_is_already_in_progress(self):
@@ -57,8 +61,8 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
 
         old_metal = planet.metal
         old_crystal = planet.crystal
-        old_building_type = planet.building_type
-        old_building_ends_at = planet.building_ends_at
+        old_building_type = planet.buildings.building_type
+        old_building_ends_at = planet.buildings.building_ends_at
 
         with self.assertRaises(BuildingAlreadyInProgressError) as ctx:
             start_building_upgrade(
@@ -67,13 +71,13 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
                 at=now,
             )
 
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         self.assertEqual(str(ctx.exception), "Na tej planecie trwa już budowa.")
         self.assertEqual(planet.metal, old_metal)
         self.assertEqual(planet.crystal, old_crystal)
-        self.assertEqual(planet.building_type, old_building_type)
-        self.assertEqual(planet.building_ends_at, old_building_ends_at)
+        self.assertEqual(planet.buildings.building_type, old_building_type)
+        self.assertEqual(planet.buildings.building_ends_at, old_building_ends_at)
 
     def test_start_building_upgrade_raises_when_not_enough_resources(self):
         user = self.create_user("builder3")
@@ -96,11 +100,11 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
                 at=now,
             )
 
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         self.assertEqual(str(ctx.exception), "Za mało surowców.")
-        self.assertEqual(planet.building_type, "")
-        self.assertIsNone(planet.building_ends_at)
+        self.assertEqual(planet.buildings.building_type, "")
+        self.assertIsNone(planet.buildings.building_ends_at)
         self.assertEqual(planet.metal, 0)
         self.assertEqual(planet.crystal, 0)
 
@@ -123,11 +127,11 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
                 at=now,
             )
 
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         self.assertEqual(str(ctx.exception), "Nieznany budynek.")
-        self.assertEqual(planet.building_type, "")
-        self.assertIsNone(planet.building_ends_at)
+        self.assertEqual(planet.buildings.building_type, "")
+        self.assertIsNone(planet.buildings.building_ends_at)
 
 
 class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
@@ -144,12 +148,12 @@ class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
         )
 
         finished = finish_building_if_ready(planet, at=now)
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         self.assertTrue(finished)
-        self.assertEqual(planet.metal_mine_level, 4)
-        self.assertEqual(planet.building_type, "")
-        self.assertIsNone(planet.building_ends_at)
+        self.assertEqual(planet.buildings.metal_mine_level, 4)
+        self.assertEqual(planet.buildings.building_type, "")
+        self.assertIsNone(planet.buildings.building_ends_at)
 
     def test_finish_building_if_ready_returns_false_when_no_building_end_time(self):
         user = self.create_user("finisher2")
@@ -164,12 +168,12 @@ class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
         )
 
         finished = finish_building_if_ready(planet, at=now)
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         self.assertFalse(finished)
-        self.assertEqual(planet.metal_mine_level, 3)
-        self.assertEqual(planet.building_type, "")
-        self.assertIsNone(planet.building_ends_at)
+        self.assertEqual(planet.buildings.metal_mine_level, 3)
+        self.assertEqual(planet.buildings.building_type, "")
+        self.assertIsNone(planet.buildings.building_ends_at)
 
     def test_finish_building_if_ready_returns_false_when_building_is_still_in_progress(self):
         user = self.create_user("finisher3")
@@ -186,12 +190,12 @@ class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
         )
 
         finished = finish_building_if_ready(planet, at=now)
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         self.assertFalse(finished)
-        self.assertEqual(planet.metal_mine_level, 3)
-        self.assertEqual(planet.building_type, "metal_mine")
-        self.assertEqual(planet.building_ends_at, future_end)
+        self.assertEqual(planet.buildings.metal_mine_level, 3)
+        self.assertEqual(planet.buildings.building_type, "metal_mine")
+        self.assertEqual(planet.buildings.building_ends_at, future_end)
 
     def test_finish_building_if_ready_clears_invalid_building_type(self):
         user = self.create_user("finisher4")
@@ -206,9 +210,9 @@ class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
         )
 
         finished = finish_building_if_ready(planet, at=now)
-        planet.refresh_from_db()
+        planet = self.reload_planet(planet)
 
         self.assertFalse(finished)
-        self.assertEqual(planet.metal_mine_level, 3)
-        self.assertEqual(planet.building_type, "")
-        self.assertIsNone(planet.building_ends_at)
+        self.assertEqual(planet.buildings.metal_mine_level, 3)
+        self.assertEqual(planet.buildings.building_type, "")
+        self.assertIsNone(planet.buildings.building_ends_at)

@@ -14,6 +14,10 @@ class UnknownBuildingError(BuildingError):
     pass
 
 
+class NoFreePlanetFieldsError(DomainError):
+    pass
+
+
 class NotEnoughResourcesError(BuildingError):
     pass
 

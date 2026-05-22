@@ -7,6 +7,7 @@ from apps.game.domain.exceptions import (
     BuildingAlreadyInProgressError,
     NotEnoughResourcesError,
     UnknownBuildingError,
+    NoFreePlanetFieldsError,
 )
 from apps.game.models import Planet, PlanetBuildings
 from ..buildings import BUILDINGS
@@ -79,6 +80,9 @@ def start_building_upgrade(planet, building_name, *, at=None):
     config = get_building_config(building_name)
     if not config:
         raise UnknownBuildingError("Nieznany budynek.")
+
+    if not buildings.has_free_field(at=now):
+        raise NoFreePlanetFieldsError("Brak wolnych pól na planecie.")
 
     cost = get_upgrade_cost(planet, building_name)
     if cost is None:

@@ -13,8 +13,9 @@ class Planet(models.Model):
         related_name="planets"
     )
     name = models.CharField(max_length=100)
-    x = models.IntegerField()
-    y = models.IntegerField()
+    galaxy = models.PositiveIntegerField(default=1)
+    system = models.PositiveIntegerField()
+    position = models.PositiveIntegerField()
     metal = models.BigIntegerField(default=500)
     crystal = models.BigIntegerField(default=200)
     is_homeland = models.BooleanField(default=False)
@@ -30,7 +31,7 @@ class Planet(models.Model):
                 name="unique_homeland_per_owner",
             )
         ]
-        ordering = ["x", "y"]
+        ordering = ["galaxy", "system", "position"]
 
     def clean(self):
         if self.is_homeland:
@@ -47,6 +48,10 @@ class Planet(models.Model):
 
     def is_building_in_progress(self, *, at=None):
         return self.get_buildings().is_building_in_progress(at=at)
+
+    @property
+    def coordinates(self):
+        return f"{self.galaxy}:{self.system}:{self.position}"
 
     def __str__(self):
         return self.name

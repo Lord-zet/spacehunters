@@ -33,6 +33,15 @@ def get_storage_capacities(planet):
     }
 
 
+def get_planet_field_usage(planet):
+    buildings = planet.get_buildings()
+    return {
+        "used": buildings.get_used_fields(),
+        "free": buildings.get_free_fields(),
+        "total": planet.planet_fields_total,
+    }
+
+
 @login_required
 def dashboard(request):
     planet = get_user_homeland(request.user)
@@ -61,6 +70,7 @@ def planet_detail(request, pk):
         "background": background,
         "storage_capacities": get_storage_capacities(planet),
         "active_fleets": active_fleets,
+        "field_usage": get_planet_field_usage(planet),
     }
     return render(request, "game/planet_detail.html", context)
 
@@ -101,6 +111,7 @@ def planet_buildings(request, pk):
         "building_in_progress": planet.is_building_in_progress(),
         "background": background,
         "storage_capacities": get_storage_capacities(planet),
+        "field_usage": get_planet_field_usage(planet),
     }
     return render(request, "game/buildings.html", context)
 

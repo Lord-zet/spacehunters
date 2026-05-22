@@ -19,6 +19,7 @@ class Planet(models.Model):
     is_homeland = models.BooleanField(default=False)
     last_resource_update = models.DateTimeField(auto_now_add=True)
     transporter_count = models.PositiveIntegerField(default=0)
+    planet_fields_total = models.PositiveIntegerField(default=90)
 
     class Meta:
         constraints = [

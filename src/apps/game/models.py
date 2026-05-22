@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from .buildings import BUILDINGS
 
 
 class Planet(models.Model):
@@ -69,7 +70,35 @@ class PlanetBuildings(models.Model):
 
     def is_building_in_progress(self, *, at=None):
         now = at or timezone.now()
-        return self.building_ends_at is not None and self.building_ends_at > now
+        return (
+            bool(self.building_type)
+            and self.building_ends_at is not None
+            and self.building_ends_at > now
+        )
+
+    def get_used_fields(self, *, at=None, include_in_progress=True) -> int:
+        used_fields = 0
+
+        for config in BUILDINGS.values():
+            used_fields += getattr(self, config["level_field"], 0)
+
+        if include_in_progress and self.is_building_in_progress(at=at):
+            used_fields += 1
+
+        return used_fields
+
+    def get_free_fields(self, *, at=None, include_in_progress=True) -> int:
+        free_fields = self.planet.planet_fields_total - self.get_used_fields(
+            at=at,
+            include_in_progress=include_in_progress,
+        )
+        return max(free_fields, 0)
+
+    def has_free_field(self, *, at=None, include_in_progress=True) -> bool:
+        return self.get_free_fields(
+            at=at,
+            include_in_progress=include_in_progress,
+        ) > 0
 
     def __str__(self):
         return f"Buildings<{self.planet_id}>"

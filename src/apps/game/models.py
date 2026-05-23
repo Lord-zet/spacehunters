@@ -29,7 +29,11 @@ class Planet(models.Model):
                 fields=["owner"],
                 condition=Q(is_homeland=True),
                 name="unique_homeland_per_owner",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["galaxy", "system", "position"],
+                name="unique_planet_coordinates",
+            ),
         ]
         ordering = ["galaxy", "system", "position"]
 

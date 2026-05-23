@@ -9,11 +9,12 @@ User = get_user_model()
 class Command(BaseCommand):
     help = "Creates test user and its planets"
 
-    def ensure_planet(self, *, owner, x, y, name, is_homeland):
+    def ensure_planet(self, *, owner, galaxy, system, position, name, is_homeland):
         planet, _ = Planet.objects.get_or_create(
             owner=owner,
-            x=x,
-            y=y,
+            galaxy=galaxy,
+            system=system,
+            position=position,
             defaults={
                 "name": name,
                 "metal": 500,
@@ -47,16 +48,18 @@ class Command(BaseCommand):
 
         self.ensure_planet(
             owner=user,
-            x=2,
-            y=5,
+            galaxy=1,
+            system=2,
+            position=5,
             name="Planet1",
             is_homeland=True,
         )
 
         self.ensure_planet(
             owner=user,
-            x=2,
-            y=12,
+            galaxy=1,
+            system=2,
+            position=12,
             name="Planet2",
             is_homeland=False,
         )

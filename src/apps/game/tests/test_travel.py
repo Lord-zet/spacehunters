@@ -5,26 +5,28 @@ from .helpers import PlanetTestMixin
 
 
 class TravelCalculationTests(PlanetTestMixin, TestCase):
-    def test_calculate_distance_returns_manhattan_distance_between_planets(self):
+    def test_calculate_distance_returns_weighted_distance_between_planets(self):
         user = self.create_user("travel1")
 
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            x=1,
-            y=1,
+            galaxy=1,
+            system=1,
+            position=1,
         )
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            x=4,
-            y=6,
+            galaxy=1,
+            system=4,
+            position=6,
             is_homeland=False,
         )
 
         distance = calculate_distance(source_planet, target_planet)
 
-        self.assertEqual(distance, 8)  # |4 - 1| + |6 - 1| = 3 + 5 = 8
+        self.assertEqual(distance, 310)  # 3*95 + 5*5
 
     def test_calculate_flight_time_seconds_increases_with_distance(self):
         user = self.create_user("travel2")
@@ -32,21 +34,24 @@ class TravelCalculationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            x=1,
-            y=1,
+            galaxy=1,
+            system=1,
+            position=1,
         )
         near_planet = self.create_planet(
             owner=user,
             name="Near",
-            x=2,
-            y=1,
+            galaxy=1,
+            system=1,
+            position=2,
             is_homeland=False,
         )
         far_planet = self.create_planet(
             owner=user,
             name="Far",
-            x=6,
-            y=5,
+            galaxy=2,
+            system=6,
+            position=5,
             is_homeland=False,
         )
 

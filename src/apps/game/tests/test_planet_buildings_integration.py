@@ -25,8 +25,9 @@ class PlanetBuildingsIntegrationTests(TestCase):
         self.planet = Planet.objects.create(
             owner=self.user,
             name="Earth",
-            x=1,
-            y=1,
+            galaxy=1,
+            system=1,
+            position=1,
             metal=10000,
             crystal=10000,
             transporter_count=5,

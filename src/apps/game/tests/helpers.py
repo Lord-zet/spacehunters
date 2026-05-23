@@ -24,8 +24,9 @@ class PlanetTestMixin:
         planet_data = {
             "owner": owner,
             "name": "Test Planet",
-            "x": 1,
-            "y": 1,
+            "galaxy": 1,
+            "system": 1,
+            "position": 1,
             "metal": 500,
             "crystal": 200,
             "is_homeland": True,

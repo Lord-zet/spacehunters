@@ -1,6 +1,21 @@
+GALAXY_DISTANCE_WEIGHT = 20_000
+SYSTEM_DISTANCE_WEIGHT = 95
+POSITION_DISTANCE_WEIGHT = 5
+MIN_DISTANCE = 5
+
 
 def calculate_distance(source_planet, target_planet) -> int:
-    return abs(source_planet.x - target_planet.x) + abs(source_planet.y - target_planet.y)
+    galaxy_gap = abs(source_planet.galaxy - target_planet.galaxy)
+    system_gap = abs(source_planet.system - target_planet.system)
+    position_gap = abs(source_planet.position - target_planet.position)
+
+    distance = (
+        galaxy_gap * GALAXY_DISTANCE_WEIGHT
+        + system_gap * SYSTEM_DISTANCE_WEIGHT
+        + position_gap * POSITION_DISTANCE_WEIGHT
+    )
+
+    return max(distance, MIN_DISTANCE)
 
 
 def calculate_flight_time_seconds(

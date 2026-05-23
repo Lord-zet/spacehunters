@@ -135,7 +135,7 @@
                 <select class="planet-select" onchange="window.location.href=this.value;">
                     {% for p in user.planets.all %}
                         <option value="{% url 'game:planet_detail' pk=p.id %}" {% if p.name == planet.name %}selected{% endif %}>
-                            {{ p.name }} [{{ p.x }} - {{ p.y }}]
+                            {{ p.name }} [ {{ p.coordinates }} ]
                         </option>
                     {% empty %}
                         <option>{{ planet.name|default:"Główna Kolonia" }}</option>

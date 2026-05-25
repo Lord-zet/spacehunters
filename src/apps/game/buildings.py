@@ -7,6 +7,10 @@ def crystal_mine_production(level):
     return {"crystal": int(80 * level * (1.1 ** level))}
 
 
+def helion_synthesizer_production(level):
+    return {"helion": int(40 * level * (1.1 ** level))}
+
+
 BUILDINGS = {
     "metal_mine": {
         "level_field": "metal_mine_level",
@@ -21,6 +25,13 @@ BUILDINGS = {
         "build_time": 90,
         "production_fn": crystal_mine_production,
     },
+    "helion_synthesizer": {
+        "level_field": "helion_synthesizer_level",
+        "base_cost": {"metal": 120, "crystal": 80},
+        "build_time": 120,
+        "build_time_multiplier": 1.4,
+        "production_fn": helion_synthesizer_production,
+    },
     "metal_storage": {
         "level_field": "metal_storage_level",
         "base_cost": {"metal": 120, "crystal": 40},
@@ -30,5 +41,10 @@ BUILDINGS = {
         "level_field": "crystal_storage_level",
         "base_cost": {"metal": 120, "crystal": 80},
         "build_time": 75,
+    },
+    "helion_storage": {
+        "level_field": "helion_storage_level",
+        "base_cost": {"metal": 160, "crystal": 120},
+        "build_time": 90,
     },
 }

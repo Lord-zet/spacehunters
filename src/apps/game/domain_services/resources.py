@@ -3,12 +3,16 @@ from django.utils import timezone
 from ..buildings import BUILDINGS
 
 
+RESOURCE_FIELDS = ("metal", "crystal", "helion")
+
+
 def get_storage_capacity(planet, resource: str) -> int:
     buildings = planet.get_buildings()
 
     storage_levels = {
         "metal": buildings.metal_storage_level,
         "crystal": buildings.crystal_storage_level,
+        "helion": buildings.helion_storage_level,
     }
     level = storage_levels.get(resource, 0)
 
@@ -59,6 +63,6 @@ def synchronize_resources(planet, at=None, *, save=False):
     planet.last_resource_update = now
 
     if save:
-        planet.save(update_fields=["metal", "crystal", "last_resource_update"])
+        planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
 
     return planet

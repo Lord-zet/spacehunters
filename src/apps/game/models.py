@@ -18,6 +18,7 @@ class Planet(models.Model):
     position = models.PositiveIntegerField()
     metal = models.BigIntegerField(default=500)
     crystal = models.BigIntegerField(default=200)
+    helion = models.BigIntegerField(default=0)
     is_homeland = models.BooleanField(default=False)
     last_resource_update = models.DateTimeField(auto_now_add=True)
     transporter_count = models.PositiveIntegerField(default=0)
@@ -69,8 +70,10 @@ class PlanetBuildings(models.Model):
     )
     metal_mine_level = models.PositiveIntegerField(default=1)
     crystal_mine_level = models.PositiveIntegerField(default=0)
+    helion_synthesizer_level = models.PositiveIntegerField(default=0)
     metal_storage_level = models.PositiveIntegerField(default=1)
     crystal_storage_level = models.PositiveIntegerField(default=1)
+    helion_storage_level = models.PositiveIntegerField(default=0)
     building_type = models.CharField(max_length=50, blank=True, default="")
     building_ends_at = models.DateTimeField(null=True, blank=True)
 

@@ -11,7 +11,7 @@ from apps.game.domain.exceptions import (
 )
 from apps.game.models import Planet, PlanetBuildings
 from ..buildings import BUILDINGS
-from .resources import synchronize_resources
+from .resources import synchronize_resources, RESOURCE_FIELDS
 
 
 def get_building_config(building_name):
@@ -98,7 +98,7 @@ def start_building_upgrade(planet, building_name, *, at=None):
     buildings.building_ends_at = now + timedelta(seconds=upgrade_time)
 
     buildings.save(update_fields=["building_type", "building_ends_at"])
-    planet.save(update_fields=["metal", "crystal", "last_resource_update"])
+    planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
 
     return planet
 

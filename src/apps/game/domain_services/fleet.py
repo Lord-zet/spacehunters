@@ -13,7 +13,7 @@ from apps.game.domain.exceptions import (
     SamePlanetTransportError,
 )
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
-from .resources import synchronize_resources
+from .resources import synchronize_resources, RESOURCE_FIELDS
 
 TRANSPORTER_CAPACITY = 1000
 
@@ -64,7 +64,7 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     source_planet.transporter_count -= transporter_count
     source_planet.metal -= metal
     source_planet.crystal -= crystal
-    source_planet.save(update_fields=["transporter_count", "metal", "crystal", "last_resource_update"])
+    source_planet.save(update_fields=["transporter_count", *RESOURCE_FIELDS, "last_resource_update"])
 
     flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet)
     flight_duration = timedelta(seconds=flight_time_seconds)
@@ -109,7 +109,7 @@ def process_fleets_for_user(user, *, at=None):
 
         target_planet.metal += fleet.metal
         target_planet.crystal += fleet.crystal
-        target_planet.save(update_fields=["metal", "crystal", "last_resource_update"])
+        target_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
 
         fleet.metal = 0
         fleet.crystal = 0
@@ -132,7 +132,7 @@ def process_fleets_for_user(user, *, at=None):
         synchronize_resources(source_planet, at=now, save=False)
 
         source_planet.transporter_count += fleet.transporter_count
-        source_planet.save(update_fields=["transporter_count", "last_resource_update"])
+        source_planet.save(update_fields=["transporter_count", *RESOURCE_FIELDS, "last_resource_update"])
 
         fleet.status = Fleet.Status.COMPLETED
         fleet.save(update_fields=["status"])

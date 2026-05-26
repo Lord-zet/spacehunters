@@ -19,6 +19,7 @@ class Command(BaseCommand):
                 "name": name,
                 "metal": 500,
                 "crystal": 300,
+                "helion": 0,
                 "transporter_count": 2,
                 "is_homeland": is_homeland,
             },
@@ -29,8 +30,10 @@ class Command(BaseCommand):
             defaults={
                 "metal_mine_level": 1,
                 "crystal_mine_level": 1,
+                "helion_synthesizer_level": 0,
                 "metal_storage_level": 1,
                 "crystal_storage_level": 1,
+                "helion_storage_level": 0,
                 "building_type": "",
                 "building_ends_at": None,
             },

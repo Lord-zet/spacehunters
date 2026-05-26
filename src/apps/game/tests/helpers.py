@@ -31,6 +31,7 @@ class PlanetTestMixin:
             "position": 1,
             "metal": 500,
             "crystal": 200,
+            "helion": 0,
             "is_homeland": True,
             "transporter_count": 0,
         }

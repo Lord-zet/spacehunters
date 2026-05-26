@@ -5,6 +5,7 @@ from apps.game.domain_services.buildings import (
     finish_building_if_ready,
     start_building_upgrade,
     get_upgrade_cost,
+    get_upgrade_time
 )
 from apps.game.domain.exceptions import (
     BuildingAlreadyInProgressError,
@@ -216,3 +217,24 @@ class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
         self.assertEqual(planet.buildings.metal_mine_level, 3)
         self.assertEqual(planet.buildings.building_type, "")
         self.assertIsNone(planet.buildings.building_ends_at)
+
+    def test_upgrade_cost_for_level_zero_building_is_not_zero(self):
+        planet = self.create_planet(
+            metal=10000,
+            crystal=10000,
+            helion_synthesizer_level=0,
+        )
+
+        cost = get_upgrade_cost(planet, "helion_synthesizer")
+
+        self.assertGreater(cost["metal"], 0)
+        self.assertGreater(cost["crystal"], 0)
+
+    def test_upgrade_time_for_level_zero_building_is_greater_than_base_zero_case(self):
+        planet = self.create_planet(
+            helion_synthesizer_level=0,
+        )
+
+        upgrade_time = get_upgrade_time(planet, "helion_synthesizer")
+
+        self.assertGreater(upgrade_time, 0)

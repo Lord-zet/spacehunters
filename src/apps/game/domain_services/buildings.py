@@ -24,8 +24,9 @@ def get_building_level(planet, config):
 
 
 def calculate_upgrade_cost(current_level, base_cost):
+    next_level = current_level + 1
     return {
-        resource: int(base * current_level * 2.5)
+        resource: int(base * next_level * 2.5)
         for resource, base in base_cost.items()
     }
 
@@ -52,7 +53,8 @@ def spend_resources(planet, cost):
 
 
 def calculate_upgrade_time(current_level, base_build_time, multiplier=1.3):
-    return int(base_build_time * (multiplier ** current_level))
+    next_level = current_level + 1
+    return int(base_build_time * (multiplier ** next_level))
 
 
 def get_upgrade_time(planet, building_name):

@@ -123,6 +123,10 @@
                 <span class="{% if planet.crystal >= storage_capacities.crystal %}text-red-500 font-bold{% else %}text-white{% endif %}">{{ planet.crystal|default:"0" }}</span>
             </div>
             <div class="flex flex-col items-center">
+                <span class="text-[10px] text-white/50 uppercase">Helion</span>
+                <span class="{% if planet.helion >= storage_capacities.helion %}text-red-500 font-bold{% else %}text-white{% endif %}">{{ planet.helion|default:"0" }}</span>
+            </div>
+            <div class="flex flex-col items-center">
                 <span class="text-[10px] text-white/50 uppercase font-bold text-accent-orange">Energia</span>
                 <span class="text-accent-orange">{{ energy|default:"0" }}</span>
             </div>

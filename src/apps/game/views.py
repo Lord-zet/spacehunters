@@ -30,6 +30,7 @@ def get_storage_capacities(planet):
     return {
         "metal": get_storage_capacity(planet, "metal"),
         "crystal": get_storage_capacity(planet, "crystal"),
+        "helion": get_storage_capacity(planet, "helion"),
     }
 
 

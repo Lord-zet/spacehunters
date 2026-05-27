@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 
-from apps.game.models import Planet, PlanetBuildings
+from apps.game.models import Planet, PlanetBuildings, PlanetShip
 
 User = get_user_model()
 
@@ -37,6 +37,12 @@ class Command(BaseCommand):
                 "building_type": "",
                 "building_ends_at": None,
             },
+        )
+
+        PlanetShip.objects.get_or_create(
+            planet=planet,
+            ship_code="transporter",
+            defaults={"quantity": 2},
         )
 
         return planet

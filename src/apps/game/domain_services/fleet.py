@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
 
-from apps.game.models import Fleet, Planet
+from apps.game.models import Fleet, Planet, PlanetShip
 from apps.game.domain.exceptions import (
     FleetError,
     CargoCapacityExceededError,
@@ -20,6 +20,15 @@ from .resources import synchronize_resources, RESOURCE_FIELDS
 TRANSPORTER_CODE = "transporter"
 
 
+def get_planet_ship(planet, ship_code: str) -> PlanetShip:
+    ship, _ = PlanetShip.objects.get_or_create(
+        planet=planet,
+        ship_code=ship_code,
+        defaults={"quantity": 0},
+    )
+    return ship
+
+
 def transport_capacity(transporter_count: int) -> int:
     return SHIPS[TRANSPORTER_CODE]["cargo_capacity"] * transporter_count
 
@@ -29,7 +38,8 @@ def can_carry_resources(transporter_count: int, metal: int, crystal: int) -> boo
 
 
 def has_enough_transporters(planet, transporter_count: int) -> bool:
-    return planet.transporter_count >= transporter_count
+    transporter = get_planet_ship(planet, TRANSPORTER_CODE)
+    return transporter.quantity >= transporter_count
 
 
 def has_enough_resources_for_transport(planet, metal: int, crystal: int) -> bool:
@@ -43,6 +53,18 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     source_planet = Planet.objects.select_for_update().get(pk=source_planet.pk)
     target_planet = Planet.objects.select_for_update().get(pk=target_planet.pk)
 
+    transporter = (
+        PlanetShip.objects.select_for_update()
+        .filter(planet=source_planet, ship_code=TRANSPORTER_CODE)
+        .first()
+    )
+    if transporter is None:
+        transporter = PlanetShip.objects.create(
+            planet=source_planet,
+            ship_code=TRANSPORTER_CODE,
+            quantity=0,
+        )
+
     synchronize_resources(source_planet, at=now, save=False)
 
     if source_planet.id == target_planet.id:
@@ -54,7 +76,7 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     if metal < 0 or crystal < 0:
         raise FleetError("Nie można wysłać ujemnej ilości surowców.")
 
-    if not has_enough_transporters(source_planet, transporter_count):
+    if transporter.quantity < transporter_count:
         raise NotEnoughTransportersError("Nie masz wystarczającej liczby transportowców.")
 
     if not has_enough_resources_for_transport(source_planet, metal, crystal):
@@ -63,10 +85,12 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     if not can_carry_resources(transporter_count, metal, crystal):
         raise CargoCapacityExceededError("Ładunek nie mieści się w pojemności transportowców.")
 
-    source_planet.transporter_count -= transporter_count
+    transporter.quantity -= transporter_count
     source_planet.metal -= metal
     source_planet.crystal -= crystal
-    source_planet.save(update_fields=["transporter_count", *RESOURCE_FIELDS, "last_resource_update"])
+
+    transporter.save(update_fields=["quantity"])
+    source_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
 
     flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet)
     flight_duration = timedelta(seconds=flight_time_seconds)
@@ -133,8 +157,22 @@ def process_fleets_for_user(user, *, at=None):
         source_planet = Planet.objects.select_for_update().get(pk=fleet.source_planet_id)
         synchronize_resources(source_planet, at=now, save=False)
 
-        source_planet.transporter_count += fleet.transporter_count
-        source_planet.save(update_fields=["transporter_count", *RESOURCE_FIELDS, "last_resource_update"])
+        transporter = (
+            PlanetShip.objects.select_for_update()
+            .filter(planet=source_planet, ship_code=TRANSPORTER_CODE)
+            .first()
+        )
+        if transporter is None:
+            transporter = PlanetShip.objects.create(
+                planet=source_planet,
+                ship_code=TRANSPORTER_CODE,
+                quantity=0,
+            )
+
+        transporter.quantity += fleet.transporter_count
+        transporter.save(update_fields=["quantity"])
+
+        source_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
 
         fleet.status = Fleet.Status.COMPLETED
         fleet.save(update_fields=["status"])

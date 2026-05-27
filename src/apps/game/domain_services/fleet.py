@@ -13,13 +13,15 @@ from apps.game.domain.exceptions import (
     SamePlanetTransportError,
 )
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
+from apps.game.ships import SHIPS
 from .resources import synchronize_resources, RESOURCE_FIELDS
 
-TRANSPORTER_CAPACITY = 1000
+
+TRANSPORTER_CODE = "transporter"
 
 
 def transport_capacity(transporter_count: int) -> int:
-    return TRANSPORTER_CAPACITY * transporter_count
+    return SHIPS[TRANSPORTER_CODE]["cargo_capacity"] * transporter_count
 
 
 def can_carry_resources(transporter_count: int, metal: int, crystal: int) -> bool:

@@ -20,7 +20,6 @@ class Command(BaseCommand):
                 "metal": 500,
                 "crystal": 300,
                 "helion": 0,
-                "transporter_count": 2,
                 "is_homeland": is_homeland,
             },
         )

@@ -52,7 +52,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
 
         source_planet.refresh_from_db()
 
-        self.assertEqual(source_planet.transporter_count, 7)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 7)
         self.assertEqual(source_planet.metal, 4000)
         self.assertEqual(source_planet.crystal, 2500)
 
@@ -91,7 +91,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         planet.refresh_from_db()
 
         self.assertEqual(str(ctx.exception), "Nie można wysłać floty na tę samą planetę.")
-        self.assertEqual(planet.transporter_count, 10)
+        self.assertEqual(self.get_planet_ship_quantity(planet, "transporter"), 10)
         self.assertEqual(planet.metal, 5000)
         self.assertEqual(planet.crystal, 3000)
         self.assertEqual(Fleet.objects.count(), 0)
@@ -128,7 +128,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         source_planet.refresh_from_db()
 
         self.assertEqual(str(ctx.exception), "Nie masz wystarczającej liczby transportowców.")
-        self.assertEqual(source_planet.transporter_count, 2)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 2)
         self.assertEqual(source_planet.metal, 5000)
         self.assertEqual(source_planet.crystal, 3000)
         self.assertEqual(Fleet.objects.count(), 0)
@@ -165,7 +165,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         source_planet.refresh_from_db()
 
         self.assertEqual(str(ctx.exception), "Nie masz wystarczających zasobów.")
-        self.assertEqual(source_planet.transporter_count, 10)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 10)
         self.assertEqual(source_planet.metal, 100)
         self.assertEqual(source_planet.crystal, 50)
         self.assertEqual(Fleet.objects.count(), 0)
@@ -202,7 +202,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         source_planet.refresh_from_db()
 
         self.assertEqual(str(ctx.exception), "Ładunek nie mieści się w pojemności transportowców.")
-        self.assertEqual(source_planet.transporter_count, 1)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 1)
         self.assertEqual(source_planet.metal, 10000)
         self.assertEqual(source_planet.crystal, 10000)
         self.assertEqual(Fleet.objects.count(), 0)
@@ -262,7 +262,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         self.assertEqual(fleet.crystal, 0)
 
         # Transportowce jeszcze nie wróciły
-        self.assertEqual(source_planet.transporter_count, 7)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 7)
 
     def test_process_fleets_for_user_returns_transporters_to_source_and_completes_fleet(self):
         user = self.create_user("process2")
@@ -311,7 +311,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         source_planet.refresh_from_db()
 
         self.assertEqual(fleet.status, Fleet.Status.COMPLETED)
-        self.assertEqual(source_planet.transporter_count, 10)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 10)
 
     def test_process_fleets_for_user_does_nothing_for_outbound_fleet_that_has_not_arrived_yet(self):
         user = self.create_user("process3")
@@ -365,7 +365,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         self.assertEqual(fleet.crystal, 500)
         self.assertEqual(target_planet.metal, 100)
         self.assertEqual(target_planet.crystal, 50)
-        self.assertEqual(source_planet.transporter_count, 7)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 7)
 
     def test_process_fleets_for_user_does_nothing_for_returning_fleet_that_has_not_returned_yet(self):
         user = self.create_user("process4")
@@ -414,4 +414,4 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         source_planet.refresh_from_db()
 
         self.assertEqual(fleet.status, Fleet.Status.RETURNING)
-        self.assertEqual(source_planet.transporter_count, 7)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 7)

@@ -37,8 +37,7 @@ class PlanetTestMixin:
             "crystal": 200,
             "helion": 0,
             "is_homeland": True,
-            "transporter_count": 0,  # legacy only for migration stage
-            "planet_fields_total": 12,
+            "planet_fields_total": 25,
         }
 
         buildings_data = {
@@ -63,7 +62,6 @@ class PlanetTestMixin:
                 ships_data[key] = overrides.pop(key)
 
         planet_data.update(overrides)
-        planet_data["transporter_count"] = ships_data["transporter_count"]
 
         planet = Planet.objects.create(**planet_data)
         PlanetBuildings.objects.create(planet=planet, **buildings_data)

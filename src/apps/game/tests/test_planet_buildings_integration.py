@@ -30,7 +30,6 @@ class PlanetBuildingsIntegrationTests(TestCase):
             position=1,
             metal=10000,
             crystal=10000,
-            transporter_count=5,
             is_homeland=True,
         )
         PlanetBuildings.objects.create(

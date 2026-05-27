@@ -116,6 +116,28 @@ class PlanetBuildings(models.Model):
         return f"Buildings<{self.planet_id}>"
 
 
+class PlanetShip(models.Model):
+    planet = models.ForeignKey(
+        Planet,
+        on_delete=models.CASCADE,
+        related_name="ships",
+    )
+    ship_code = models.CharField(max_length=50)
+    quantity = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["planet", "ship_code"],
+                name="unique_ship_type_per_planet",
+            ),
+        ]
+        ordering = ["planet_id", "ship_code"]
+
+    def __str__(self):
+        return f"{self.planet_id}:{self.ship_code}={self.quantity}"
+
+
 class Fleet(models.Model):
     class Status(models.TextChoices):
         OUTBOUND = "outbound", "Outbound"

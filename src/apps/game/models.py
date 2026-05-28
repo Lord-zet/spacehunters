@@ -161,7 +161,6 @@ class Fleet(models.Model):
         on_delete=models.CASCADE,
         related_name="incoming_fleets"
     )
-    transporter_count = models.BigIntegerField()
     metal = models.BigIntegerField(default=0)
     crystal = models.BigIntegerField(default=0)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OUTBOUND)
@@ -173,6 +172,21 @@ class Fleet(models.Model):
     departure_time = models.DateTimeField(auto_now_add=True)
     arrival_time = models.DateTimeField()
     return_time = models.DateTimeField(null=True, blank=True)
+
+    def get_ship_quantity(self, ship_code: str) -> int:
+        prefetched = getattr(self, "_prefetched_objects_cache", {})
+        if "ships" in prefetched:
+            for ship in self.ships.all():
+                if ship.ship_code == ship_code:
+                    return ship.quantity
+            return 0
+
+        ship = self.ships.filter(ship_code=ship_code).first()
+        return ship.quantity if ship else 0
+
+    @property
+    def transporter_count(self):
+        return self.get_ship_quantity("transporter")
 
     def __str__(self):
         return f"{self.source_planet} -> {self.target_planet}"

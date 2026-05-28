@@ -176,3 +176,25 @@ class Fleet(models.Model):
 
     def __str__(self):
         return f"{self.source_planet} -> {self.target_planet}"
+
+
+class FleetShip(models.Model):
+    fleet = models.ForeignKey(
+        Fleet,
+        on_delete=models.CASCADE,
+        related_name="ships",
+    )
+    ship_code = models.CharField(max_length=50)
+    quantity = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["fleet", "ship_code"],
+                name="unique_ship_type_per_fleet",
+            ),
+        ]
+        ordering = ["fleet_id", "ship_code"]
+
+    def __str__(self):
+        return f"{self.fleet_id}:{self.ship_code}={self.quantity}"

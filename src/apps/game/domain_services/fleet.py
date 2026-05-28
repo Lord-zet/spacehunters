@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
 
-from apps.game.models import Fleet, Planet, PlanetShip
+from apps.game.models import Fleet, Planet, PlanetShip, FleetShip
 from apps.game.domain.exceptions import (
     FleetError,
     CargoCapacityExceededError,
@@ -12,7 +12,7 @@ from apps.game.domain.exceptions import (
     NotEnoughTransportersError,
     SamePlanetTransportError,
 )
-from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
+from apps.game.domain_services.travel import calculate_flight_time_seconds
 from apps.game.ships import SHIPS
 from .resources import synchronize_resources, RESOURCE_FIELDS
 
@@ -27,6 +27,18 @@ def get_planet_ship(planet, ship_code: str) -> PlanetShip:
         defaults={"quantity": 0},
     )
     return ship
+
+
+def get_fleet_ship_quantity(fleet, ship_code: str) -> int:
+    prefetched = getattr(fleet, "_prefetched_objects_cache", {})
+    if "ships" in prefetched:
+        for ship in fleet.ships.all():
+            if ship.ship_code == ship_code:
+                return ship.quantity
+        return 0
+
+    ship = fleet.ships.filter(ship_code=ship_code).first()
+    return ship.quantity if ship else 0
 
 
 def transport_capacity(transporter_count: int) -> int:
@@ -105,10 +117,17 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
         transporter_count=transporter_count,
         metal=metal,
         crystal=crystal,
+        mission_type=Fleet.MissionType.TRANSPORT,
         status=Fleet.Status.OUTBOUND,
         departure_time=now,
         arrival_time=arrival_time,
         return_time=return_time,
+    )
+
+    FleetShip.objects.create(
+        fleet=fleet,
+        ship_code=TRANSPORTER_CODE,
+        quantity=transporter_count,
     )
 
     return fleet
@@ -122,6 +141,7 @@ def process_fleets_for_user(user, *, at=None):
         Fleet.objects
         .select_for_update()
         .select_related("target_planet", "source_planet")
+        .prefetch_related("ships")
         .filter(
             Q(owner=user) | Q(target_planet__owner=user),
             status=Fleet.Status.OUTBOUND,
@@ -146,6 +166,7 @@ def process_fleets_for_user(user, *, at=None):
         Fleet.objects
         .select_for_update()
         .select_related("source_planet")
+        .prefetch_related("ships")
         .filter(
             owner=user,
             status=Fleet.Status.RETURNING,
@@ -169,7 +190,7 @@ def process_fleets_for_user(user, *, at=None):
                 quantity=0,
             )
 
-        transporter.quantity += fleet.transporter_count
+        transporter.quantity += get_fleet_ship_quantity(fleet, TRANSPORTER_CODE)
         transporter.save(update_fields=["quantity"])
 
         source_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])

@@ -143,6 +143,9 @@ class Fleet(models.Model):
         RETURNING = "returning", "Returning"
         COMPLETED = "completed", "Completed"
 
+    class MissionType(models.TextChoices):
+        TRANSPORT = "transport", "Transport"
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -162,6 +165,11 @@ class Fleet(models.Model):
     metal = models.BigIntegerField(default=0)
     crystal = models.BigIntegerField(default=0)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OUTBOUND)
+    mission_type = models.CharField(
+        max_length=30,
+        choices=MissionType.choices,
+        default=MissionType.TRANSPORT,
+    )
     departure_time = models.DateTimeField(auto_now_add=True)
     arrival_time = models.DateTimeField()
     return_time = models.DateTimeField(null=True, blank=True)

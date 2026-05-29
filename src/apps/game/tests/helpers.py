@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 
-from apps.game.models import Planet, PlanetBuildings, PlanetShip
+from apps.game.models import Planet, PlanetBuildings, PlanetShip, FleetShip
 
 
 class PlanetTestMixin:
@@ -83,4 +83,8 @@ class PlanetTestMixin:
 
     def get_planet_ship_quantity(self, planet, ship_code):
         ship = PlanetShip.objects.get(planet=planet, ship_code=ship_code)
+        return ship.quantity
+
+    def get_fleet_ship_quantity(self, fleet, ship_code):
+        ship = FleetShip.objects.get(fleet=fleet, ship_code=ship_code)
         return ship.quantity

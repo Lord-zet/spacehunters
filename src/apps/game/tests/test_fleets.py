@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.game.models import Fleet
+from apps.game.models import Fleet, FleetShip
 from apps.game.domain_services.fleet import send_transport_fleet, process_fleets_for_user
 from apps.game.domain.exceptions import (
     CargoCapacityExceededError,
@@ -59,7 +59,11 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         self.assertEqual(fleet.owner, user)
         self.assertEqual(fleet.source_planet, source_planet)
         self.assertEqual(fleet.target_planet, target_planet)
-        self.assertEqual(fleet.transporter_count, 3)
+        self.assertEqual(
+            self.get_fleet_ship_quantity(fleet, "transporter"),
+            3,
+        )
+        self.assertEqual(fleet.mission_type, Fleet.MissionType.TRANSPORT)
         self.assertEqual(fleet.metal, 1000)
         self.assertEqual(fleet.crystal, 500)
         self.assertEqual(fleet.status, Fleet.Status.OUTBOUND)
@@ -240,13 +244,19 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             owner=user,
             source_planet=source_planet,
             target_planet=target_planet,
-            transporter_count=3,
+            mission_type=Fleet.MissionType.TRANSPORT,
             metal=1000,
             crystal=500,
             status=Fleet.Status.OUTBOUND,
             departure_time=now - timezone.timedelta(minutes=2),
             arrival_time=now - timezone.timedelta(seconds=1),
             return_time=now + timezone.timedelta(minutes=1),
+        )
+
+        FleetShip.objects.create(
+            fleet=fleet,
+            ship_code="transporter",
+            quantity=3,
         )
 
         process_fleets_for_user(user, at=now)
@@ -296,13 +306,19 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             owner=user,
             source_planet=source_planet,
             target_planet=target_planet,
-            transporter_count=3,
+            mission_type=Fleet.MissionType.TRANSPORT,
             metal=0,
             crystal=0,
             status=Fleet.Status.RETURNING,
             departure_time=now - timezone.timedelta(minutes=4),
             arrival_time=now - timezone.timedelta(minutes=2),
             return_time=now - timezone.timedelta(seconds=1),
+        )
+
+        FleetShip.objects.create(
+            fleet=fleet,
+            ship_code="transporter",
+            quantity=3,
         )
 
         process_fleets_for_user(user, at=now)
@@ -345,13 +361,19 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             owner=user,
             source_planet=source_planet,
             target_planet=target_planet,
-            transporter_count=3,
+            mission_type=Fleet.MissionType.TRANSPORT,
             metal=1000,
             crystal=500,
             status=Fleet.Status.OUTBOUND,
             departure_time=now - timezone.timedelta(seconds=10),
             arrival_time=now + timezone.timedelta(minutes=1),
             return_time=now + timezone.timedelta(minutes=2),
+        )
+
+        FleetShip.objects.create(
+            fleet=fleet,
+            ship_code="transporter",
+            quantity=3,
         )
 
         process_fleets_for_user(user, at=now)
@@ -399,13 +421,19 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             owner=user,
             source_planet=source_planet,
             target_planet=target_planet,
-            transporter_count=3,
+            mission_type=Fleet.MissionType.TRANSPORT,
             metal=0,
             crystal=0,
             status=Fleet.Status.RETURNING,
             departure_time=now - timezone.timedelta(minutes=4),
             arrival_time=now - timezone.timedelta(minutes=2),
             return_time=now + timezone.timedelta(minutes=1),
+        )
+
+        FleetShip.objects.create(
+            fleet=fleet,
+            ship_code="transporter",
+            quantity=3,
         )
 
         process_fleets_for_user(user, at=now)

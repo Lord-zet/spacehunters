@@ -44,3 +44,19 @@ class NotEnoughFuelError(DomainError):
 
 class InvalidStationingTargetError(DomainError):
     pass
+
+
+class UnknownShipError(DomainError):
+    pass
+
+
+class ShipyardRequiredError(DomainError):
+    pass
+
+
+class ShipConstructionAlreadyInProgressError(DomainError):
+    pass
+
+
+class InvalidShipQuantityError(DomainError):
+    pass

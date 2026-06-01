@@ -1,6 +1,6 @@
 from django.contrib.auth.forms import AuthenticationForm
 from django import forms
-from .models import Planet
+from .models import Planet, Fleet
 
 
 TAILWIND_INPUT = (
@@ -29,12 +29,19 @@ TAILWIND_FLEET_RESOURCE_INPUT = (
 TAILWIND_FLEET_SHIP_INPUT = (
     "w-24 bg-black/40 border border-white/10 rounded px-2 py-1 text-xs focus:border-accent-cyan outline-none transition-all"
 )
-
+TAILWIND_FLEET_MISSION_TYPE = (
+    "w-full bg-black/60 border border-white/10 rounded px-3 py-2 text-sm focus:border-accent-cyan outline-none appearance-none cursor-pointer"
+)
 TAILWIND_FLEET_TARGET_INPUT = (
     "w-full bg-black/60 border border-white/10 rounded px-3 py-2 text-sm focus:border-accent-cyan outline-none appearance-none cursor-pointer"
 )
 
 class SendFleetForm(forms.Form):
+    mission_type = forms.ChoiceField(
+        choices=Fleet.MissionType.choices,
+        initial=Fleet.MissionType.TRANSPORT,
+        label="Misja",
+    )
     transporter_count = forms.IntegerField(
         label="Ilość transporterów",
         required=True,
@@ -63,6 +70,10 @@ class SendFleetForm(forms.Form):
     def __init__(self, *args, user=None, source_planet=None, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.fields["mission_type"].widget.attrs.update({
+            "class": TAILWIND_FLEET_MISSION_TYPE,
+            "placeholder": "0",
+        })
         self.fields["transporter_count"].widget.attrs.update({
             "class": TAILWIND_FLEET_SHIP_INPUT,
             "placeholder": "0",

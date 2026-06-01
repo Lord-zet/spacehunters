@@ -3,10 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 
-from .models import Planet
+from .models import Planet, Fleet
 from .forms import SendFleetForm
 from .buildings import BUILDINGS
-from .domain_services.fleet import send_transport_fleet
+from .domain_services.fleet import send_transport_fleet, send_stationing_fleet
 from .domain_services.buildings import start_building_upgrade, get_upgrade_cost
 from .domain_services.resources import get_production_per_hour, get_storage_capacity
 from .domain_services.sync import synchronize_planet_state, synchronize_user_state
@@ -133,25 +133,42 @@ def send_fleet(request, pk):
         form = SendFleetForm(request.POST, user=request.user, source_planet=source_planet)
 
         if form.is_valid():
+            mission_type = form.cleaned_data.get("mission_type")
             tc = form.cleaned_data.get("transporter_count")
             target_planet = form.cleaned_data.get("target_planet")
             metal_to_send = form.cleaned_data.get("metal_to_send")
             crystal_to_send = form.cleaned_data.get("crystal_to_send")
 
             try:
-                fleet = send_transport_fleet(
-                    source_planet,
-                    target_planet,
-                    tc,
-                    metal_to_send,
-                    crystal_to_send,
-                    request.user,
-                )
-                messages.success(
-                    request,
-                    f"Wysłano flotę ({fleet.transporter_count} szt.) transportową "
-                    f"z planety {fleet.source_planet.name} na {fleet.target_planet.name}. "
-                    f"Koszt lotu: {fleet.helion_cost} helionu."
+                if mission_type == Fleet.MissionType.STATION:
+                    fleet = send_stationing_fleet(
+                        source_planet,
+                        target_planet,
+                        tc,
+                        metal_to_send,
+                        crystal_to_send,
+                        request.user,
+                    )
+                    messages.success(
+                        request,
+                        f"Wysłano flotę ({fleet.transporter_count} szt.) stacjonowania "
+                        f"z planety {fleet.source_planet.name} na {fleet.target_planet.name}. "
+                        f"Koszt lotu: {fleet.helion_cost} helionu."
+                    )
+                else:
+                    fleet = send_transport_fleet(
+                        source_planet,
+                        target_planet,
+                        tc,
+                        metal_to_send,
+                        crystal_to_send,
+                        request.user,
+                    )
+                    messages.success(
+                        request,
+                        f"Wysłano flotę ({fleet.transporter_count} szt.) transportową "
+                        f"z planety {fleet.source_planet.name} na {fleet.target_planet.name}. "
+                        f"Koszt lotu: {fleet.helion_cost} helionu."
                 )
             except Planet.DoesNotExist:
                 messages.error(request, "Nie znaleziono planety.")

@@ -57,6 +57,11 @@ class Planet(models.Model):
     def coordinates(self):
         return f"{self.galaxy}:{self.system}:{self.position}"
 
+    @property
+    def transporter_count(self):
+        ship = self.ships.filter(ship_code="transporter").first()
+        return ship.quantity if ship else 0
+
     def __str__(self):
         return self.name
 

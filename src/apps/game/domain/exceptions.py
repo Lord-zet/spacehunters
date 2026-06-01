@@ -36,3 +36,7 @@ class NotEnoughTransportersError(FleetError):
 
 class CargoCapacityExceededError(FleetError):
     pass
+
+
+class NotEnoughFuelError(DomainError):
+    pass

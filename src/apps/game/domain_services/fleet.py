@@ -12,6 +12,7 @@ from apps.game.domain.exceptions import (
     NotEnoughResourcesError,
     NotEnoughTransportersError,
     SamePlanetTransportError,
+    NotEnoughFuelError,
 )
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.ships import SHIPS
@@ -80,6 +81,10 @@ def has_enough_resources_for_transport(planet, metal: int, crystal: int) -> bool
     return planet.metal >= metal and planet.crystal >= crystal
 
 
+def has_enough_helion_for_flight(planet, helion_cost: int) -> bool:
+    return planet.helion >= helion_cost
+
+
 @transaction.atomic
 def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, user):
     now = timezone.now()
@@ -119,9 +124,22 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     if not can_carry_resources(transporter_count, metal, crystal):
         raise CargoCapacityExceededError("Ładunek nie mieści się w pojemności transportowców.")
 
+    ship_quantities = {
+        TRANSPORTER_CODE: transporter_count,
+    }
+    helion_cost = calculate_helion_cost_for_flight(
+        source_planet,
+        target_planet,
+        ship_quantities,
+    )
+
+    if not has_enough_helion_for_flight(source_planet, helion_cost):
+        raise NotEnoughFuelError("Nie masz wystarczającej ilości helionu na lot.")
+
     transporter.quantity -= transporter_count
     source_planet.metal -= metal
     source_planet.crystal -= crystal
+    source_planet.helion -= helion_cost
 
     transporter.save(update_fields=["quantity"])
     source_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
@@ -138,6 +156,7 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
         target_planet=target_planet,
         metal=metal,
         crystal=crystal,
+        helion_cost=helion_cost,
         mission_type=Fleet.MissionType.TRANSPORT,
         status=Fleet.Status.OUTBOUND,
         departure_time=now,

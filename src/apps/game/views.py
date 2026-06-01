@@ -150,7 +150,8 @@ def send_fleet(request, pk):
                 messages.success(
                     request,
                     f"Wysłano flotę ({fleet.transporter_count} szt.) transportową "
-                    f"z planety {fleet.source_planet.name} na {fleet.target_planet.name}."
+                    f"z planety {fleet.source_planet.name} na {fleet.target_planet.name}. "
+                    f"Koszt lotu: {fleet.helion_cost} helionu."
                 )
             except Planet.DoesNotExist:
                 messages.error(request, "Nie znaleziono planety.")

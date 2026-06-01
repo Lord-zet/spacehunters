@@ -1,3 +1,4 @@
+import math
 from datetime import timedelta
 
 from django.utils import timezone
@@ -12,12 +13,13 @@ from apps.game.domain.exceptions import (
     NotEnoughTransportersError,
     SamePlanetTransportError,
 )
-from apps.game.domain_services.travel import calculate_flight_time_seconds
+from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.ships import SHIPS
 from .resources import synchronize_resources, RESOURCE_FIELDS
 
-
 TRANSPORTER_CODE = "transporter"
+HELION_DISTANCE_DIVISOR = 1000
+MIN_HELION_COST = 1
 
 
 def get_planet_ship(planet, ship_code: str) -> PlanetShip:
@@ -39,6 +41,26 @@ def get_fleet_ship_quantity(fleet, ship_code: str) -> int:
 
     ship = fleet.ships.filter(ship_code=ship_code).first()
     return ship.quantity if ship else 0
+
+
+def calculate_fleet_base_fuel_burn(ship_quantities: dict[str, int]) -> int:
+    total = 0
+    for ship_code, quantity in ship_quantities.items():
+        if quantity <= 0:
+            continue
+        ship_config = SHIPS[ship_code]
+        total += ship_config["fuel_burn"] * quantity
+    return total
+
+
+def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantities: dict[str, int]) -> int:
+    base_burn = calculate_fleet_base_fuel_burn(ship_quantities)
+    if base_burn <= 0:
+        return 0
+
+    distance = calculate_distance(source_planet, target_planet)
+    raw_cost = (base_burn * distance) / HELION_DISTANCE_DIVISOR
+    return max(MIN_HELION_COST, math.ceil(raw_cost))
 
 
 def transport_capacity(transporter_count: int) -> int:

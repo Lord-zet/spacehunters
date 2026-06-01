@@ -150,6 +150,7 @@ class Fleet(models.Model):
 
     class MissionType(models.TextChoices):
         TRANSPORT = "transport", "Transport"
+        STATION = "station", "Station"
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

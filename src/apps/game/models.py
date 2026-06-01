@@ -195,6 +195,14 @@ class Fleet(models.Model):
     def transporter_count(self):
         return self.get_ship_quantity("transporter")
 
+    @property
+    def next_event_at(self):
+        if self.status == self.Status.OUTBOUND:
+            return self.arrival_time
+        if self.status == self.Status.RETURNING:
+            return self.return_time
+        return None
+
     def __str__(self):
         return f"{self.source_planet} -> {self.target_planet}"
 

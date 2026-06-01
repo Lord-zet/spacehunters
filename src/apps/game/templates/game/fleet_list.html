@@ -126,15 +126,15 @@
                                     <div class="space-y-2">
                                         <div class="flex justify-between items-center text-[11px]">
                                             <span class="text-white/50 italic">Start</span>
-                                            <span class="text-white/80 font-mono">{{ fleet.departure_time }}</span>
+                                            <span class="text-white/80 font-mono">{{ fleet.departure_time|date:"m.d H:i:s" }}</span>
                                         </div>
                                         <div class="flex justify-between items-center text-[11px]">
                                             <span class="text-white/50 italic">Osiągnięcie celu</span>
-                                            <span class="text-accent-cyan font-mono">{{ fleet.arrival_time }}</span>
+                                            <span class="text-accent-cyan font-mono">{{ fleet.arrival_time|date:"m.d H:i:s" }}</span>
                                         </div>
                                         <div class="flex justify-between items-center text-[11px]">
                                             <span class="text-white/50 italic">Powrót</span>
-                                            <span class="text-accent-orange font-mono">{{ fleet.return_time }}</span>
+                                            <span class="text-accent-orange font-mono">{{ fleet.return_time|date:"m.d H:i:s" }}</span>
                                         </div>
                                     </div>
                                 </div>

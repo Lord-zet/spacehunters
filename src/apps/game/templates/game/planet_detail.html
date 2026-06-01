@@ -68,17 +68,17 @@
                             <th class="p-4">Pochodzenie</th>
                             <th class="p-4">Cel</th>
                             <th class="p-4">Statki</th>
-                            <th class="p-4">Czas</th>
+                            <th class="p-4">ETA</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for fleet in active_fleets %}
                         <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
-                            <td class="p-4 text-accent-cyan font-bold">Transport</td>
+                            <td class="p-4 text-accent-cyan font-bold">{{ fleet.get_mission_type_display }}</td>
                             <td class="p-4">{{ fleet.source_planet.name }}</td>
                             <td class="p-4">{{ fleet.target_planet.name }}</td>
                             <td class="p-4">{{ fleet.transporter_count }}</td>
-                            <td class="p-4 text-accent-orange font-bold">{{ fleet.return_time }}</td>
+                            <td class="p-4 text-accent-orange font-bold">{{ fleet.next_event_at|date:"m.d H:i:s"|default:"—" }}</td>
                         </tr>
                         {% empty %}
                         <tr>

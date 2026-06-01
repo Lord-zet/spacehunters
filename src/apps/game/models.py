@@ -62,6 +62,15 @@ class Planet(models.Model):
         ship = self.ships.filter(ship_code="transporter").first()
         return ship.quantity if ship else 0
 
+    def get_ship_quantity(self, ship_code: str) -> int:
+        ship = self.ships.filter(ship_code=ship_code).first()
+        return ship.quantity if ship else 0
+
+    def get_ship_construction(self):
+        if hasattr(self, "ship_construction"):
+            return self.ship_construction
+        return PlanetShipConstruction.objects.create(planet=self)
+
     def __str__(self):
         return self.name
 
@@ -141,6 +150,31 @@ class PlanetShip(models.Model):
 
     def __str__(self):
         return f"{self.planet_id}:{self.ship_code}={self.quantity}"
+
+
+class PlanetShipConstruction(models.Model):
+    planet = models.OneToOneField(
+        Planet,
+        on_delete=models.CASCADE,
+        related_name="ship_construction",
+    )
+    ship_code = models.CharField(max_length=50, blank=True, default="")
+    quantity = models.PositiveIntegerField(default=0)
+    started_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+
+    def is_in_progress(self, *, at=None):
+        now = at or timezone.now()
+        return bool(self.ship_code) and self.ends_at is not None and self.ends_at > now
+
+    def clear(self):
+        self.ship_code = ""
+        self.quantity = 0
+        self.started_at = None
+        self.ends_at = None
+
+    def __str__(self):
+        return f"ShipConstruction<{self.planet_id}>"
 
 
 class Fleet(models.Model):

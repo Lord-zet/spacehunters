@@ -47,4 +47,10 @@ BUILDINGS = {
         "base_cost": {"metal": 160, "crystal": 120},
         "build_time": 90,
     },
+    "shipyard": {
+        "level_field": "shipyard_level",
+        "base_cost": {"metal": 400, "crystal": 200},
+        "build_time": 180,
+        "build_time_multiplier": 1.4,
+    },
 }

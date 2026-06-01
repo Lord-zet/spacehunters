@@ -78,6 +78,7 @@ class PlanetBuildings(models.Model):
     metal_storage_level = models.PositiveIntegerField(default=1)
     crystal_storage_level = models.PositiveIntegerField(default=1)
     helion_storage_level = models.PositiveIntegerField(default=0)
+    shipyard_level = models.PositiveIntegerField(default=0)
     building_type = models.CharField(max_length=50, blank=True, default="")
     building_ends_at = models.DateTimeField(null=True, blank=True)
 

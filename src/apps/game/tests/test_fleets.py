@@ -25,6 +25,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             position=1,
             metal=5000,
             crystal=3000,
+            helion=500,
             transporter_count=10,
             last_resource_update=now,
         )
@@ -79,6 +80,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             name="Earth",
             metal=5000,
             crystal=3000,
+            helion=500,
             transporter_count=10,
         )
 
@@ -108,6 +110,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             name="Earth",
             metal=5000,
             crystal=3000,
+            helion=500,
             transporter_count=2,
         )
         target_planet = self.create_planet(
@@ -145,6 +148,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             name="Earth",
             metal=100,
             crystal=50,
+            helion=500,
             transporter_count=10,
         )
         target_planet = self.create_planet(
@@ -182,6 +186,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             name="Earth",
             metal=10000,
             crystal=10000,
+            helion=500,
             transporter_count=1,
         )
         target_planet = self.create_planet(
@@ -224,6 +229,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             position=1,
             metal=5000,
             crystal=3000,
+            helion=500,
             transporter_count=7,
             last_resource_update=now,
         )
@@ -286,6 +292,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             position=1,
             metal=5000,
             crystal=3000,
+            helion=500,
             transporter_count=7,
             last_resource_update=now,
         )
@@ -341,6 +348,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             position=1,
             metal=5000,
             crystal=3000,
+            helion=500,
             transporter_count=7,
             last_resource_update=now,
         )
@@ -401,6 +409,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             position=1,
             metal=5000,
             crystal=3000,
+            helion=500,
             transporter_count=7,
             last_resource_update=now,
         )

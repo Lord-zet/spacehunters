@@ -32,7 +32,7 @@ without relying on external background workers (like Celery).
 
 ### Resource Production
 
-* Resources (metal, crystal) are generated continuously based on building levels.
+* Resources are generated continuously based on building levels.
 * The system calculates resource changes on demand using timestamps and the previous state, ensuring high performance and simplified infrastructure.
 
 ### Building System
@@ -43,7 +43,7 @@ without relying on external background workers (like Celery).
 
 ### Fleet System
 
-* Transport fleets between owned or neutral planets.
+* Transport fleets between owned planets.
 * Real-time validation of cargo capacity and resource availability.
 * Travel time is calculated based on distance between coordinates.
 * Missions (arrival, resource transfer, return) are resolved based on arrival timestamps.
@@ -163,12 +163,6 @@ The application will be available at: [http://127.0.0.1:8000/](http://127.0.0.1:
 * Deterministic Simulation: All game states are calculated based on time deltas, ensuring consistency without cron jobs.
 * Service Layer Pattern: Business logic is encapsulated in a dedicated service layer, keeping models focused on data and views focused on request handling.
 * Server-side Validation: All game actions (building, moving fleets) are strictly validated on the server.
-
-### Project Structure
-
-* `models.py` — Core domain models (Planet, Fleet, Resources) using a "fat models" approach where appropriate for data integrity.
-* `services.py` — Service Layer handling complex business logic such as fleet mission resolution and production math.
-* `views.py` — Thin controllers handling routing and template rendering.
 
 
 ## Contribution policy

@@ -13,6 +13,7 @@ from apps.game.domain.exceptions import (
     NotEnoughTransportersError,
     SamePlanetTransportError,
     NotEnoughFuelError,
+    InvalidStationingTargetError,
 )
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.ships import SHIPS
@@ -85,38 +86,68 @@ def has_enough_helion_for_flight(planet, helion_cost: int) -> bool:
     return planet.helion >= helion_cost
 
 
+def ensure_planet_has_enough_ships(planet, ship_quantities: dict[str, int]) -> None:
+    transporter_count = ship_quantities.get(TRANSPORTER_CODE, 0)
+
+    if transporter_count <= 0:
+        raise FleetError("Liczba transportowców musi być większa od zera.")
+
+    transporter = get_planet_ship(planet, TRANSPORTER_CODE)
+    if transporter.quantity < transporter_count:
+        raise NotEnoughTransportersError("Nie masz wystarczającej liczby transportowców.")
+
+
+def deduct_planet_ships(planet, ship_quantities: dict[str, int]) -> None:
+    for ship_code, quantity in ship_quantities.items():
+        if quantity <= 0:
+            continue
+        planet_ship = get_planet_ship(planet, ship_code)
+        planet_ship.quantity -= quantity
+        planet_ship.save(update_fields=["quantity"])
+
+
+def create_fleet_ships(fleet, ship_quantities: dict[str, int]) -> None:
+    fleet_ships = [
+        FleetShip(
+            fleet=fleet,
+            ship_code=ship_code,
+            quantity=quantity,
+        )
+        for ship_code, quantity in ship_quantities.items()
+        if quantity > 0
+    ]
+    FleetShip.objects.bulk_create(fleet_ships)
+
+
 @transaction.atomic
-def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, user):
+def _send_fleet_mission(
+    source_planet,
+    target_planet,
+    ship_quantities: dict[str, int],
+    metal: int,
+    crystal: int,
+    user,
+    mission_type: str,
+):
     now = timezone.now()
 
     source_planet = Planet.objects.select_for_update().get(pk=source_planet.pk)
     target_planet = Planet.objects.select_for_update().get(pk=target_planet.pk)
-
-    transporter = (
-        PlanetShip.objects.select_for_update()
-        .filter(planet=source_planet, ship_code=TRANSPORTER_CODE)
-        .first()
-    )
-    if transporter is None:
-        transporter = PlanetShip.objects.create(
-            planet=source_planet,
-            ship_code=TRANSPORTER_CODE,
-            quantity=0,
-        )
 
     synchronize_resources(source_planet, at=now, save=False)
 
     if source_planet.id == target_planet.id:
         raise SamePlanetTransportError("Nie można wysłać floty na tę samą planetę.")
 
-    if transporter_count <= 0:
-        raise FleetError("Liczba transportowców musi być większa od zera.")
-
     if metal < 0 or crystal < 0:
         raise FleetError("Nie można wysłać ujemnej ilości surowców.")
 
-    if transporter.quantity < transporter_count:
-        raise NotEnoughTransportersError("Nie masz wystarczającej liczby transportowców.")
+    if mission_type == Fleet.MissionType.STATION and source_planet.owner_id != target_planet.owner_id:
+        raise InvalidStationingTargetError("Misja stacjonowania jest możliwa tylko na własną planetę.")
+
+    ensure_planet_has_enough_ships(source_planet, ship_quantities)
+
+    transporter_count = ship_quantities.get(TRANSPORTER_CODE, 0)
 
     if not has_enough_resources_for_transport(source_planet, metal, crystal):
         raise NotEnoughResourcesError("Nie masz wystarczających zasobów.")
@@ -124,9 +155,6 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     if not can_carry_resources(transporter_count, metal, crystal):
         raise CargoCapacityExceededError("Ładunek nie mieści się w pojemności transportowców.")
 
-    ship_quantities = {
-        TRANSPORTER_CODE: transporter_count,
-    }
     helion_cost = calculate_helion_cost_for_flight(
         source_planet,
         target_planet,
@@ -136,19 +164,17 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
     if not has_enough_helion_for_flight(source_planet, helion_cost):
         raise NotEnoughFuelError("Nie masz wystarczającej ilości helionu na lot.")
 
-    transporter.quantity -= transporter_count
+    deduct_planet_ships(source_planet, ship_quantities)
     source_planet.metal -= metal
     source_planet.crystal -= crystal
     source_planet.helion -= helion_cost
-
-    transporter.save(update_fields=["quantity"])
     source_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
 
     flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet)
     flight_duration = timedelta(seconds=flight_time_seconds)
 
     arrival_time = now + flight_duration
-    return_time = arrival_time + flight_duration
+    return_time = arrival_time + flight_duration if mission_type == Fleet.MissionType.TRANSPORT else None
 
     fleet = Fleet.objects.create(
         owner=user,
@@ -157,20 +183,40 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
         metal=metal,
         crystal=crystal,
         helion_cost=helion_cost,
-        mission_type=Fleet.MissionType.TRANSPORT,
+        mission_type=mission_type,
         status=Fleet.Status.OUTBOUND,
         departure_time=now,
         arrival_time=arrival_time,
         return_time=return_time,
     )
 
-    FleetShip.objects.create(
-        fleet=fleet,
-        ship_code=TRANSPORTER_CODE,
-        quantity=transporter_count,
-    )
+    create_fleet_ships(fleet, ship_quantities)
 
     return fleet
+
+
+def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, user):
+    return _send_fleet_mission(
+        source_planet=source_planet,
+        target_planet=target_planet,
+        ship_quantities={TRANSPORTER_CODE: transporter_count},
+        metal=metal,
+        crystal=crystal,
+        user=user,
+        mission_type=Fleet.MissionType.TRANSPORT,
+    )
+
+
+def send_stationing_fleet(source_planet, target_planet, transporter_count, metal, crystal, user):
+    return _send_fleet_mission(
+        source_planet=source_planet,
+        target_planet=target_planet,
+        ship_quantities={TRANSPORTER_CODE: transporter_count},
+        metal=metal,
+        crystal=crystal,
+        user=user,
+        mission_type=Fleet.MissionType.STATION,
+    )
 
 
 @transaction.atomic
@@ -197,10 +243,35 @@ def process_fleets_for_user(user, *, at=None):
         target_planet.crystal += fleet.crystal
         target_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
 
-        fleet.metal = 0
-        fleet.crystal = 0
-        fleet.status = Fleet.Status.RETURNING
-        fleet.save(update_fields=["metal", "crystal", "status"])
+        if fleet.mission_type == Fleet.MissionType.TRANSPORT:
+            fleet.metal = 0
+            fleet.crystal = 0
+            fleet.status = Fleet.Status.RETURNING
+            fleet.save(update_fields=["metal", "crystal", "status"])
+            continue
+
+        if fleet.mission_type == Fleet.MissionType.STATION:
+            for fleet_ship in fleet.ships.all():
+                target_ship = PlanetShip.objects.select_for_update().filter(
+                    planet=target_planet,
+                    ship_code=fleet_ship.ship_code,
+                ).first()
+
+                if target_ship is None:
+                    target_ship = PlanetShip.objects.create(
+                        planet=target_planet,
+                        ship_code=fleet_ship.ship_code,
+                        quantity=0,
+                    )
+
+                target_ship.quantity += fleet_ship.quantity
+                target_ship.save(update_fields=["quantity"])
+
+            fleet.metal = 0
+            fleet.crystal = 0
+            fleet.status = Fleet.Status.COMPLETED
+            fleet.return_time = None
+            fleet.save(update_fields=["metal", "crystal", "status", "return_time"])
 
     returning_fleets = (
         Fleet.objects
@@ -218,20 +289,21 @@ def process_fleets_for_user(user, *, at=None):
         source_planet = Planet.objects.select_for_update().get(pk=fleet.source_planet_id)
         synchronize_resources(source_planet, at=now, save=False)
 
-        transporter = (
-            PlanetShip.objects.select_for_update()
-            .filter(planet=source_planet, ship_code=TRANSPORTER_CODE)
-            .first()
-        )
-        if transporter is None:
-            transporter = PlanetShip.objects.create(
+        for fleet_ship in fleet.ships.all():
+            source_ship = PlanetShip.objects.select_for_update().filter(
                 planet=source_planet,
-                ship_code=TRANSPORTER_CODE,
-                quantity=0,
-            )
+                ship_code=fleet_ship.ship_code,
+            ).first()
 
-        transporter.quantity += get_fleet_ship_quantity(fleet, TRANSPORTER_CODE)
-        transporter.save(update_fields=["quantity"])
+            if source_ship is None:
+                source_ship = PlanetShip.objects.create(
+                    planet=source_planet,
+                    ship_code=fleet_ship.ship_code,
+                    quantity=0,
+                )
+
+            source_ship.quantity += fleet_ship.quantity
+            source_ship.save(update_fields=["quantity"])
 
         source_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
 

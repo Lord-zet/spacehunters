@@ -40,3 +40,7 @@ class CargoCapacityExceededError(FleetError):
 
 class NotEnoughFuelError(DomainError):
     pass
+
+
+class InvalidStationingTargetError(DomainError):
+    pass

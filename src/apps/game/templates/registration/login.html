@@ -84,6 +84,75 @@
                 <span class="text-[8px] text-accent-cyan/50 animate-pulse font-scifi">SECURE LINE 01</span>
             </div>
 
+            {% if messages or form.non_field_errors or form.errors %}
+            <div class="space-y-2 mb-6">
+                <!-- Standardowe powiadomienia Django Messages (np. przekierowanie z komunikatem) -->
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="p-3 border-l-2 bg-black/40 flex items-center space-x-3 rounded-r transition-all
+                        {% if message.tags == 'success' %}border-emerald-500/80 text-emerald-400 bg-emerald-950/10
+                        {% elif message.tags == 'error' %}border-red-500/80 text-red-400 bg-red-950/10
+                        {% else %}border-accent-cyan/80 text-accent-cyan bg-cyan-950/10{% endif %}">
+
+                        <!-- Dioda statusu -->
+                        <div class="flex-shrink-0">
+                            {% if message.tags == 'success' %}
+                                <span class="flex w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            {% elif message.tags == 'error' %}
+                                <span class="flex w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                            {% else %}
+                                <span class="flex w-2 h-2 rounded-full bg-accent-cyan animate-pulse"></span>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[12px] uppercase tracking-wider opacity-60">
+                                {% if message.tags == 'success' %}Status: Autoryzacja pomyślna
+                                {% elif message.tags == 'error' %}Błąd systemu autoryzacji
+                                {% else %}Komunikat terminala{% endif %}
+                            </p>
+                            <p class="text-[11px] font-sans text-white/95 leading-tight">{{ message }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Błędy ogólne wbudowanego formularza Django (np. błędne hasło/login) -->
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                    <div class="p-3 border-l-2 bg-black/40 flex items-center space-x-3 rounded-r transition-all border-red-500/80 text-red-400 bg-red-950/10">
+                        <div class="flex-shrink-0">
+                            <span class="flex w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[12px] uppercase tracking-wider opacity-60">System ochrony bazy</p>
+                            <p class="text-[11px] font-sans text-white/95 leading-tight">{{ error }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Błędy konkretnych pól (np. brakujące dane, gdyby HTML5 był pominięty) -->
+                {% if form.errors and not form.non_field_errors %}
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                        <div class="p-3 border-l-2 bg-black/40 flex items-center space-x-3 rounded-r transition-all border-red-500/80 text-red-400 bg-red-950/10">
+                            <div class="flex-shrink-0">
+                                <span class="flex w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[12px] uppercase tracking-wider opacity-60">Ostrzeżenie pola: {{ field|capfirst }}</p>
+                                <p class="text-[11px] font-sans text-white/95 leading-tight">{{ error }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+            {% endif %}
+
             <form method="POST" class="space-y-6">
                 {% csrf_token %}
                 
@@ -112,16 +181,6 @@
                 </div>
             </form>
 
-            <!-- Błędy logowania -->
-            {% if messages %}
-                <div class="mt-4 space-y-2">
-                    {% for message in messages %}
-                        <p class="text-[10px] text-red-400 text-center uppercase tracking-tighter italic">
-                            Error: {{ message }}
-                        </p>
-                    {% endfor %}
-                </div>
-            {% endif %}
         </div>
 
         <!-- STOPKA LOGOWANIA -->

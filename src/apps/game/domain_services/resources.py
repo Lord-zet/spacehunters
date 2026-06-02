@@ -56,8 +56,7 @@ def get_storage_capacity(planet, resource: str) -> int:
     }
     level = storage_levels.get(resource, 0)
 
-    base_capacity = 5000
-    return int(base_capacity * (1.5 ** level))
+    return get_storage_capacity_for_level(level)
 
 
 def get_production_per_hour(planet) -> dict:

@@ -5,6 +5,20 @@ from ..buildings import BUILDINGS
 
 RESOURCE_FIELDS = ("metal", "crystal", "helion")
 
+# Manual progression for early storage levels to keep UI values clean and game balance readable.
+PRETTY_STORAGE_CAPACITIES = [
+    5000,    # lvl 0
+    10000,   # lvl 1
+    15000,   # lvl 2
+    30000,   # lvl 3
+    50000,   # lvl 4
+    80000,   # lvl 5
+    120000,  # lvl 6
+    180000,  # lvl 7
+    240000,  # lvl 8
+    320000,  # lvl 9
+    450000,  # lvl 10
+]
 
 def get_storage_capacity(planet, resource: str) -> int:
     buildings = planet.get_buildings()

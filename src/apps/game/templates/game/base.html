@@ -194,7 +194,11 @@
                         Budynki
                     </a>
                 </li>
-
+                <li>
+                    <a href="{% url 'game:shipyard' pk=planet.id %}" class="flex items-center p-3 transition-colors hover:bg-white/10 rounded-lg {% if request.resolver_match.url_name == 'shipyard' %}nav-link-active{% endif %}">
+                        Stocznia
+                    </a>
+                </li>
                 <li>
                     <a href="{% url 'game:send_fleet' pk=planet.id %}" class="flex items-center p-3 transition-colors hover:bg-white/10 rounded-lg {% if request.resolver_match.url_name == 'send_fleet' %}nav-link-active{% endif %}">
                         Flota

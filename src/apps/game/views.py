@@ -6,10 +6,16 @@ from django.utils import timezone
 from .models import Planet, Fleet
 from .forms import SendFleetForm
 from .buildings import BUILDINGS
+from .ships import SHIPS
 from .domain_services.fleet import send_transport_fleet, send_stationing_fleet
 from .domain_services.buildings import start_building_upgrade, get_upgrade_cost
 from .domain_services.resources import get_production_per_hour, get_storage_capacity
 from .domain_services.sync import synchronize_planet_state, synchronize_user_state
+from .domain_services.shipyard import (
+    start_ship_construction,
+    get_ship_construction_cost,
+    get_ship_construction_time_seconds,
+)
 from apps.game.domain.exceptions import DomainError
 from .selectors import (
     get_active_fleets_for_user,
@@ -208,3 +214,64 @@ def fleet_list(request, pk):
         "now": timezone.now(),
     }
     return render(request, "game/fleet_list.html", context)
+
+
+@login_required
+def planet_shipyard(request, pk):
+    planet = get_user_planet_or_404(request.user, pk)
+
+    synchronize_user_state(request.user)
+    planet, _ = synchronize_planet_state(planet)
+
+    request.session["active_planet_id"] = planet.id
+
+    if getattr(planet, "_ship_construction_finished", False):
+        messages.success(request, "Budowa statków została zakończona.")
+
+    if request.method == "POST":
+        ship_code = request.POST.get("ship_code", "").strip()
+        quantity_raw = request.POST.get("quantity", "0").strip()
+
+        try:
+            quantity = int(quantity_raw)
+        except ValueError:
+            messages.error(request, "Nieprawidłowa liczba statków.")
+            return redirect("game:shipyard", pk=planet.pk)
+
+        try:
+            start_ship_construction(planet, ship_code, quantity)
+            messages.success(request, "Rozpoczęto budowę statków.")
+        except DomainError as e:
+            messages.error(request, str(e))
+
+        return redirect("game:shipyard", pk=planet.pk)
+
+    background = get_planet_background(planet)
+    construction = planet.get_ship_construction()
+
+    active_ship_label = ""
+    if construction.ship_code:
+        active_ship_label = SHIPS.get(construction.ship_code, {}).get("label", construction.ship_code)
+
+    shipyard_ships = {
+        code: {
+            "config": config,
+            "owned_quantity": planet.get_ship_quantity(code),
+            "unit_cost": get_ship_construction_cost(code, 1),
+            "unit_build_time": get_ship_construction_time_seconds(code, 1),
+        }
+        for code, config in SHIPS.items()
+    }
+
+    context = {
+        "planet": planet,
+        "planet_buildings": planet.get_buildings(),
+        "background": background,
+        "storage_capacities": get_storage_capacities(planet),
+        "field_usage": get_planet_field_usage(planet),
+        "shipyard_ships": shipyard_ships,
+        "ship_construction": construction,
+        "ship_construction_in_progress": construction.is_in_progress(),
+        "active_ship_label": active_ship_label,
+    }
+    return render(request, "game/shipyard.html", context)

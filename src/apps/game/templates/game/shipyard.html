@@ -1,0 +1,137 @@
+{% extends "game/base.html" %}
+{% load time_extras %}
+
+{% block title %}Stocznia | {{ planet.name }}{% endblock %}
+
+{% block content %}
+
+
+{% if planet_buildings.shipyard_level < 1 %}
+    <div class="warning">
+        <div class="glass-panel p-4 text-[14px] text-white/50 text-left border-r-2 border-accent-orange uppercase tracking-widest">
+            Musisz najpierw wybudować stocznię.
+        </div>
+    </div>
+
+{% else %}
+
+    <div class="max-w-5xl mx-auto space-y-6 font-mono text-white">
+
+        <!-- NAGŁÓWEK SEKCJI -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="font-scifi text-2xl text-accent-cyan tracking-widest uppercase">Stocznia orbitalna</h2>
+                <p class="text-xs text-white/40 uppercase tracking-tight">Konstrukcja eskadr bojowych oraz flot transportowych</p>
+            </div>
+            <div class="text-right">
+                <span class="text-[10px] block text-white/30 uppercase">Wydajność produkcyjna</span>
+                <span class="text-lg text-accent-cyan">100%</span>
+            </div>
+        </div>
+
+        <!-- PANEL STATUSU PRODUKCJI STOCZNI -->
+        <div class="glass-panel border-l-4 border-accent-cyan p-4 flex items-center justify-between overflow-hidden relative">
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full border-2 border-accent-cyan/20 flex items-center justify-center">
+                        {% if ship_construction_in_progress %}
+                            <div class="w-6 h-6 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin"></div>
+                        {% else %}
+                            <div class="w-6 h-6 border-2 border-white/20 rounded-full flex items-center justify-center">
+                                <div class="w-2 h-2 bg-white/20 rounded-full"></div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[10px] text-white/40 uppercase tracking-widest">Status Linii Produkcyjnej</p>
+                    <h3 class="text-sm font-scifi uppercase">
+                        {% if ship_construction_in_progress %}
+                            W budowie: <span class="text-accent-cyan">{{ active_ship_label }} [ {{ ship_construction.quantity }} szt. ]</span>
+                        {% else %}
+                            <span class="text-white/60">Brak aktywnych zleceń produkcyjnych</span>
+                        {% endif %}
+                    </h3>
+                </div>
+            </div>
+
+            {% if ship_construction_in_progress %}
+            <div class="text-right">
+                <p class="text-[10px] text-white/40 uppercase tracking-widest">Pozostały czas</p>
+                <p class="text-sm font-scifi text-accent-orange">{{ ship_construction.ends_at|time_remaining }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Dekoracyjne tło dla panelu -->
+            <div class="absolute right-0 top-0 h-full w-32 bg-gradient-to-l from-accent-cyan/5 to-transparent pointer-events-none"></div>
+        </div>
+
+        <!-- GŁÓWNY PANEL STATKÓW -->
+        <div class="glass-panel hud-border p-1">
+            <div class="divide-y divide-white/10">
+
+            {% for ship_code, item in shipyard_ships.items %}
+
+                    <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
+                        <!-- Miniatura -->
+                        <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+                            <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=200" alt="Transporter" class="w-full h-full object-cover">
+                            <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[11px] px-1 font-bold">Posiadane: {{ item.owned_quantity }}</span>
+                        </div>
+
+                        <!-- Opis i Dane -->
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-lg font-scifi text-white uppercase tracking-wider">{{ item.config.label }}</h3>
+                                <p class="text-xs text-white/60 mt-1 leading-relaxed">...</p>
+                            </div>
+
+                            <form action="{% url 'game:shipyard' pk=planet.pk %}" method="POST" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
+                                {% csrf_token %}
+                                <div>
+                                    <p class="text-[10px] text-white/40 uppercase mb-1">Koszt jedn.</p>
+                                    <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ item.unit_cost.metal|default:0 }}</span> | K: <span class="text-white">{{ item.unit_cost.crystal|default:0 }}</span> | H: <span class="text-white">{{ item.unit_cost.helion|default:0 }}</span></p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-white/40 uppercase mb-1">Czas produkcji</p>
+                                    <p class="text-xs text-accent-cyan font-mono">{{ item.unit_build_time|format_duration }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-white/40 uppercase mb-1">Ilość</p>
+                                    <input type="hidden" name="ship_code" value="{{ ship_code }}">
+                                    <input type="number" name="quantity" min="1" value="1"
+                                           class="w-full md:w-24 bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-center focus:border-accent-cyan outline-none transition-all">
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="w-full md:w-auto bg-accent-cyan/10 hover:bg-accent-cyan/30 border border-accent-cyan/50 text-accent-cyan px-6 py-1 text-xs uppercase font-scifi transition-all hover:scale-105 active:scale-95"
+                                            {% if ship_construction_in_progress or planet_buildings.shipyard_level < item.config.required_shipyard_level %}
+                                                disabled
+                                            {% endif %}>
+                                        Zleć budowę
+                                    </button>
+
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+            {% endfor %}
+
+            </div>
+        </div>
+
+        <!-- PANEL INFORMACYJNY (DOLNY) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="glass-panel p-4 text-[11px] text-white/50 italic border-l-2 border-accent-cyan">
+                * Konstrukcja floty przebiega sekwencyjnie. Wyższy poziom Stoczni skraca czas montażu kadłubów.
+            </div>
+            <div class="glass-panel p-4 text-[11px] text-white/50 text-right border-r-2 border-accent-orange uppercase tracking-widest">
+                Logistyka wojskowa: <span class="text-accent-cyan">Gotowość operacyjna</span>
+            </div>
+        </div>
+    </div>
+
+{% endif %}
+
+{% endblock %}

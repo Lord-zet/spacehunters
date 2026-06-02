@@ -11,6 +11,7 @@ class PlanetTestMixin:
         "metal_storage_level",
         "crystal_storage_level",
         "helion_storage_level",
+        "shipyard_level",
         "building_type",
         "building_ends_at",
     }
@@ -47,6 +48,7 @@ class PlanetTestMixin:
             "metal_storage_level": 10,
             "crystal_storage_level": 10,
             "helion_storage_level": 0,
+            "shipyard_level": 0,
             "building_type": "",
             "building_ends_at": None,
         }

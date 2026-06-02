@@ -73,10 +73,14 @@
                         <p class="text-xs text-white/60 mt-1 leading-relaxed">Głębokie odwierty w skorupie planety pozwalające na wydobycie podstawowych rud żelaza niezbędnych do budowy floty i struktur.</p>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
                             <p class="text-sm text-white">+{{ production.metal|default:"0" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.metal_mine|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
@@ -111,10 +115,14 @@
                         <p class="text-xs text-white/60 mt-1 leading-relaxed">Kryształy są głównym nośnikiem energii w obwodach elektronicznych. Wydobywane z rzadkich formacji kwarcowych.</p>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
                             <p class="text-sm text-white">+{{ production.crystal|default:"0" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.crystal_mine|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
@@ -149,10 +157,14 @@
                         <p class="text-xs text-white/60 mt-1 leading-relaxed">Helion jest paliwem wykorzystywanym przez wszystkie statki.</p>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
                             <p class="text-sm text-white">+{{ production.helion|default:"0" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.helion_synthesizer|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
@@ -187,10 +199,14 @@
                         <p class="text-xs text-white/60 mt-1 leading-relaxed">Ogromne silosy przeznaczone do bezpiecznego przechowywania rudy. Zwiększa limit maksymalnego składowania metalu.</p>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
                             <p class="text-sm text-white">{{ storage_capacities.metal|default:"0" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.metal_storage|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
@@ -225,10 +241,14 @@
                         <p class="text-xs text-white/60 mt-1 leading-relaxed">Termicznie izolowane komory chroniące strukturę krystaliczną przed degradacją spowodowaną wahaniami temperatur.</p>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
                             <p class="text-sm text-white">{{ storage_capacities.crystal|default:"5.000" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.crystal_storage|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
@@ -263,10 +283,14 @@
                         <p class="text-xs text-white/60 mt-1 leading-relaxed">Specjalne zbiorniki przystosowane do magazynowania ciekłego paliwa.</p>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
                             <p class="text-sm text-white">{{ storage_capacities.helion|default:"5.000" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.helion_storage|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
@@ -302,10 +326,14 @@
                         <p class="text-xs text-white/60 mt-1 leading-relaxed">Stocznia umożliwa budowę wszelkiego rodzaju statków - od transporterów po okręty wojenne.</p>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-white/5 pt-4">
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase"></p>
                             <p class="text-sm text-white"></p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.shipyard|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>

@@ -8,7 +8,7 @@ from .forms import SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
 from .domain_services.fleet import send_transport_fleet, send_stationing_fleet
-from .domain_services.buildings import start_building_upgrade, get_upgrade_cost
+from .domain_services.buildings import start_building_upgrade, get_upgrade_cost, get_upgrade_time
 from .domain_services.resources import get_production_per_hour, get_storage_capacity
 from .domain_services.sync import synchronize_planet_state, synchronize_user_state
 from .domain_services.shipyard import (
@@ -107,6 +107,10 @@ def planet_buildings(request, pk):
         name: get_upgrade_cost(planet, name)
         for name in BUILDINGS.keys()
     }
+    building_time = {
+        name: get_upgrade_time(planet, name)
+        for name in BUILDINGS.keys()
+    }
 
     background = get_planet_background(planet)
 
@@ -119,6 +123,7 @@ def planet_buildings(request, pk):
         "background": background,
         "storage_capacities": get_storage_capacities(planet),
         "field_usage": get_planet_field_usage(planet),
+        "building_time": building_time,
     }
     return render(request, "game/buildings.html", context)
 

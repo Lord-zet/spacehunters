@@ -2,6 +2,8 @@ from django.contrib.auth.forms import AuthenticationForm
 from django import forms
 from .models import Planet, Fleet
 
+from .ships import SHIPS
+
 
 TAILWIND_INPUT = (
     "w-full bg-black/40 border border-white/10 rounded px-4 py-3 text-sm "
@@ -105,3 +107,21 @@ class SendFleetForm(forms.Form):
 
     def clean_crystal_to_send(self):
         return self.cleaned_data.get("crystal_to_send") or 0
+
+
+class ShipConstructionForm(forms.Form):
+    ship_code = forms.ChoiceField(
+        label="Ship"
+    )
+    quantity = forms.IntegerField(
+        min_value=1,
+        label="Quantity"
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["ship_code"].choices = [
+            (code, config["label"])
+            for code, config in SHIPS.items()
+        ]

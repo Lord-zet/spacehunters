@@ -10,6 +10,9 @@ SHIPS = {
         "fuel_burn": 10,
         "build_time": 120,
         "required_shipyard_level": 1,
+        "description": ""
+                       "Szybki, lekko opancerzony statek transportowy. Optymalny do transportu "
+                       "ładunku między skolonizowanymi światami.",
         "base_cost": {
             "metal": 2000,
             "crystal": 1000,

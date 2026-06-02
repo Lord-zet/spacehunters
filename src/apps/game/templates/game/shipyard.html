@@ -76,7 +76,7 @@
                         <!-- Miniatura -->
                         <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                            <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=200" alt="Transporter" class="w-full h-full object-cover">
+                            <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=200" alt="{{ item.config.label }}" class="w-full h-full object-cover">
                             <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[11px] px-1 font-bold">Posiadane: {{ item.owned_quantity }}</span>
                         </div>
 
@@ -84,7 +84,7 @@
                         <div class="flex-1 flex flex-col justify-between">
                             <div>
                                 <h3 class="text-lg font-scifi text-white uppercase tracking-wider">{{ item.config.label }}</h3>
-                                <p class="text-xs text-white/60 mt-1 leading-relaxed">...</p>
+                                <p class="text-xs text-white/60 mt-1 leading-relaxed">{{ item.config.description }}</p>
                             </div>
 
                             <form action="{% url 'game:shipyard' pk=planet.pk %}" method="POST" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">

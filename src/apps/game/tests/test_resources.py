@@ -6,6 +6,7 @@ from apps.game.domain_services.resources import (
     synchronize_resources,
     get_production_per_hour,
     get_storage_capacity,
+    get_storage_capacity_for_level,
 )
 from .helpers import PlanetTestMixin
 
@@ -156,3 +157,34 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
         self.assertEqual(fresh_planet.metal, 500)
         self.assertEqual(fresh_planet.crystal, 200)
         self.assertEqual(fresh_planet.last_resource_update, start_time)
+
+
+class StorageCapacityTests(PlanetTestMixin, TestCase):
+    def test_storage_capacity_for_early_levels_uses_pretty_table(self):
+        self.assertEqual(get_storage_capacity_for_level(0), 5000)
+        self.assertEqual(get_storage_capacity_for_level(1), 10000)
+        self.assertEqual(get_storage_capacity_for_level(2), 15000)
+        self.assertEqual(get_storage_capacity_for_level(3), 30000)
+        self.assertEqual(get_storage_capacity_for_level(8), 240000)
+
+    def test_storage_capacity_for_higher_levels_uses_nice_rounded_values(self):
+        capacity = get_storage_capacity_for_level(15)
+
+        self.assertGreater(capacity, 0)
+        self.assertIsInstance(capacity, int)
+
+    def test_storage_capacity_is_monotonically_increasing(self):
+        capacities = [get_storage_capacity_for_level(level) for level in range(20)]
+
+        self.assertEqual(capacities, sorted(capacities))
+
+    def test_get_storage_capacity_uses_building_level_for_resource_type(self):
+        planet = self.create_planet(
+            metal_storage_level=3,
+            crystal_storage_level=2,
+            helion_storage_level=1,
+        )
+
+        self.assertEqual(get_storage_capacity(planet, "metal"), get_storage_capacity_for_level(3))
+        self.assertEqual(get_storage_capacity(planet, "crystal"), get_storage_capacity_for_level(2))
+        self.assertEqual(get_storage_capacity(planet, "helion"), get_storage_capacity_for_level(1))

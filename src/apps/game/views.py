@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 
 from .models import Planet, Fleet
-from .forms import SendFleetForm
+from .forms import SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
 from .domain_services.fleet import send_transport_fleet, send_stationing_fleet
@@ -229,22 +229,22 @@ def planet_shipyard(request, pk):
         messages.success(request, "Budowa statków została zakończona.")
 
     if request.method == "POST":
-        ship_code = request.POST.get("ship_code", "").strip()
-        quantity_raw = request.POST.get("quantity", "0").strip()
+        form = ShipConstructionForm(request.POST)
 
-        try:
-            quantity = int(quantity_raw)
-        except ValueError:
-            messages.error(request, "Nieprawidłowa liczba statków.")
-            return redirect("game:shipyard", pk=planet.pk)
+        if form.is_valid():
+            ship_code = form.cleaned_data["ship_code"]
+            quantity = form.cleaned_data["quantity"]
 
-        try:
-            start_ship_construction(planet, ship_code, quantity)
-            messages.success(request, "Rozpoczęto budowę statków.")
-        except DomainError as e:
-            messages.error(request, str(e))
-
-        return redirect("game:shipyard", pk=planet.pk)
+            try:
+                start_ship_construction(planet, ship_code, quantity)
+                messages.success(request, "Rozpoczęto budowę statków.")
+                return redirect("game:shipyard", pk=planet.pk)
+            except DomainError as e:
+                messages.error(request, str(e))
+        else:
+            messages.error(request, "Popraw błędy w formularzu.")
+    else:
+        form = ShipConstructionForm()
 
     background = get_planet_background(planet)
     construction = planet.get_ship_construction()
@@ -273,5 +273,6 @@ def planet_shipyard(request, pk):
         "ship_construction": construction,
         "ship_construction_in_progress": construction.is_in_progress(),
         "active_ship_label": active_ship_label,
+        "form": form,
     }
     return render(request, "game/shipyard.html", context)

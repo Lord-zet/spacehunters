@@ -20,6 +20,32 @@ PRETTY_STORAGE_CAPACITIES = [
     450000,  # lvl 10
 ]
 
+NICE_MANTISSAS = [1.0, 1.2, 1.5, 2.0, 2.4, 3.0, 4.0, 5.0, 6.0, 7.5, 8.0, 10.0]
+
+
+def round_up_to_nice_number(value: float) -> int:
+    if value <= 0:
+        return 0
+
+    magnitude = 10 ** (len(str(int(value))) - 1)
+    normalized = value / magnitude
+
+    for mantissa in NICE_MANTISSAS:
+        if normalized <= mantissa:
+            return int(mantissa * magnitude)
+
+    return int(10 * magnitude)
+
+
+def get_storage_capacity_for_level(level: int) -> int:
+    if level < len(PRETTY_STORAGE_CAPACITIES):
+        return PRETTY_STORAGE_CAPACITIES[level]
+
+    extra_levels = level - len(PRETTY_STORAGE_CAPACITIES) + 1
+    raw_value = PRETTY_STORAGE_CAPACITIES[-1] * (1.35 ** extra_levels)
+    return round_up_to_nice_number(raw_value)
+
+
 def get_storage_capacity(planet, resource: str) -> int:
     buildings = planet.get_buildings()
 

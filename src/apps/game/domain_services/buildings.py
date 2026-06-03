@@ -69,7 +69,13 @@ def get_upgrade_cost(planet, building_name):
         return None
 
     current_level = get_building_level(planet, config)
-    return calculate_upgrade_cost(current_level, config["base_cost"])
+    growth_factor = config.get("cost_growth_factor", DEFAULT_COST_GROWTH_FACTOR)
+
+    return calculate_upgrade_cost(
+        current_level,
+        config["base_cost"],
+        growth_factor=growth_factor,
+    )
 
 
 def has_enough_resources(planet, cost):

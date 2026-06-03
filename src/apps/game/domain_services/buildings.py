@@ -25,6 +25,16 @@ EARLY_COST_MULTIPLIERS = [
 DEFAULT_COST_GROWTH_FACTOR = 1.33
 
 
+def round_building_cost(value: float) -> int:
+    if value < 1000:
+        return int(round(value))
+    if value < 10000:
+        return int(round(value / 50) * 50)
+    if value < 100000:
+        return int(round(value / 100) * 100)
+    return int(round(value / 500) * 500)
+
+
 def get_upgrade_cost_multiplier(
     next_level: int,
     growth_factor: float = DEFAULT_COST_GROWTH_FACTOR,
@@ -57,10 +67,17 @@ def calculate_upgrade_cost(
         growth_factor=growth_factor,
     )
 
-    return {
-        resource: int(round(base * level_multiplier))
-        for resource, base in base_cost.items()
-    }
+    result = {}
+
+    for resource, base in base_cost.items():
+        raw_cost = base * level_multiplier
+
+        if next_level <= len(EARLY_COST_MULTIPLIERS):
+            result[resource] = int(round(raw_cost))
+        else:
+            result[resource] = round_building_cost(raw_cost)
+
+    return result
 
 
 def get_upgrade_cost(planet, building_name):

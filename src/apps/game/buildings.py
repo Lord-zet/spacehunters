@@ -1,14 +1,20 @@
 
+def calculate_resource_production(level, base_output, exponent):
+    if level <= 0:
+        return 0
+    return int(round(base_output * (level ** exponent)))
+
+
 def metal_mine_production(level):
-    return {"metal": int(120 * level * (1.1 ** level))}
+    return {"metal": calculate_resource_production(level, 120, 1.18)}
 
 
 def crystal_mine_production(level):
-    return {"crystal": int(80 * level * (1.1 ** level))}
+    return {"crystal": calculate_resource_production(level, 80, 1.17)}
 
 
 def helion_synthesizer_production(level):
-    return {"helion": int(40 * level * (1.1 ** level))}
+    return {"helion": calculate_resource_production(level, 40, 1.16)}
 
 
 BUILDINGS = {

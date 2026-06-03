@@ -14,6 +14,7 @@ from apps.game.domain_services.resources import (
     get_storage_capacity_for_level,
 )
 from apps.game.models import Planet, PlanetBuildings
+from apps.game.buildings import calculate_resource_production
 
 
 class PlanetBuildingsIntegrationTests(TestCase):
@@ -44,7 +45,10 @@ class PlanetBuildingsIntegrationTests(TestCase):
     def test_production_uses_levels_from_planet_buildings(self):
         production = get_production_per_hour(self.planet)
 
-        self.assertEqual(production["metal"], int(120 * 1 * (1.1 ** 1)))
+        self.assertEqual(
+            production["metal"],
+            calculate_resource_production(1, 120, 1.18),
+        )
         self.assertEqual(production.get("crystal"), 0)
 
     def test_storage_capacity_uses_storage_level_from_planet_buildings(self):

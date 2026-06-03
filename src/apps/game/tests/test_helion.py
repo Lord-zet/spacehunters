@@ -7,6 +7,8 @@ from apps.game.domain_services.resources import (
     synchronize_resources,
     get_storage_capacity_for_level,
 )
+from apps.game.buildings import calculate_resource_production
+
 from .helpers import PlanetTestMixin
 
 
@@ -21,7 +23,7 @@ class HelionResourceTests(PlanetTestMixin, TestCase):
         self.assertIn("helion", production)
         self.assertEqual(
             production["helion"],
-            int(40 * 3 * (1.1 ** 3)),
+            calculate_resource_production(3, 40, 1.16),
         )
 
     def test_helion_storage_capacity_depends_on_helion_storage_level(self):

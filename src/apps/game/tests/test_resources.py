@@ -8,6 +8,8 @@ from apps.game.domain_services.resources import (
     get_storage_capacity,
     get_storage_capacity_for_level,
 )
+from apps.game.buildings import calculate_resource_production
+
 from .helpers import PlanetTestMixin
 
 
@@ -188,3 +190,53 @@ class StorageCapacityTests(PlanetTestMixin, TestCase):
         self.assertEqual(get_storage_capacity(planet, "metal"), get_storage_capacity_for_level(3))
         self.assertEqual(get_storage_capacity(planet, "crystal"), get_storage_capacity_for_level(2))
         self.assertEqual(get_storage_capacity(planet, "helion"), get_storage_capacity_for_level(1))
+
+
+class ResourceProductionProgressionTests(PlanetTestMixin, TestCase):
+    def test_calculate_resource_production_returns_zero_for_level_zero(self):
+        self.assertEqual(calculate_resource_production(0, 120, 1.18), 0)
+
+    def test_calculate_resource_production_grows_monotonically(self):
+        values = [
+            calculate_resource_production(level, 120, 1.18)
+            for level in range(1, 21)
+        ]
+
+        self.assertEqual(values, sorted(values))
+
+    def test_metal_mine_production_is_much_softer_at_high_levels(self):
+        planet = self.create_planet(
+            metal_mine_level=20,
+            crystal_mine_level=0,
+            helion_synthesizer_level=0,
+        )
+
+        production = get_production_per_hour(planet)
+
+        self.assertLess(production["metal"], 5000)
+
+    def test_mine_production_still_scales_reasonably_in_early_game(self):
+        planet_lvl_1 = self.create_planet(
+            owner=self.create_user("prod_lvl_1"),
+            is_homeland=True,
+            system=40,
+            position=1,
+            metal_mine_level=1,
+            crystal_mine_level=0,
+            helion_synthesizer_level=0,
+        )
+        planet_lvl_5 = self.create_planet(
+            owner=self.create_user("prod_lvl_5"),
+            is_homeland=True,
+            system=40,
+            position=2,
+            metal_mine_level=5,
+            crystal_mine_level=0,
+            helion_synthesizer_level=0,
+        )
+
+        prod_1 = get_production_per_hour(planet_lvl_1)["metal"]
+        prod_5 = get_production_per_hour(planet_lvl_5)["metal"]
+
+        self.assertGreater(prod_5, prod_1)
+        self.assertLess(prod_5, 1000)

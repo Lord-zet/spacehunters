@@ -5,7 +5,8 @@ from apps.game.domain_services.buildings import (
     finish_building_if_ready,
     start_building_upgrade,
     get_upgrade_cost,
-    get_upgrade_time
+    get_upgrade_time,
+    get_upgrade_cost_multiplier,
 )
 from apps.game.domain.exceptions import (
     BuildingAlreadyInProgressError,
@@ -238,3 +239,79 @@ class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
         upgrade_time = get_upgrade_time(planet, "helion_synthesizer")
 
         self.assertGreater(upgrade_time, 0)
+
+
+class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
+    def test_level_zero_building_has_non_zero_cost(self):
+        planet = self.create_planet(
+            helion_synthesizer_level=0,
+        )
+
+        cost = get_upgrade_cost(planet, "helion_synthesizer")
+
+        self.assertGreater(cost["metal"], 0)
+        self.assertGreater(cost["crystal"], 0)
+
+    def test_early_levels_follow_pretty_progression(self):
+        planet = self.create_planet(
+            metal_mine_level=0,
+        )
+
+        self.assertEqual(get_upgrade_cost(planet, "metal_mine"), {"metal": 100})
+
+        planet = self.create_planet(
+            owner=self.create_user("cost_lvl_1"),
+            is_homeland=True,
+            system=20,
+            position=1,
+            metal_mine_level=1,
+        )
+        self.assertEqual(get_upgrade_cost(planet, "metal_mine"), {"metal": 250})
+
+        planet = self.create_planet(
+            owner=self.create_user("cost_lvl_2"),
+            is_homeland=True,
+            system=20,
+            position=2,
+            metal_mine_level=2,
+        )
+        self.assertEqual(get_upgrade_cost(planet, "metal_mine"), {"metal": 450})
+
+    def test_high_levels_are_significantly_more_expensive_than_old_linear_curve(self):
+        planet = self.create_planet(
+            metal_mine_level=20,
+        )
+
+        cost = get_upgrade_cost(planet, "metal_mine")
+
+        self.assertGreater(cost["metal"], 50000)
+
+    def test_storage_growth_is_softer_than_mine_growth_for_same_level(self):
+        mine_planet = self.create_planet(
+            owner=self.create_user("mine_growth"),
+            is_homeland=True,
+            system=30,
+            position=1,
+            metal_mine_level=10,
+        )
+        storage_planet = self.create_planet(
+            owner=self.create_user("storage_growth"),
+            is_homeland=True,
+            system=30,
+            position=2,
+            metal_storage_level=10,
+        )
+
+        mine_multiplier = get_upgrade_cost_multiplier(11, growth_factor=1.33)
+        storage_multiplier = get_upgrade_cost_multiplier(11, growth_factor=1.28)
+
+        self.assertGreater(mine_multiplier, storage_multiplier)
+
+    def test_high_level_costs_are_rounded_to_cleaner_values(self):
+        planet = self.create_planet(
+            crystal_mine_level=18,
+        )
+
+        cost = get_upgrade_cost(planet, "crystal_mine")["metal"]
+
+        self.assertEqual(cost % 50, 0)

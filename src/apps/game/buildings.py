@@ -5,6 +5,14 @@ def calculate_resource_production(level, base_output, exponent):
     return int(round(base_output * (level ** exponent)))
 
 
+def make_resource_production_fn(resource, base_output, exponent):
+    def production(level):
+        return {
+            resource: calculate_resource_production(level, base_output, exponent)
+        }
+    return production
+
+
 def metal_mine_production(level):
     return {"metal": calculate_resource_production(level, 120, 1.18)}
 
@@ -24,14 +32,14 @@ BUILDINGS = {
         "build_time": 60,
         "build_time_multiplier": 1.4,
         "cost_growth_factor": 1.33,
-        "production_fn": metal_mine_production,
+        "production_fn": make_resource_production_fn("metal", 120, 1.18),
     },
     "crystal_mine": {
         "level_field": "crystal_mine_level",
         "base_cost": {"metal": 80},
         "build_time": 90,
         "cost_growth_factor": 1.33,
-        "production_fn": crystal_mine_production,
+        "production_fn": make_resource_production_fn("crystal", 80, 1.17),
     },
     "helion_synthesizer": {
         "level_field": "helion_synthesizer_level",
@@ -39,7 +47,7 @@ BUILDINGS = {
         "build_time": 120,
         "build_time_multiplier": 1.4,
         "cost_growth_factor": 1.31,
-        "production_fn": helion_synthesizer_production,
+        "production_fn": make_resource_production_fn("helion", 40, 1.16),
     },
     "metal_storage": {
         "level_field": "metal_storage_level",

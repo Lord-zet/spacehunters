@@ -14,6 +14,29 @@ from ..buildings import BUILDINGS
 from .resources import synchronize_resources, RESOURCE_FIELDS
 
 
+EARLY_COST_MULTIPLIERS = [
+    1.0,   # lvl 1
+    2.5,   # lvl 2
+    4.5,   # lvl 3
+    7.0,   # lvl 4
+    10.0,  # lvl 5
+]
+
+DEFAULT_COST_GROWTH_FACTOR = 1.33
+
+
+def get_upgrade_cost_multiplier(
+    next_level: int,
+    growth_factor: float = DEFAULT_COST_GROWTH_FACTOR,
+) -> float:
+    if next_level <= len(EARLY_COST_MULTIPLIERS):
+        return EARLY_COST_MULTIPLIERS[next_level - 1]
+
+    anchor_multiplier = EARLY_COST_MULTIPLIERS[-1]
+    extra_levels = next_level - len(EARLY_COST_MULTIPLIERS)
+    return anchor_multiplier * (growth_factor ** extra_levels)
+
+
 def get_building_config(building_name):
     return BUILDINGS.get(building_name)
 
@@ -23,10 +46,19 @@ def get_building_level(planet, config):
     return getattr(buildings, config["level_field"])
 
 
-def calculate_upgrade_cost(current_level, base_cost):
+def calculate_upgrade_cost(
+    current_level,
+    base_cost,
+    growth_factor: float = DEFAULT_COST_GROWTH_FACTOR,
+):
     next_level = current_level + 1
+    level_multiplier = get_upgrade_cost_multiplier(
+        next_level,
+        growth_factor=growth_factor,
+    )
+
     return {
-        resource: int(base * next_level * 2.5)
+        resource: int(round(base * level_multiplier))
         for resource, base in base_cost.items()
     }
 

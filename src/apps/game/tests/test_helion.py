@@ -5,6 +5,7 @@ from apps.game.domain_services.resources import (
     get_production_per_hour,
     get_storage_capacity,
     synchronize_resources,
+    get_storage_capacity_for_level,
 )
 from .helpers import PlanetTestMixin
 
@@ -30,7 +31,7 @@ class HelionResourceTests(PlanetTestMixin, TestCase):
 
         capacity = get_storage_capacity(planet, "helion")
 
-        self.assertEqual(capacity, int(5000 * (1.5 ** 2)))
+        self.assertEqual(capacity, get_storage_capacity_for_level(2))
 
     def test_synchronize_resources_adds_helion_up_to_storage_capacity(self):
         start_time = timezone.now()

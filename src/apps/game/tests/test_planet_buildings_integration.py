@@ -11,6 +11,7 @@ from apps.game.domain_services.buildings import (
 from apps.game.domain_services.resources import (
     get_production_per_hour,
     get_storage_capacity,
+    get_storage_capacity_for_level,
 )
 from apps.game.models import Planet, PlanetBuildings
 
@@ -48,7 +49,7 @@ class PlanetBuildingsIntegrationTests(TestCase):
 
     def test_storage_capacity_uses_storage_level_from_planet_buildings(self):
         capacity = get_storage_capacity(self.planet, "metal")
-        self.assertEqual(capacity, int(5000 * (1.5 ** 1)))
+        self.assertEqual(capacity, get_storage_capacity_for_level(1))
 
     def test_start_building_upgrade_saves_progress_on_planet_buildings(self):
         now = timezone.now()

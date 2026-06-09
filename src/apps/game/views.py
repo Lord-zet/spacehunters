@@ -10,7 +10,10 @@ from .ships import SHIPS
 from .domain_services.fleet import send_transport_fleet, send_stationing_fleet
 from .domain_services.buildings import start_building_upgrade, get_upgrade_cost, get_upgrade_time
 from .domain_services.resources import get_production_per_hour, get_storage_capacity
-from .domain_services.sync import synchronize_planet_state, synchronize_user_state
+from .domain_services.sync import (
+    advance_planet_state,
+    synchronize_user_state,
+)
 from .domain_services.shipyard import (
     start_ship_construction,
     get_ship_construction_cost,
@@ -63,7 +66,9 @@ def planet_detail(request, pk):
     planet = get_user_planet_or_404(request.user, pk)
 
     synchronize_user_state(request.user)
-    planet, _ = synchronize_planet_state(planet)
+
+    advance_result = advance_planet_state(planet)
+    planet = advance_result.planet
 
     active_fleets = get_active_fleets_for_user(request.user)
 
@@ -85,11 +90,12 @@ def planet_detail(request, pk):
 @login_required
 def planet_buildings(request, pk):
     planet = get_user_planet_or_404(request.user, pk)
-    planet, finished = synchronize_planet_state(planet)
+    advance_result = advance_planet_state(planet)
+    planet = advance_result.planet
 
     request.session["active_planet_id"] = planet.id
 
-    if finished:
+    if advance_result.building_finished:
         messages.success(request, "Budowa została zakończona.")
 
     if request.method == "POST":
@@ -138,7 +144,8 @@ def switch_planet(request, pk):
 @login_required
 def send_fleet(request, pk):
     source_planet = get_user_planet_or_404(request.user, pk)
-    source_planet, _ = synchronize_planet_state(source_planet)
+    advance_result = advance_planet_state(source_planet)
+    source_planet = advance_result.planet
 
     if request.method == "POST":
         form = SendFleetForm(request.POST, user=request.user, source_planet=source_planet)
@@ -226,11 +233,12 @@ def planet_shipyard(request, pk):
     planet = get_user_planet_or_404(request.user, pk)
 
     synchronize_user_state(request.user)
-    planet, _ = synchronize_planet_state(planet)
+    advance_result = advance_planet_state(planet)
+    planet = advance_result.planet
 
     request.session["active_planet_id"] = planet.id
 
-    if getattr(planet, "_ship_construction_finished", False):
+    if advance_result.ship_construction_finished:
         messages.success(request, "Budowa statków została zakończona.")
 
     if request.method == "POST":

@@ -46,8 +46,9 @@ def get_storage_capacity_for_level(level: int) -> int:
     return round_up_to_nice_number(raw_value)
 
 
-def get_storage_capacity(planet, resource: str) -> int:
-    buildings = planet.get_buildings()
+def get_storage_capacity(planet, resource: str, *, buildings=None) -> int:
+    if buildings is None:
+        buildings = planet.get_buildings()
 
     storage_levels = {
         "metal": buildings.metal_storage_level,
@@ -55,15 +56,16 @@ def get_storage_capacity(planet, resource: str) -> int:
         "helion": buildings.helion_storage_level,
     }
     level = storage_levels.get(resource, 0)
-
     return get_storage_capacity_for_level(level)
 
 
-def get_production_per_hour(planet) -> dict:
-    buildings = planet.get_buildings()
+def get_production_per_hour(planet, *, buildings=None) -> dict:
+    if buildings is None:
+        buildings = planet.get_buildings()
+
     total = {}
 
-    for _, config in BUILDINGS.items():
+    for config in BUILDINGS.values():
         level = getattr(buildings, config["level_field"])
 
         production_fn = config.get("production_fn")
@@ -78,14 +80,17 @@ def get_production_per_hour(planet) -> dict:
     return total
 
 
-def synchronize_resources(planet, at=None, *, save=False):
+def synchronize_resources(planet, at=None, *, save=False, buildings=None):
     now = at or timezone.now()
     elapsed_seconds = (now - planet.last_resource_update).total_seconds()
 
     if elapsed_seconds <= 0:
         return planet
 
-    production = get_production_per_hour(planet)
+    if buildings is None:
+        buildings = planet.get_buildings()
+
+    production = get_production_per_hour(planet, buildings=buildings)
 
     for resource, per_hour in production.items():
         gain = int(per_hour * elapsed_seconds / 3600)
@@ -93,7 +98,7 @@ def synchronize_resources(planet, at=None, *, save=False):
             continue
 
         current_amount = getattr(planet, resource, 0)
-        capacity = get_storage_capacity(planet, resource)
+        capacity = get_storage_capacity(planet, resource, buildings=buildings)
         free_space = max(capacity - current_amount, 0)
 
         actual_gain = min(gain, free_space)

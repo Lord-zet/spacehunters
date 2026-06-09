@@ -60,3 +60,7 @@ class ShipConstructionAlreadyInProgressError(DomainError):
 
 class InvalidShipQuantityError(DomainError):
     pass
+
+
+class PlanetStateTimeRegressionError(DomainError):
+    pass

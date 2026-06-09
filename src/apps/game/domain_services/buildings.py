@@ -160,12 +160,14 @@ def start_building_upgrade(planet, building_name, *, at=None):
     return planet
 
 
-@transaction.atomic
-def finish_building_if_ready(planet, *, at=None):
-    now = at or timezone.now()
+def finish_locked_building_if_ready(buildings, *, at=None):
+    """
+    Kończy budowę na przekazanym, wcześniej zablokowanym rekordzie
+    PlanetBuildings.
 
-    planet = Planet.objects.select_for_update().get(pk=planet.pk)
-    buildings, _ = PlanetBuildings.objects.select_for_update().get_or_create(planet=planet)
+    Funkcja nie pobiera ponownie Planet ani PlanetBuildings.
+    """
+    now = at or timezone.now()
 
     if not buildings.building_ends_at:
         return False
@@ -174,10 +176,16 @@ def finish_building_if_ready(planet, *, at=None):
         return False
 
     config = get_building_config(buildings.building_type)
+
     if not config:
         buildings.building_type = ""
         buildings.building_ends_at = None
-        buildings.save(update_fields=["building_type", "building_ends_at"])
+        buildings.save(
+            update_fields=[
+                "building_type",
+                "building_ends_at",
+            ]
+        )
         return False
 
     level_field = config["level_field"]
@@ -186,6 +194,28 @@ def finish_building_if_ready(planet, *, at=None):
 
     buildings.building_type = ""
     buildings.building_ends_at = None
-    buildings.save(update_fields=[level_field, "building_type", "building_ends_at"])
+    buildings.save(
+        update_fields=[
+            level_field,
+            "building_type",
+            "building_ends_at",
+        ]
+    )
 
     return True
+
+
+@transaction.atomic
+def finish_building_if_ready(planet, *, at=None):
+    locked_planet = Planet.objects.select_for_update().get(pk=planet.pk)
+
+    buildings, _ = (
+        PlanetBuildings.objects
+        .select_for_update()
+        .get_or_create(planet=locked_planet)
+    )
+
+    return finish_locked_building_if_ready(
+        buildings,
+        at=at,
+    )

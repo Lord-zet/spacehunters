@@ -93,12 +93,12 @@ def start_ship_construction(planet, ship_code, quantity, *, at=None):
     return construction
 
 
-@transaction.atomic
-def finish_ship_construction_if_ready(planet, *, at=None):
+def finish_locked_ship_construction_if_ready(planet, construction, *, at=None):
+    """
+    Kończy produkcję statków na przekazanych, wcześniej zablokowanych
+    obiektach Planet oraz PlanetShipConstruction.
+    """
     now = at or timezone.now()
-
-    planet = Planet.objects.select_for_update().get(pk=planet.pk)
-    construction, _ = PlanetShipConstruction.objects.select_for_update().get_or_create(planet=planet)
 
     if not construction.ends_at:
         return False
@@ -107,20 +107,64 @@ def finish_ship_construction_if_ready(planet, *, at=None):
         return False
 
     config = get_ship_config(construction.ship_code)
+
     if not config:
         construction.clear()
-        construction.save(update_fields=["ship_code", "quantity", "started_at", "ends_at"])
+        construction.save(
+            update_fields=[
+                "ship_code",
+                "quantity",
+                "started_at",
+                "ends_at",
+            ]
+        )
         return False
 
-    planet_ship, _ = PlanetShip.objects.select_for_update().get_or_create(
-        planet=planet,
-        ship_code=construction.ship_code,
-        defaults={"quantity": 0},
+    planet_ship = (
+        PlanetShip.objects
+        .select_for_update()
+        .filter(
+            planet=planet,
+            ship_code=construction.ship_code,
+        )
+        .first()
     )
+
+    if planet_ship is None:
+        planet_ship = PlanetShip.objects.create(
+            planet=planet,
+            ship_code=construction.ship_code,
+            quantity=0,
+        )
+
     planet_ship.quantity += construction.quantity
     planet_ship.save(update_fields=["quantity"])
 
     construction.clear()
-    construction.save(update_fields=["ship_code", "quantity", "started_at", "ends_at"])
+    construction.save(
+        update_fields=[
+            "ship_code",
+            "quantity",
+            "started_at",
+            "ends_at",
+        ]
+    )
 
     return True
+
+
+@transaction.atomic
+def finish_ship_construction_if_ready(planet, *, at=None):
+    locked_planet = Planet.objects.select_for_update().get(pk=planet.pk)
+
+    construction, _ = (
+        PlanetShipConstruction.objects
+        .select_for_update()
+        .get_or_create(planet=locked_planet)
+    )
+
+    return finish_locked_ship_construction_if_ready(
+        locked_planet,
+        construction,
+        at=at,
+    )

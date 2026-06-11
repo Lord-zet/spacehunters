@@ -90,6 +90,8 @@ def planet_detail(request, pk):
 @login_required
 def planet_buildings(request, pk):
     planet = get_user_planet_or_404(request.user, pk)
+
+    synchronize_user_state(request.user)
     advance_result = advance_planet_state(planet)
     planet = advance_result.planet
 
@@ -144,6 +146,8 @@ def switch_planet(request, pk):
 @login_required
 def send_fleet(request, pk):
     source_planet = get_user_planet_or_404(request.user, pk)
+
+    synchronize_user_state(request.user)
     advance_result = advance_planet_state(source_planet)
     source_planet = advance_result.planet
 

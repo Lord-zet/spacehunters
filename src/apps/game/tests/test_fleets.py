@@ -219,7 +219,10 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
 class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
     def test_process_fleets_for_user_delivers_resources_to_target_and_sets_returning_status(self):
         user = self.create_user("process1")
-        now = timezone.now()
+
+        start_time = timezone.now()
+        arrival_time = start_time + timezone.timedelta(minutes=30)
+        process_time = start_time + timezone.timedelta(hours=1)
 
         source_planet = self.create_planet(
             owner=user,
@@ -231,8 +234,9 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             crystal=3000,
             helion=500,
             transporter_count=7,
-            last_resource_update=now,
+            last_resource_update=start_time,
         )
+
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
@@ -243,7 +247,12 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             crystal=50,
             transporter_count=0,
             is_homeland=False,
-            last_resource_update=now,
+            last_resource_update=start_time,
+
+            # Ważne: wyłączamy produkcję, bo ten test dotyczy floty, a nie naliczania zasobów.
+            metal_mine_level=0,
+            crystal_mine_level=0,
+            helion_synthesizer_level=0,
         )
 
         fleet = Fleet.objects.create(
@@ -254,9 +263,9 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             metal=1000,
             crystal=500,
             status=Fleet.Status.OUTBOUND,
-            departure_time=now - timezone.timedelta(minutes=2),
-            arrival_time=now - timezone.timedelta(seconds=1),
-            return_time=now + timezone.timedelta(minutes=1),
+            departure_time=start_time,
+            arrival_time=arrival_time,
+            return_time=process_time + timezone.timedelta(minutes=30),
         )
 
         FleetShip.objects.create(
@@ -265,7 +274,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             quantity=3,
         )
 
-        process_fleets_for_user(user, at=now)
+        process_fleets_for_user(user, at=process_time)
 
         fleet.refresh_from_db()
         target_planet.refresh_from_db()
@@ -273,16 +282,25 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
 
         self.assertEqual(target_planet.metal, 1100)
         self.assertEqual(target_planet.crystal, 550)
+
+        # W nowej chronologii planeta docelowa została przesunięta tylko
+        # do momentu przylotu floty. Dalsze przesunięcie do process_time
+        # robi później advance_planet_state() przy wejściu na planetę.
+        self.assertEqual(target_planet.last_resource_update, arrival_time)
+
         self.assertEqual(fleet.status, Fleet.Status.RETURNING)
         self.assertEqual(fleet.metal, 0)
         self.assertEqual(fleet.crystal, 0)
 
-        # Transportowce jeszcze nie wróciły
-        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 7)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"),7)
 
     def test_process_fleets_for_user_returns_transporters_to_source_and_completes_fleet(self):
         user = self.create_user("process2")
-        now = timezone.now()
+
+        start_time = timezone.now()
+        arrival_time = start_time + timezone.timedelta(minutes=30)
+        return_time = start_time + timezone.timedelta(hours=1)
+        process_time = start_time + timezone.timedelta(hours=2)
 
         source_planet = self.create_planet(
             owner=user,
@@ -294,8 +312,14 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             crystal=3000,
             helion=500,
             transporter_count=7,
-            last_resource_update=now,
+            last_resource_update=start_time,
+
+            # Test dotyczy powrotu statków, nie produkcji.
+            metal_mine_level=0,
+            crystal_mine_level=0,
+            helion_synthesizer_level=0,
         )
+
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
@@ -306,7 +330,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             crystal=50,
             transporter_count=0,
             is_homeland=False,
-            last_resource_update=now,
+            last_resource_update=start_time,
         )
 
         fleet = Fleet.objects.create(
@@ -317,9 +341,9 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             metal=0,
             crystal=0,
             status=Fleet.Status.RETURNING,
-            departure_time=now - timezone.timedelta(minutes=4),
-            arrival_time=now - timezone.timedelta(minutes=2),
-            return_time=now - timezone.timedelta(seconds=1),
+            departure_time=start_time,
+            arrival_time=arrival_time,
+            return_time=return_time,
         )
 
         FleetShip.objects.create(
@@ -328,13 +352,17 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             quantity=3,
         )
 
-        process_fleets_for_user(user, at=now)
+        process_fleets_for_user(user, at=process_time)
 
         fleet.refresh_from_db()
         source_planet.refresh_from_db()
 
         self.assertEqual(fleet.status, Fleet.Status.COMPLETED)
-        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 10)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"),10)
+
+        # W nowej chronologii źródłowa planeta jest przesunięta do return_time,
+        # nie do process_time.
+        self.assertEqual(source_planet.last_resource_update, return_time)
 
     def test_process_fleets_for_user_does_nothing_for_outbound_fleet_that_has_not_arrived_yet(self):
         user = self.create_user("process3")

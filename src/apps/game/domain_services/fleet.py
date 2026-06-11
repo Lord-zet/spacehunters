@@ -1,5 +1,6 @@
 import math
 from datetime import timedelta
+from dataclasses import dataclass
 
 from django.utils import timezone
 from django.db import transaction
@@ -18,6 +19,8 @@ from apps.game.domain.exceptions import (
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.ships import SHIPS
 from .resources import synchronize_resources, RESOURCE_FIELDS
+from .sync import advance_planet_state
+
 
 TRANSPORTER_CODE = "transporter"
 HELION_DISTANCE_DIVISOR = 1000
@@ -117,6 +120,119 @@ def create_fleet_ships(fleet, ship_quantities: dict[str, int]) -> None:
         if quantity > 0
     ]
     FleetShip.objects.bulk_create(fleet_ships)
+
+
+def add_planet_ships(planet, ship_code: str, quantity: int) -> None:
+    if quantity <= 0:
+        return
+
+    planet_ship = (
+        PlanetShip.objects
+        .select_for_update()
+        .filter(
+            planet=planet,
+            ship_code=ship_code,
+        )
+        .first()
+    )
+
+    if planet_ship is None:
+        planet_ship = PlanetShip.objects.create(
+            planet=planet,
+            ship_code=ship_code,
+            quantity=0,
+        )
+
+    planet_ship.quantity += quantity
+    planet_ship.save(update_fields=["quantity"])
+
+
+def deliver_fleet_resources_to_planet(fleet, planet) -> None:
+    planet.metal += fleet.metal
+    planet.crystal += fleet.crystal
+
+    planet.save(update_fields=["metal", "crystal"])
+
+
+def add_fleet_ships_to_planet(fleet, planet) -> None:
+    for fleet_ship in fleet.ships.all():
+        add_planet_ships(
+            planet,
+            fleet_ship.ship_code,
+            fleet_ship.quantity,
+        )
+
+
+def handle_transport_arrival(fleet, *, at) -> None:
+    advance_result = advance_planet_state(
+        fleet.target_planet,
+        at=at,
+    )
+    target_planet = advance_result.planet
+
+    deliver_fleet_resources_to_planet(
+        fleet,
+        target_planet,
+    )
+
+    fleet.metal = 0
+    fleet.crystal = 0
+    fleet.status = Fleet.Status.RETURNING
+
+    fleet.save(update_fields=["metal", "crystal", "status"])
+
+
+def handle_station_arrival(fleet, *, at) -> None:
+    advance_result = advance_planet_state(
+        fleet.target_planet,
+        at=at,
+    )
+    target_planet = advance_result.planet
+
+    deliver_fleet_resources_to_planet(
+        fleet,
+        target_planet,
+    )
+
+    add_fleet_ships_to_planet(
+        fleet,
+        target_planet,
+    )
+
+    fleet.metal = 0
+    fleet.crystal = 0
+    fleet.status = Fleet.Status.COMPLETED
+    fleet.return_time = None
+
+    fleet.save(update_fields=["metal", "crystal", "status", "return_time"])
+
+
+def handle_fleet_return(fleet, *, at) -> None:
+    advance_result = advance_planet_state(
+        fleet.source_planet,
+        at=at,
+    )
+    source_planet = advance_result.planet
+
+    add_fleet_ships_to_planet(
+        fleet,
+        source_planet,
+    )
+
+    fleet.status = Fleet.Status.COMPLETED
+    fleet.save(update_fields=["status"])
+
+
+def handle_outbound_fleet_arrival(fleet, *, at) -> None:
+    if fleet.mission_type == Fleet.MissionType.TRANSPORT:
+        handle_transport_arrival(fleet, at=at)
+        return
+
+    if fleet.mission_type == Fleet.MissionType.STATION:
+        handle_station_arrival(fleet, at=at)
+        return
+
+    raise FleetError("Nieobsługiwany typ misji floty.")
 
 
 @transaction.atomic
@@ -219,11 +335,18 @@ def send_stationing_fleet(source_planet, target_planet, transporter_count, metal
     )
 
 
+@dataclass(frozen=True, slots=True)
+class FleetEvent:
+    fleet: Fleet
+    event_type: str
+    event_time: timezone.datetime
+
+
 @transaction.atomic
 def process_fleets_for_user(user, *, at=None):
     now = at or timezone.now()
 
-    outbound_fleets = (
+    outbound_fleets = list(
         Fleet.objects
         .select_for_update()
         .select_related("target_planet", "source_planet")
@@ -235,48 +358,10 @@ def process_fleets_for_user(user, *, at=None):
         )
     )
 
-    for fleet in outbound_fleets:
-        target_planet = Planet.objects.select_for_update().get(pk=fleet.target_planet_id)
-        synchronize_resources(target_planet, at=now, save=False)
-
-        target_planet.metal += fleet.metal
-        target_planet.crystal += fleet.crystal
-        target_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
-
-        if fleet.mission_type == Fleet.MissionType.TRANSPORT:
-            fleet.metal = 0
-            fleet.crystal = 0
-            fleet.status = Fleet.Status.RETURNING
-            fleet.save(update_fields=["metal", "crystal", "status"])
-            continue
-
-        if fleet.mission_type == Fleet.MissionType.STATION:
-            for fleet_ship in fleet.ships.all():
-                target_ship = PlanetShip.objects.select_for_update().filter(
-                    planet=target_planet,
-                    ship_code=fleet_ship.ship_code,
-                ).first()
-
-                if target_ship is None:
-                    target_ship = PlanetShip.objects.create(
-                        planet=target_planet,
-                        ship_code=fleet_ship.ship_code,
-                        quantity=0,
-                    )
-
-                target_ship.quantity += fleet_ship.quantity
-                target_ship.save(update_fields=["quantity"])
-
-            fleet.metal = 0
-            fleet.crystal = 0
-            fleet.status = Fleet.Status.COMPLETED
-            fleet.return_time = None
-            fleet.save(update_fields=["metal", "crystal", "status", "return_time"])
-
-    returning_fleets = (
+    returning_fleets = list(
         Fleet.objects
         .select_for_update()
-        .select_related("source_planet")
+        .select_related("source_planet", "target_planet")
         .prefetch_related("ships")
         .filter(
             owner=user,
@@ -285,27 +370,40 @@ def process_fleets_for_user(user, *, at=None):
         )
     )
 
-    for fleet in returning_fleets:
-        source_planet = Planet.objects.select_for_update().get(pk=fleet.source_planet_id)
-        synchronize_resources(source_planet, at=now, save=False)
+    events = [
+        FleetEvent(
+            fleet=fleet,
+            event_type="arrival",
+            event_time=fleet.arrival_time,
+        )
+        for fleet in outbound_fleets
+    ]
 
-        for fleet_ship in fleet.ships.all():
-            source_ship = PlanetShip.objects.select_for_update().filter(
-                planet=source_planet,
-                ship_code=fleet_ship.ship_code,
-            ).first()
+    events.extend(
+        FleetEvent(
+            fleet=fleet,
+            event_type="return",
+            event_time=fleet.return_time,
+        )
+        for fleet in returning_fleets
+        if fleet.return_time is not None
+    )
 
-            if source_ship is None:
-                source_ship = PlanetShip.objects.create(
-                    planet=source_planet,
-                    ship_code=fleet_ship.ship_code,
-                    quantity=0,
-                )
+    events.sort(
+        key=lambda event: (
+            event.event_time,
+            event.fleet.pk,
+            event.event_type,
+        )
+    )
 
-            source_ship.quantity += fleet_ship.quantity
-            source_ship.save(update_fields=["quantity"])
+    for event in events:
+        if event.event_type == "arrival":
+            handle_outbound_fleet_arrival(event.fleet, at=event.event_time)
+            continue
 
-        source_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
+        if event.event_type == "return":
+            handle_fleet_return(event.fleet, at=event.event_time)
+            continue
 
-        fleet.status = Fleet.Status.COMPLETED
-        fleet.save(update_fields=["status"])
+        raise FleetError("Nieobsługiwany typ zdarzenia floty.")

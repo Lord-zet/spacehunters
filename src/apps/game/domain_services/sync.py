@@ -155,3 +155,56 @@ def synchronize_user_state(user, *, at=None):
     from .fleet import process_fleets_for_user
 
     process_fleets_for_user(user, at=at)
+
+
+@dataclass(frozen=True, slots=True)
+class UserStateAdvanceResult:
+    planet_result: PlanetStateAdvanceResult | None = None
+
+    @property
+    def planet(self):
+        if self.planet_result is None:
+            return None
+
+        return self.planet_result.planet
+
+    @property
+    def building_finished(self) -> bool:
+        if self.planet_result is None:
+            return False
+
+        return self.planet_result.building_finished
+
+    @property
+    def ship_construction_finished(self) -> bool:
+        if self.planet_result is None:
+            return False
+
+        return self.planet_result.ship_construction_finished
+
+
+def advance_user_state(user, *, planet=None, at=None) -> UserStateAdvanceResult:
+    """
+    Doprowadza stan użytkownika do wskazanego czasu.
+
+    Kolejność celowa:
+    1. najpierw rozliczamy zdarzenia flotowe,
+    2. dopiero potem przesuwamy wskazaną planetę do target_time.
+
+    Dzięki temu flota, która przyleciała np. o 10:00, zostanie
+    zastosowana przed przesunięciem planety do 12:00.
+    """
+    target_time = at or timezone.now()
+
+    from .fleet import process_fleets_for_user
+
+    process_fleets_for_user(user, at=target_time)
+
+    planet_result = None
+
+    if planet is not None:
+        planet_result = advance_planet_state(planet, at=target_time)
+
+    return UserStateAdvanceResult(
+        planet_result=planet_result,
+    )

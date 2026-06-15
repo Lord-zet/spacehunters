@@ -12,7 +12,7 @@ from apps.game.domain.exceptions import (
 )
 from apps.game.models import Planet, PlanetShip, PlanetShipConstruction, PlanetBuildings
 from apps.game.ships import SHIPS
-from .resources import synchronize_resources, RESOURCE_FIELDS
+from .resources import synchronize_resources, RESOURCE_STATE_FIELDS
 
 
 def get_ship_config(ship_code):
@@ -88,7 +88,7 @@ def start_ship_construction(planet, ship_code, quantity, *, at=None):
     construction.ends_at = now + timedelta(seconds=get_ship_construction_time_seconds(ship_code, quantity))
 
     construction.save(update_fields=["ship_code", "quantity", "started_at", "ends_at"])
-    planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
+    planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
     return construction
 

@@ -16,9 +16,14 @@ class Planet(models.Model):
     galaxy = models.PositiveIntegerField(default=1)
     system = models.PositiveIntegerField()
     position = models.PositiveIntegerField()
+
     metal = models.BigIntegerField(default=500)
     crystal = models.BigIntegerField(default=200)
     helion = models.BigIntegerField(default=0)
+    metal_production_remainder_micro = models.PositiveIntegerField(default=0)
+    crystal_production_remainder_micro = models.PositiveIntegerField(default=0)
+    helion_production_remainder_micro = models.PositiveIntegerField(default=0)
+
     is_homeland = models.BooleanField(default=False)
     last_resource_update = models.DateTimeField(auto_now_add=True)
     planet_fields_total = models.PositiveIntegerField(default=90)

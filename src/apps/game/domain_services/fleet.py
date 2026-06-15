@@ -18,7 +18,7 @@ from apps.game.domain.exceptions import (
 )
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.ships import SHIPS
-from .resources import synchronize_resources, RESOURCE_FIELDS
+from .resources import synchronize_resources, RESOURCE_STATE_FIELDS
 from .sync import advance_planet_state
 
 
@@ -284,7 +284,7 @@ def _send_fleet_mission(
     source_planet.metal -= metal
     source_planet.crystal -= crystal
     source_planet.helion -= helion_cost
-    source_planet.save(update_fields=[*RESOURCE_FIELDS, "last_resource_update"])
+    source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
     flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet)
     flight_duration = timedelta(seconds=flight_time_seconds)

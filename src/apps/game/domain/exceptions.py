@@ -64,3 +64,11 @@ class InvalidShipQuantityError(DomainError):
 
 class PlanetStateTimeRegressionError(DomainError):
     pass
+
+
+class PlanetOwnershipError(DomainError):
+    pass
+
+
+class UnsupportedFleetMissionError(DomainError):
+    pass

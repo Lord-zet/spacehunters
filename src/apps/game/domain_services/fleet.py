@@ -15,6 +15,8 @@ from apps.game.domain.exceptions import (
     SamePlanetTransportError,
     NotEnoughFuelError,
     InvalidStationingTargetError,
+    UnsupportedFleetMissionError,
+    UnknownShipError,
 )
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.ships import SHIPS
@@ -25,6 +27,10 @@ from .sync import advance_planet_state
 TRANSPORTER_CODE = "transporter"
 HELION_DISTANCE_DIVISOR = 1000
 MIN_HELION_COST = 1
+SUPPORTED_FLEET_MISSIONS = {
+    Fleet.MissionType.TRANSPORT,
+    Fleet.MissionType.STATION,
+}
 
 
 def get_planet_ship(planet, ship_code: str) -> PlanetShip:
@@ -68,12 +74,25 @@ def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantiti
     return max(MIN_HELION_COST, math.ceil(raw_cost))
 
 
+def calculate_cargo_capacity(ship_quantities: dict[str, int]) -> int:
+    total = 0
+
+    for ship_code, quantity in ship_quantities.items():
+        if quantity <= 0:
+            continue
+
+        ship_config = SHIPS[ship_code]
+        total += ship_config.get("cargo_capacity", 0) * quantity
+
+    return total
+
+
 def transport_capacity(transporter_count: int) -> int:
-    return SHIPS[TRANSPORTER_CODE]["cargo_capacity"] * transporter_count
+    return calculate_cargo_capacity({TRANSPORTER_CODE: transporter_count})
 
 
-def can_carry_resources(transporter_count: int, metal: int, crystal: int) -> bool:
-    return (metal + crystal) <= transport_capacity(transporter_count)
+def can_carry_resources(ship_quantities: dict[str, int], metal: int, crystal: int) -> bool:
+    return (metal + crystal) <= calculate_cargo_capacity(ship_quantities)
 
 
 def has_enough_transporters(planet, transporter_count: int) -> bool:
@@ -90,14 +109,19 @@ def has_enough_helion_for_flight(planet, helion_cost: int) -> bool:
 
 
 def ensure_planet_has_enough_ships(planet, ship_quantities: dict[str, int]) -> None:
-    transporter_count = ship_quantities.get(TRANSPORTER_CODE, 0)
+    validate_ship_quantities(ship_quantities)
 
-    if transporter_count <= 0:
-        raise FleetError("Liczba transportowców musi być większa od zera.")
+    for ship_code, quantity in ship_quantities.items():
+        if quantity <= 0:
+            continue
 
-    transporter = get_planet_ship(planet, TRANSPORTER_CODE)
-    if transporter.quantity < transporter_count:
-        raise NotEnoughTransportersError("Nie masz wystarczającej liczby transportowców.")
+        planet_ship = get_planet_ship(planet, ship_code)
+
+        if planet_ship.quantity < quantity:
+            if ship_code == TRANSPORTER_CODE:
+                raise NotEnoughTransportersError("Nie masz wystarczającej liczby transportowców.")
+
+            raise FleetError("Nie masz wystarczającej liczby statków.")
 
 
 def deduct_planet_ships(planet, ship_quantities: dict[str, int]) -> None:
@@ -235,6 +259,36 @@ def handle_outbound_fleet_arrival(fleet, *, at) -> None:
     raise FleetError("Nieobsługiwany typ misji floty.")
 
 
+def ensure_source_planet_belongs_to_user(source_planet, user) -> None:
+    if source_planet.owner_id != user.id:
+        raise PlanetOwnershipError("Planeta źródłowa nie należy do tego gracza.")
+
+
+def ensure_supported_mission_type(mission_type: str) -> None:
+    if mission_type not in SUPPORTED_FLEET_MISSIONS:
+        raise UnsupportedFleetMissionError("Nieobsługiwany typ misji floty.")
+
+
+def validate_ship_quantities(ship_quantities: dict[str, int]) -> None:
+    if not ship_quantities:
+        raise FleetError("Flota musi zawierać co najmniej jeden statek.")
+
+    has_any_ship = False
+
+    for ship_code, quantity in ship_quantities.items():
+        if ship_code not in SHIPS:
+            raise UnknownShipError("Nieznany statek.")
+
+        if quantity < 0:
+            raise FleetError("Liczba statków nie może być ujemna.")
+
+        if quantity > 0:
+            has_any_ship = True
+
+    if not has_any_ship:
+        raise FleetError("Flota musi zawierać co najmniej jeden statek.")
+
+
 @transaction.atomic
 def _send_fleet_mission(
     source_planet,
@@ -249,6 +303,10 @@ def _send_fleet_mission(
 
     source_planet = Planet.objects.select_for_update().get(pk=source_planet.pk)
     target_planet = Planet.objects.select_for_update().get(pk=target_planet.pk)
+
+    ensure_source_planet_belongs_to_user(source_planet, user)
+    ensure_supported_mission_type(mission_type)
+    validate_ship_quantities(ship_quantities)
 
     synchronize_resources(source_planet, at=now, save=False)
 

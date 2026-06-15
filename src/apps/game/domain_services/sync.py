@@ -12,7 +12,7 @@ from apps.game.models import (
 )
 
 from .buildings import finish_locked_building_if_ready
-from .resources import RESOURCE_FIELDS, synchronize_resources
+from .resources import RESOURCE_STATE_FIELDS, synchronize_resources
 from .shipyard import finish_locked_ship_construction_if_ready
 
 
@@ -136,12 +136,7 @@ def advance_planet_state(
         buildings=buildings,
     )
 
-    locked_planet.save(
-        update_fields=[
-            *RESOURCE_FIELDS,
-            "last_resource_update",
-        ]
-    )
+    locked_planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
     return PlanetStateAdvanceResult(
         planet=locked_planet,

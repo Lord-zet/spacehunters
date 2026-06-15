@@ -247,16 +247,19 @@ def handle_fleet_return(fleet, *, at) -> None:
     fleet.save(update_fields=["status"])
 
 
+FLEET_ARRIVAL_HANDLERS = {
+    Fleet.MissionType.TRANSPORT: handle_transport_arrival,
+    Fleet.MissionType.STATION: handle_station_arrival,
+}
+
+
 def handle_outbound_fleet_arrival(fleet, *, at) -> None:
-    if fleet.mission_type == Fleet.MissionType.TRANSPORT:
-        handle_transport_arrival(fleet, at=at)
-        return
+    handler = FLEET_ARRIVAL_HANDLERS.get(fleet.mission_type)
 
-    if fleet.mission_type == Fleet.MissionType.STATION:
-        handle_station_arrival(fleet, at=at)
-        return
+    if handler is None:
+        raise UnsupportedFleetMissionError("Nieobsługiwany typ misji floty.")
 
-    raise FleetError("Nieobsługiwany typ misji floty.")
+    handler(fleet, at=at)
 
 
 def ensure_source_planet_belongs_to_user(source_planet, user) -> None:

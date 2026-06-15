@@ -10,10 +10,7 @@ from .ships import SHIPS
 from .domain_services.fleet import send_transport_fleet, send_stationing_fleet
 from .domain_services.buildings import start_building_upgrade, get_upgrade_cost, get_upgrade_time
 from .domain_services.resources import get_production_per_hour, get_storage_capacity
-from .domain_services.sync import (
-    advance_planet_state,
-    synchronize_user_state,
-)
+from .domain_services.sync import advance_user_state
 from .domain_services.shipyard import (
     start_ship_construction,
     get_ship_construction_cost,
@@ -65,9 +62,7 @@ def dashboard(request):
 def planet_detail(request, pk):
     planet = get_user_planet_or_404(request.user, pk)
 
-    synchronize_user_state(request.user)
-
-    advance_result = advance_planet_state(planet)
+    advance_result = advance_user_state(request.user, planet=planet)
     planet = advance_result.planet
 
     active_fleets = get_active_fleets_for_user(request.user)
@@ -91,8 +86,7 @@ def planet_detail(request, pk):
 def planet_buildings(request, pk):
     planet = get_user_planet_or_404(request.user, pk)
 
-    synchronize_user_state(request.user)
-    advance_result = advance_planet_state(planet)
+    advance_result = advance_user_state(request.user, planet=planet)
     planet = advance_result.planet
 
     request.session["active_planet_id"] = planet.id
@@ -147,8 +141,7 @@ def switch_planet(request, pk):
 def send_fleet(request, pk):
     source_planet = get_user_planet_or_404(request.user, pk)
 
-    synchronize_user_state(request.user)
-    advance_result = advance_planet_state(source_planet)
+    advance_result = advance_user_state(request.user, planet=planet)
     source_planet = advance_result.planet
 
     if request.method == "POST":
@@ -215,7 +208,7 @@ def send_fleet(request, pk):
 
 @login_required
 def fleet_list(request, pk):
-    synchronize_user_state(request.user)
+    advance_user_state(request.user)
 
     fleets = get_user_fleets(request.user)
     planet = get_user_planet_or_404(request.user, pk)
@@ -236,8 +229,7 @@ def fleet_list(request, pk):
 def planet_shipyard(request, pk):
     planet = get_user_planet_or_404(request.user, pk)
 
-    synchronize_user_state(request.user)
-    advance_result = advance_planet_state(planet)
+    advance_result = advance_user_state(request.user, planet=planet)
     planet = advance_result.planet
 
     request.session["active_planet_id"] = planet.id

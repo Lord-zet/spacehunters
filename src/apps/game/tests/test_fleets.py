@@ -210,11 +210,51 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
 
         source_planet.refresh_from_db()
 
-        self.assertEqual(str(ctx.exception), "Ładunek nie mieści się w pojemności transportowców.")
+        self.assertEqual(str(ctx.exception), "Ładunek nie mieści się w pojemności floty.")
         self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 1)
         self.assertEqual(source_planet.metal, 10000)
         self.assertEqual(source_planet.crystal, 10000)
         self.assertEqual(Fleet.objects.count(), 0)
+
+    def test_send_transport_fleet_uses_fleet_composition_for_cargo_capacity(self):
+        user = self.create_user("fleet_capacity_regression")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Earth",
+            galaxy=1,
+            system=1,
+            position=1,
+            metal=10000,
+            crystal=10000,
+            helion=500,
+            transporter_count=2,
+            last_resource_update=now,
+        )
+
+        target_planet = self.create_planet(
+            owner=user,
+            name="Mars",
+            galaxy=1,
+            system=2,
+            position=2,
+            is_homeland=False,
+            last_resource_update=now,
+        )
+
+        fleet = send_transport_fleet(
+            source_planet=source_planet,
+            target_planet=target_planet,
+            transporter_count=2,
+            metal=1500,
+            crystal=500,
+            user=user,
+        )
+
+        self.assertEqual(fleet.metal, 1500)
+        self.assertEqual(fleet.crystal, 500)
+
 
 class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
     def test_process_fleets_for_user_delivers_resources_to_target_and_sets_returning_status(self):

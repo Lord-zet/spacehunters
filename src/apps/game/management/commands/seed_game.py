@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 
-from apps.game.models import Planet, PlanetBuildings, PlanetShip
+from apps.game.models import Planet
+from apps.game.domain_services.planets import create_planet
 
 User = get_user_model()
 
@@ -10,41 +11,43 @@ class Command(BaseCommand):
     help = "Creates test user and its planets"
 
     def ensure_planet(self, *, owner, galaxy, system, position, name, is_homeland):
-        planet, _ = Planet.objects.get_or_create(
+        planet = Planet.objects.filter(
             owner=owner,
             galaxy=galaxy,
             system=system,
             position=position,
-            defaults={
-                "name": name,
+        ).first()
+
+        if planet is not None:
+            return planet
+
+        return create_planet(
+            owner=owner,
+            galaxy=galaxy,
+            system=system,
+            position=position,
+            name=name,
+            is_homeland=is_homeland,
+            resources={
                 "metal": 500,
                 "crystal": 300,
                 "helion": 300,
-                "is_homeland": is_homeland,
             },
-        )
-
-        PlanetBuildings.objects.get_or_create(
-            planet=planet,
-            defaults={
+            buildings={
                 "metal_mine_level": 1,
                 "crystal_mine_level": 1,
                 "helion_synthesizer_level": 1,
                 "metal_storage_level": 0,
                 "crystal_storage_level": 0,
                 "helion_storage_level": 0,
+                "shipyard_level": 0,
                 "building_type": "",
                 "building_ends_at": None,
             },
+            ships={
+                "transporter": 2,
+            },
         )
-
-        PlanetShip.objects.get_or_create(
-            planet=planet,
-            ship_code="transporter",
-            defaults={"quantity": 2},
-        )
-
-        return planet
 
     def handle(self, *args, **options):
         user, _ = User.objects.get_or_create(

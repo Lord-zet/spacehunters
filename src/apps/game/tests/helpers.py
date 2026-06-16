@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 
-from apps.game.models import Planet, PlanetBuildings, PlanetShip, FleetShip
+from apps.game.models import Planet, PlanetShip, FleetShip
+from apps.game.domain_services.planets import create_planet
 
 
 class PlanetTestMixin:
@@ -65,12 +66,23 @@ class PlanetTestMixin:
 
         planet_data.update(overrides)
 
-        planet = Planet.objects.create(**planet_data)
-        PlanetBuildings.objects.create(planet=planet, **buildings_data)
-        PlanetShip.objects.create(
-            planet=planet,
-            ship_code="transporter",
-            quantity=ships_data["transporter_count"],
+        planet = create_planet(
+            owner=planet_data["owner"],
+            name=planet_data["name"],
+            galaxy=planet_data["galaxy"],
+            system=planet_data["system"],
+            position=planet_data["position"],
+            is_homeland=planet_data["is_homeland"],
+            planet_fields_total=planet_data["planet_fields_total"],
+            resources={
+                "metal": planet_data["metal"],
+                "crystal": planet_data["crystal"],
+                "helion": planet_data["helion"],
+            },
+            buildings=buildings_data,
+            ships={
+                "transporter": ships_data["transporter_count"],
+            },
         )
 
         if last_resource_update is not None:
@@ -84,8 +96,8 @@ class PlanetTestMixin:
         return Planet.objects.select_related("buildings").get(pk=planet.pk)
 
     def get_planet_ship_quantity(self, planet, ship_code):
-        ship = PlanetShip.objects.get(planet=planet, ship_code=ship_code)
-        return ship.quantity
+        ship = PlanetShip.objects.filter(planet=planet, ship_code=ship_code).first()
+        return ship.quantity if ship else 0
 
     def get_fleet_ship_quantity(self, fleet, ship_code):
         ship = FleetShip.objects.get(fleet=fleet, ship_code=ship_code)

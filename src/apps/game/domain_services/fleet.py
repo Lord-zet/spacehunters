@@ -17,6 +17,7 @@ from apps.game.domain.exceptions import (
     InvalidStationingTargetError,
     UnsupportedFleetMissionError,
     UnknownShipError,
+    PlanetOwnershipError,
 )
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.ships import SHIPS
@@ -324,13 +325,11 @@ def _send_fleet_mission(
 
     ensure_planet_has_enough_ships(source_planet, ship_quantities)
 
-    transporter_count = ship_quantities.get(TRANSPORTER_CODE, 0)
-
     if not has_enough_resources_for_transport(source_planet, metal, crystal):
         raise NotEnoughResourcesError("Nie masz wystarczających zasobów.")
 
-    if not can_carry_resources(transporter_count, metal, crystal):
-        raise CargoCapacityExceededError("Ładunek nie mieści się w pojemności transportowców.")
+    if not can_carry_resources(ship_quantities, metal, crystal):
+        raise CargoCapacityExceededError("Ładunek nie mieści się w pojemności floty.")
 
     helion_cost = calculate_helion_cost_for_flight(
         source_planet,

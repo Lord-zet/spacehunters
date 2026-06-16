@@ -51,9 +51,7 @@ class Planet(models.Model):
                 raise ValidationError("User can only have one main planet.")
 
     def get_buildings(self):
-        if hasattr(self, "buildings"):
-            return self.buildings
-        return PlanetBuildings.objects.create(planet=self)
+        return self.buildings
 
     def is_building_in_progress(self, *, at=None):
         return self.get_buildings().is_building_in_progress(at=at)
@@ -72,9 +70,7 @@ class Planet(models.Model):
         return ship.quantity if ship else 0
 
     def get_ship_construction(self):
-        if hasattr(self, "ship_construction"):
-            return self.ship_construction
-        return PlanetShipConstruction.objects.create(planet=self)
+        return self.ship_construction
 
     def __str__(self):
         return self.name

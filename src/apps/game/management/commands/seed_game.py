@@ -37,6 +37,7 @@ class Command(BaseCommand):
                 "metal_mine_level": 1,
                 "crystal_mine_level": 1,
                 "helion_synthesizer_level": 1,
+                "solar_array_level": 1,
                 "metal_storage_level": 0,
                 "crystal_storage_level": 0,
                 "helion_storage_level": 0,

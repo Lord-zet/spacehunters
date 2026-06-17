@@ -16,6 +16,7 @@ from .domain_services.shipyard import (
     get_ship_construction_cost,
     get_ship_construction_time_seconds,
 )
+from .domain_services.energy import get_energy_balance
 from apps.game.domain.exceptions import DomainError
 from .selectors import (
     get_active_fleets_for_user,
@@ -23,6 +24,10 @@ from .selectors import (
     get_user_homeland,
     get_user_planet_or_404,
 )
+
+
+def get_planet_energy_balance(planet):
+    return get_energy_balance(planet)
 
 
 def get_planet_background(planet):
@@ -78,6 +83,7 @@ def planet_detail(request, pk):
         "storage_capacities": get_storage_capacities(planet),
         "active_fleets": active_fleets,
         "field_usage": get_planet_field_usage(planet),
+        "energy_balance": get_planet_energy_balance(planet),
     }
     return render(request, "game/planet_detail.html", context)
 
@@ -126,6 +132,7 @@ def planet_buildings(request, pk):
         "storage_capacities": get_storage_capacities(planet),
         "field_usage": get_planet_field_usage(planet),
         "building_time": building_time,
+        "energy_balance": get_planet_energy_balance(planet),
     }
     return render(request, "game/buildings.html", context)
 
@@ -141,7 +148,7 @@ def switch_planet(request, pk):
 def send_fleet(request, pk):
     source_planet = get_user_planet_or_404(request.user, pk)
 
-    advance_result = advance_user_state(request.user, planet=planet)
+    advance_result = advance_user_state(request.user, planet=source_planet)
     source_planet = advance_result.planet
 
     if request.method == "POST":
@@ -283,5 +290,6 @@ def planet_shipyard(request, pk):
         "ship_construction_in_progress": construction.is_in_progress(),
         "active_ship_label": active_ship_label,
         "form": form,
+        "energy_balance": get_planet_energy_balance(planet),
     }
     return render(request, "game/shipyard.html", context)

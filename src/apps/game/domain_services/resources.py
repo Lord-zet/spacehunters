@@ -1,6 +1,10 @@
 from django.utils import timezone
 
 from ..buildings import BUILDINGS
+from .energy import (
+    apply_energy_efficiency_to_production,
+    get_energy_balance,
+)
 
 
 RESOURCE_FIELDS = ("metal", "crystal", "helion")
@@ -143,7 +147,7 @@ def get_storage_capacity(planet, resource: str, *, buildings=None) -> int:
     return get_storage_capacity_for_level(level)
 
 
-def get_production_per_hour(planet, *, buildings=None) -> dict:
+def get_raw_production_per_hour(planet, *, buildings=None) -> dict:
     if buildings is None:
         buildings = planet.get_buildings()
 
@@ -162,6 +166,16 @@ def get_production_per_hour(planet, *, buildings=None) -> dict:
             total[resource] = total.get(resource, 0) + amount
 
     return total
+
+
+def get_production_per_hour(planet, *, buildings=None) -> dict:
+    if buildings is None:
+        buildings = planet.get_buildings()
+
+    raw_production = get_raw_production_per_hour(planet, buildings=buildings)
+    energy_balance = get_energy_balance(planet, buildings=buildings)
+
+    return apply_energy_efficiency_to_production(raw_production, energy_balance)
 
 
 def synchronize_resources(planet, at=None, *, save=False, buildings=None):

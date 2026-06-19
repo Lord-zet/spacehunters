@@ -40,14 +40,14 @@ class PlanetTestMixin:
             "crystal": 200,
             "helion": 0,
             "is_homeland": True,
-            "planet_fields_total": 25,
+            "planet_fields_total": 50,
         }
 
         buildings_data = {
             "metal_mine_level": 2,
             "crystal_mine_level": 1,
             "helion_synthesizer_level": 0,
-            "solar_array_level": 0,
+            "solar_array_level": 20,
             "metal_storage_level": 10,
             "crystal_storage_level": 10,
             "helion_storage_level": 0,

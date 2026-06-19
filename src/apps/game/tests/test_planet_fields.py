@@ -15,8 +15,11 @@ class PlanetFieldsTests(PlanetTestMixin, TestCase):
             planet_fields_total=20,
             metal_mine_level=3,
             crystal_mine_level=2,
+            helion_synthesizer_level=0,
+            solar_array_level=0,
             metal_storage_level=1,
             crystal_storage_level=4,
+            helion_storage_level=0,
         )
 
         self.assertEqual(planet.buildings.get_used_fields(), 10)
@@ -29,8 +32,11 @@ class PlanetFieldsTests(PlanetTestMixin, TestCase):
             planet_fields_total=10,
             metal_mine_level=3,
             crystal_mine_level=2,
+            helion_synthesizer_level=0,
+            solar_array_level=0,
             metal_storage_level=1,
             crystal_storage_level=1,
+            helion_storage_level=0,
             building_type="metal_mine",
             building_ends_at=now + timezone.timedelta(minutes=5),
         )
@@ -74,8 +80,11 @@ class PlanetFieldsTests(PlanetTestMixin, TestCase):
             crystal=10000,
             metal_mine_level=1,
             crystal_mine_level=1,
+            helion_synthesizer_level=0,
+            solar_array_level=0,
             metal_storage_level=1,
             crystal_storage_level=0,
+            helion_storage_level=0,
         )
 
         start_building_upgrade(planet, "metal_mine", at=now)
@@ -95,8 +104,11 @@ class PlanetFieldsTests(PlanetTestMixin, TestCase):
             crystal=10000,
             metal_mine_level=1,
             crystal_mine_level=1,
+            helion_synthesizer_level=0,
+            solar_array_level=0,
             metal_storage_level=1,
             crystal_storage_level=0,
+            helion_storage_level=0,
         )
 
         start_building_upgrade(planet, "metal_mine", at=now)

@@ -85,6 +85,7 @@ class PlanetBuildings(models.Model):
     metal_mine_level = models.PositiveIntegerField(default=1)
     crystal_mine_level = models.PositiveIntegerField(default=0)
     helion_synthesizer_level = models.PositiveIntegerField(default=0)
+    solar_array_level = models.PositiveIntegerField(default=1)
     metal_storage_level = models.PositiveIntegerField(default=1)
     crystal_storage_level = models.PositiveIntegerField(default=1)
     helion_storage_level = models.PositiveIntegerField(default=0)

@@ -16,6 +16,7 @@ class PlanetTestMixin:
         "shipyard_level",
         "building_type",
         "building_ends_at",
+        "building_cost_paid",
     }
 
     SHIP_FIELDS = {
@@ -54,6 +55,7 @@ class PlanetTestMixin:
             "shipyard_level": 0,
             "building_type": "",
             "building_ends_at": None,
+            "building_cost_paid": {},
         }
 
         ships_data = {

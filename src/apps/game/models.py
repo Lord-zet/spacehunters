@@ -92,6 +92,7 @@ class PlanetBuildings(models.Model):
     shipyard_level = models.PositiveIntegerField(default=0)
     building_type = models.CharField(max_length=50, blank=True, default="")
     building_ends_at = models.DateTimeField(null=True, blank=True)
+    building_cost_paid = models.JSONField(default=dict, blank=True)
 
     def get_level(self, level_field: str) -> int:
         return getattr(self, level_field)
@@ -127,6 +128,11 @@ class PlanetBuildings(models.Model):
             at=at,
             include_in_progress=include_in_progress,
         ) > 0
+
+    def clear_building_progress(self) -> None:
+        self.building_type = ""
+        self.building_ends_at = None
+        self.building_cost_paid = {}
 
     def __str__(self):
         return f"Buildings<{self.planet_id}>"

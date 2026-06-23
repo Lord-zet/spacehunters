@@ -1,4 +1,5 @@
 from datetime import timedelta
+from dataclasses import dataclass
 
 from django.db import transaction
 from django.utils import timezone
@@ -8,10 +9,11 @@ from apps.game.domain.exceptions import (
     NotEnoughResourcesError,
     UnknownBuildingError,
     NoFreePlanetFieldsError,
+    NoBuildingInProgressError,
 )
 from apps.game.models import Planet, PlanetBuildings
 from ..buildings import BUILDINGS
-from .resources import synchronize_resources, RESOURCE_STATE_FIELDS
+from .resources import synchronize_resources, RESOURCE_STATE_FIELDS, RESOURCE_FIELDS
 
 
 EARLY_COST_MULTIPLIERS = [
@@ -23,6 +25,8 @@ EARLY_COST_MULTIPLIERS = [
 ]
 
 DEFAULT_COST_GROWTH_FACTOR = 1.33
+
+BUILDING_CANCEL_REFUND_PERCENT = 50
 
 
 def round_building_cost(value: float) -> int:
@@ -151,10 +155,12 @@ def start_building_upgrade(planet, building_name, *, at=None):
     spend_resources(planet, cost)
 
     buildings.building_type = building_name
+    buildings.building_cost_paid = dict(cost)
+
     upgrade_time = get_upgrade_time(planet, building_name)
     buildings.building_ends_at = now + timedelta(seconds=upgrade_time)
 
-    buildings.save(update_fields=["building_type", "building_ends_at"])
+    buildings.save(update_fields=["building_type", "building_ends_at", "building_cost_paid"])
     planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
     return planet
@@ -178,12 +184,12 @@ def finish_locked_building_if_ready(buildings, *, at=None):
     config = get_building_config(buildings.building_type)
 
     if not config:
-        buildings.building_type = ""
-        buildings.building_ends_at = None
+        buildings.clear_building_progress()
         buildings.save(
             update_fields=[
                 "building_type",
                 "building_ends_at",
+                "building_cost_paid",
             ]
         )
         return False
@@ -199,6 +205,7 @@ def finish_locked_building_if_ready(buildings, *, at=None):
             level_field,
             "building_type",
             "building_ends_at",
+            "building_cost_paid",
         ]
     )
 
@@ -218,4 +225,70 @@ def finish_building_if_ready(planet, *, at=None):
     return finish_locked_building_if_ready(
         buildings,
         at=at,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class BuildingCancellationResult:
+    building_type: str
+    paid_cost: dict[str, int]
+    refund: dict[str, int]
+
+
+def calculate_building_cancel_refund(paid_cost, *, refund_percent=BUILDING_CANCEL_REFUND_PERCENT):
+    return {
+        resource: amount * refund_percent // 100
+        for resource, amount in paid_cost.items()
+        if amount > 0
+    }
+
+
+def refund_resources(planet, refund):
+    for resource, amount in refund.items():
+        if resource not in RESOURCE_FIELDS:
+            continue
+
+        setattr(planet, resource, getattr(planet, resource) + amount)
+
+
+@transaction.atomic
+def cancel_building_upgrade(planet, *, at=None) -> BuildingCancellationResult:
+    now = at or timezone.now()
+
+    locked_planet = Planet.objects.select_for_update().get(pk=planet.pk)
+    buildings = PlanetBuildings.objects.select_for_update().get(planet=locked_planet)
+
+    synchronize_resources(locked_planet, at=now, save=False, buildings=buildings)
+
+    if not buildings.is_building_in_progress(at=now):
+        raise NoBuildingInProgressError("Brak aktywnej budowy do anulowania.")
+
+    if not buildings.building_cost_paid:
+        raise NoBuildingInProgressError("Brak zapisanego kosztu aktywnej budowy.")
+
+    building_type = buildings.building_type
+
+    paid_cost = {
+        resource: int(amount)
+        for resource, amount in buildings.building_cost_paid.items()
+    }
+
+    refund = calculate_building_cancel_refund(paid_cost)
+    refund_resources(locked_planet, refund)
+
+    buildings.clear_building_progress()
+
+    buildings.save(
+        update_fields=[
+            "building_type",
+            "building_ends_at",
+            "building_cost_paid",
+        ]
+    )
+    locked_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+
+    return BuildingCancellationResult(
+        building_type=building_type,
+        paid_cost=paid_cost,
+        refund=refund,
     )

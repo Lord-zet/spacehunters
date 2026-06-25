@@ -10,4 +10,5 @@ urlpatterns = [
     path("planet/<int:pk>/fleets/", views.fleet_list, name="fleet_list"),
     path("planet/<int:pk>/buildings/", views.planet_buildings, name="buildings"),
     path("planet/<int:pk>/shipyard/", views.planet_shipyard, name="shipyard"),
+    path("planet/<int:pk>/buildings/cancel/", views.cancel_building, name="cancel_building"),
 ]

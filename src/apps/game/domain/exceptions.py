@@ -72,3 +72,7 @@ class PlanetOwnershipError(DomainError):
 
 class UnsupportedFleetMissionError(DomainError):
     pass
+
+
+class NoBuildingInProgressError(DomainError):
+    pass

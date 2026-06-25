@@ -18,42 +18,86 @@
         </div>
     </div>
 
-    <!-- PANEL STATUSU BUDOWY -->
-    <div class="glass-panel border-l-2 border-accent-cyan p-4 flex items-center justify-between overflow-hidden relative">
-        <div class="flex items-center space-x-4">
-            <div class="relative">
-                <div class="w-10 h-10 rounded-full border-2 border-accent-cyan/20 flex items-center justify-center">
-                    {% if building_in_progress %}
-                        <div class="w-6 h-6 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin"></div>
-                    {% else %}
-                        <div class="w-6 h-6 border-2 border-white/20 rounded-full flex items-center justify-center">
-                            <div class="w-2 h-2 bg-white/20 rounded-full"></div>
+        <!-- PANEL STATUSU BUDOWY -->
+        <div class="glass-panel border-l-4 border-accent-cyan p-4 flex items-center justify-between hud-border">
+
+            <!-- LEWA STRONA: IKONA + TEKST + PRZYCISK -->
+            <div class="flex items-center gap-x-6">
+                <!-- Spinner -->
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full border-2 border-accent-cyan/20 flex items-center justify-center">
+                        {% if building_in_progress %}
+                            <div class="w-6 h-6 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin"></div>
+                        {% else %}
+                            <div class="w-6 h-6 border-2 border-white/20 rounded-full flex items-center justify-center">
+                                <div class="w-2 h-2 bg-white/20 rounded-full"></div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- GRUPA: TEKST STATUSU + PRZYCISK ANULOWANIA -->
+                <div class="flex items-center gap-x-6">
+                    <div>
+                        <p class="text-[10px] text-white/40 uppercase tracking-widest">Status inżynieryjny</p>
+                        <h3 class="text-sm font-scifi uppercase">
+                            {% if building_in_progress %}
+                                W budowie: <span class="text-accent-cyan">{{ planet_buildings.building_type }}</span>
+                            {% else %}
+                                <span class="text-white/60">Brak aktywnej budowy</span>
+                            {% endif %}
+                        </h3>
+                    </div>
+
+                    <!-- PRZYCISK ANULOWANIA (Inline) -->
+
+                        {% if building_in_progress %}
+                        <div x-data="{ confirming: false }" class="relative">
+                            <!-- Przycisk startowy -->
+                            <button type="button"
+                                    @click="confirming = true"
+                                    x-show="!confirming"
+                                    class="bg-red-900/20 hover:bg-red-500/20 border border-red-500/50 text-red-500 px-4 py-1 text-xs font-scifi uppercase transition-all hover:scale-105 active:scale-95">
+                                Anuluj budowę
+                            </button>
+
+                            <!-- Potwierdzenie -->
+                            <div x-show="confirming"
+                                 @click.away="confirming = false"
+                                 class="flex items-center space-x-4 bg-black/90 p-3 border border-red-500/50 rounded animate-in fade-in zoom-in duration-200">
+                                <p class="text-[10px] text-red-400 font-mono italic">
+                                    Czy na pewno przerwać? <br>
+                                    <span class="text-white/60">Zostanie zwrócone 50% kosztów!</span>
+                                </p>
+
+                                <form method="post" action="{% url 'game:cancel_building' planet.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 text-xs uppercase font-bold">
+                                        Potwierdź
+                                    </button>
+                                </form>
+                                <button type="button" @click="confirming = false" class="text-white/40 hover:text-white px-1">
+                                    X
+                                </button>
+                            </div>
                         </div>
                     {% endif %}
                 </div>
             </div>
-            <div>
-                <p class="text-[10px] text-white/40 uppercase tracking-widest">Status Inżynieryjny</p>
-                <h3 class="text-sm font-scifi uppercase">
-                    {% if building_in_progress %}
-                        W budowie: <span class="text-accent-cyan">{{ planet_buildings.building_type }}</span>
-                    {% else %}
-                        <span class="text-white/60">Brak aktywnej budowy</span>
-                    {% endif %}
-                </h3>
+
+            {% if building_in_progress %}
+            <div class="text-right">
+                <p class="text-[10px] text-white/40 uppercase tracking-widest">Pozostały czas</p>
+                <p class="text-sm font-scifi text-accent-orange">{{ planet_buildings.building_ends_at|time_remaining }}</p>
             </div>
+            {% endif %}
+
+            <!-- Dekoracyjne tło dla panelu -->
+            <div class="absolute right-0 top-0 h-full w-32 bg-gradient-to-l from-accent-cyan/5 to-transparent pointer-events-none"></div>
         </div>
 
-        {% if building_in_progress %}
-        <div class="text-right">
-            <p class="text-[10px] text-white/40 uppercase tracking-widest">Pozostały czas</p>
-            <p class="text-sm font-scifi text-accent-orange">{{ planet_buildings.building_ends_at|time_remaining }}</p>
-        </div>
-        {% endif %}
 
-        <!-- Dekoracyjne tło dla panelu -->
-        <div class="absolute right-0 top-0 h-full w-32 bg-gradient-to-l from-accent-cyan/5 to-transparent pointer-events-none"></div>
-    </div>
+
 
     <!-- GŁÓWNY PANEL BUDYNKÓW -->
     <div class="glass-panel hud-border p-1">

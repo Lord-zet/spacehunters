@@ -2,13 +2,14 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .models import Planet, Fleet
 from .forms import SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
 from .domain_services.fleet import send_transport_fleet, send_stationing_fleet
-from .domain_services.buildings import start_building_upgrade, get_upgrade_cost, get_upgrade_time
+from .domain_services.buildings import start_building_upgrade, get_upgrade_cost, get_upgrade_time, cancel_building_upgrade
 from .domain_services.resources import get_production_per_hour, get_storage_capacity
 from .domain_services.sync import advance_user_state
 from .domain_services.shipyard import (
@@ -293,3 +294,32 @@ def planet_shipyard(request, pk):
         "energy_balance": get_planet_energy_balance(planet),
     }
     return render(request, "game/shipyard.html", context)
+
+
+@login_required
+@require_POST
+def cancel_building(request, pk):
+    planet = get_user_planet_or_404(request.user, pk)
+    now = timezone.now()
+
+    advance_result = advance_user_state(request.user, planet=planet, at=now)
+    planet = advance_result.planet
+
+    try:
+        cancellation = cancel_building_upgrade(planet, at=now)
+    except DomainError as exc:
+        messages.error(request, str(exc))
+    else:
+        refund_text = ", ".join(
+            f"{amount} {resource}"
+            for resource, amount in cancellation.refund.items()
+        )
+
+        if not refund_text:
+            refund_text = "brak"
+
+        messages.success(
+            request, f"Anulowano budowę: {cancellation.building_type}.\nZwrot: {refund_text}."
+        )
+
+    return redirect("game:buildings", pk=planet.pk)

@@ -55,6 +55,31 @@ def get_planet_field_usage(planet):
     }
 
 
+def get_building_overview_rows(planet, *, dashboard_only=False, category=None):
+    buildings = planet.get_buildings()
+    rows = []
+
+    for code, config in BUILDINGS.items():
+        if dashboard_only and not config.get("dashboard_visible", False):
+            continue
+
+        if category is not None and config.get("category") != category:
+            continue
+
+        level_field = config["level_field"]
+
+        rows.append({
+            "code": code,
+            "label": config.get("label", code),
+            "short_label": config.get("short_label", config.get("label", code)),
+            "category": config.get("category", ""),
+            "level": getattr(buildings, level_field, 0),
+            "order": config.get("dashboard_order", 999),
+        })
+
+    return sorted(rows, key=lambda row: row["order"])
+
+
 @login_required
 def dashboard(request):
     planet = get_user_homeland(request.user)
@@ -80,6 +105,7 @@ def planet_detail(request, pk):
     context = {
         "planet": planet,
         "planet_buildings": planet.get_buildings(),
+        "building_overview_rows": get_building_overview_rows(planet, dashboard_only=True, category="production"),
         "background": background,
         "storage_capacities": get_storage_capacities(planet),
         "active_fleets": active_fleets,

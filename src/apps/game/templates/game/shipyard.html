@@ -90,15 +90,15 @@
                             <form action="{% url 'game:shipyard' pk=planet.pk %}" method="POST" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                                 {% csrf_token %}
                                 <div>
-                                    <p class="text-[10px] text-white/40 uppercase mb-1">Koszt jedn.</p>
-                                    <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ item.unit_cost.metal|default:0 }}</span> | K: <span class="text-white">{{ item.unit_cost.crystal|default:0 }}</span> | H: <span class="text-white">{{ item.unit_cost.helion|default:0 }}</span></p>
+                                    <p class="text-[10px] text-white/40 uppercase">Koszt jedn.</p>
+                                    <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ item.unit_cost.metal|default:0 }}</span> | K: <span class="text-accent-cyan">{{ item.unit_cost.crystal|default:0 }}</span> | H: <span class="text-accent-cyan">{{ item.unit_cost.helion|default:0 }}</span></p>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] text-white/40 uppercase mb-1">Czas produkcji</p>
+                                    <p class="text-[10px] text-white/40 uppercase">Czas produkcji</p>
                                     <p class="text-xs text-accent-cyan font-mono">{{ item.unit_build_time|format_duration }}</p>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] text-white/40 uppercase mb-1">Ilość</p>
+                                    <p class="text-[10px] text-white/40 uppercase">Ilość</p>
                                     <input type="hidden" name="ship_code" value="{{ ship_code }}">
                                     <input type="number" name="quantity" min="1" value="1"
                                            class="w-full md:w-24 bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-center focus:border-accent-cyan outline-none transition-all">

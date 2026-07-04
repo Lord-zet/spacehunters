@@ -14,12 +14,12 @@
         </div>
         <div class="text-right">
             <span class="text-[10px] block text-white/30 uppercase">Zajęte pola</span>
-            <span class="text-lg text-accent-orange">{{ field_usage.used }}/{{ field_usage.total }}</span>
+            <span class="text-lg text-accent-cyan">{{ field_usage.used }}/{{ field_usage.total }}</span>
         </div>
     </div>
 
         <!-- PANEL STATUSU BUDOWY -->
-        <div class="glass-panel border-l-4 border-accent-cyan p-4 flex items-center justify-between hud-border">
+        <div class="glass-panel border-l-4 border-accent-cyan p-4 flex items-center justify-between">
 
             <!-- LEWA STRONA: IKONA + TEKST + PRZYCISK -->
             <div class="flex items-center gap-x-6">
@@ -120,15 +120,15 @@
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
-                            <p class="text-sm text-white">+{{ production.metal|default:"0" }}</p>
+                            <p class="text-xs text-accent-cyan font-mono">+{{ production.metal|default:"0" }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
                             <p class="text-xs text-accent-cyan font-mono">{{ building_time.metal_mine|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.metal_mine.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.metal_mine.crystal|default:"0" }}</span></p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.metal_mine.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.metal_mine.crystal|default:"0" }}</span></p>
                         </div>
                         <div class="flex items-end justify-end">
                             <form method="post">
@@ -162,15 +162,15 @@
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
-                            <p class="text-sm text-white">+{{ production.crystal|default:"0" }}</p>
+                            <p class="text-xs text-accent-cyan font-mono">+{{ production.crystal|default:"0" }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
                             <p class="text-xs text-accent-cyan font-mono">{{ building_time.crystal_mine|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.crystal_mine.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.crystal_mine.crystal|default:"0" }}</span></p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.crystal_mine.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.crystal_mine.crystal|default:"0" }}</span></p>
                         </div>
                         <div class="flex items-end justify-end">
                             <form method="post">
@@ -204,15 +204,15 @@
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
-                            <p class="text-sm text-white">+{{ production.helion|default:"0" }}</p>
+                            <p class="text-xs text-accent-cyan font-mono">+{{ production.helion|default:"0" }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
                             <p class="text-xs text-accent-cyan font-mono">{{ building_time.helion_synthesizer|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.helion_synthesizer.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.helion_synthesizer.crystal|default:"0" }}</span></p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.helion_synthesizer.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.helion_synthesizer.crystal|default:"0" }}</span></p>
                         </div>
                         <div class="flex items-end justify-end">
                             <form method="post">
@@ -246,15 +246,15 @@
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
-                            <p class="text-sm text-white">+{{ energy_balance.produced|default:"0" }}</p>
+                            <p class="text-xs text-accent-cyan font-mono">+{{ energy_balance.produced|default:"0" }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
                             <p class="text-xs text-accent-cyan font-mono">{{ building_time.solar_array|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.solar_array.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.solar_array.crystal|default:"0" }}</span></p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.solar_array.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.solar_array.crystal|default:"0" }}</span></p>
                         </div>
                         <div class="flex items-end justify-end">
                             <form method="post">
@@ -275,7 +275,7 @@
                 <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                     <img src="#" alt="Magazyn Metalu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-orange/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.metal_storage_level|default:"0" }}</span>
+                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.metal_storage_level|default:"0" }}</span>
                 </div>
 
                 <div class="flex-1 flex flex-col justify-between">
@@ -287,15 +287,15 @@
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
-                            <p class="text-sm text-white">{{ storage_capacities.metal|default:"0" }}</p>
+                            <p class="text-xs text-accent-cyan font-mono">{{ storage_capacities.metal|default:"0" }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
                             <p class="text-xs text-accent-cyan font-mono">{{ building_time.metal_storage|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.metal_storage.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.metal_storage.crystal|default:"0" }}</span></p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.metal_storage.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.metal_storage.crystal|default:"0" }}</span></p>
                         </div>
                         <div class="flex items-end justify-end">
                             <form method="post">
@@ -317,7 +317,7 @@
                 <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                     <img src="#" alt="Magazyn Kryształu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-orange/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.crystal_storage_level|default:"0" }}</span>
+                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.crystal_storage_level|default:"0" }}</span>
                 </div>
 
                 <div class="flex-1 flex flex-col justify-between">
@@ -329,15 +329,15 @@
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
-                            <p class="text-sm text-white">{{ storage_capacities.crystal|default:"5.000" }}</p>
+                            <p class="text-xs text-accent-cyan font-mono">{{ storage_capacities.crystal|default:"5.000" }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
                             <p class="text-xs text-accent-cyan font-mono">{{ building_time.crystal_storage|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.crystal_storage.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.crystal_storage.crystal|default:"0" }}</span></p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.crystal_storage.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.crystal_storage.crystal|default:"0" }}</span></p>
                         </div>
                         <div class="flex items-end justify-end">
                             <form method="post">
@@ -359,7 +359,7 @@
                 <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                     <img src="#" alt="Magazyn Helionu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-orange/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.helion_storage_level|default:"0" }}</span>
+                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.helion_storage_level|default:"0" }}</span>
                 </div>
 
                 <div class="flex-1 flex flex-col justify-between">
@@ -371,15 +371,15 @@
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
-                            <p class="text-sm text-white">{{ storage_capacities.helion|default:"5.000" }}</p>
+                            <p class="text-xs text-accent-cyan font-mono">{{ storage_capacities.helion|default:"5.000" }}</p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
                             <p class="text-xs text-accent-cyan font-mono">{{ building_time.helion_storage|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.helion_storage.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.helion_storage.crystal|default:"0" }}</span></p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.helion_storage.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.helion_storage.crystal|default:"0" }}</span></p>
                         </div>
                         <div class="flex items-end justify-end">
                             <form method="post">
@@ -402,7 +402,7 @@
                 <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                     <img src="#" alt="Stocznia" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-orange/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.shipyard_level|default:"0" }}</span>
+                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.shipyard_level|default:"0" }}</span>
                 </div>
 
                 <div class="flex-1 flex flex-col justify-between">
@@ -417,12 +417,12 @@
                             <p class="text-sm text-white"></p>
                         </div>
                         <div>
-                            <p class="text-[10px] text-white/40 uppercase mb-1">Czas budowy</p>
+                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
                             <p class="text-xs text-accent-cyan font-mono">{{ building_time.shipyard|format_duration }}</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.shipyard.metal|default:"0" }}</span> | K: <span class="text-white">{{ building_costs.shipyard.crystal|default:"0" }}</span></p>
+                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.shipyard.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.shipyard.crystal|default:"0" }}</span></p>
                         </div>
                         <div class="flex items-end justify-end">
                             <form method="post">

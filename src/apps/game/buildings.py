@@ -48,6 +48,9 @@ def make_energy_consumption_fn(base_usage, exponent):
 
 BUILDINGS = {
     "metal_mine": {
+        "label": "Kopalnia metalu",
+        "category": "production",
+        "dashboard_visible": True,
         "level_field": "metal_mine_level",
         "base_cost": {"metal": 100},
         "build_time": 60,
@@ -57,6 +60,9 @@ BUILDINGS = {
         "energy_consumption_fn": make_energy_consumption_fn(8, 1.12),
     },
     "crystal_mine": {
+        "label": "Kopalnia kryształu",
+        "category": "production",
+        "dashboard_visible": True,
         "level_field": "crystal_mine_level",
         "base_cost": {"metal": 80},
         "build_time": 90,
@@ -65,6 +71,9 @@ BUILDINGS = {
         "energy_consumption_fn": make_energy_consumption_fn(10, 1.12),
     },
     "helion_synthesizer": {
+        "label": "Syntezator Helionu",
+        "category": "production",
+        "dashboard_visible": True,
         "level_field": "helion_synthesizer_level",
         "base_cost": {"metal": 120, "crystal": 80},
         "build_time": 120,
@@ -74,6 +83,9 @@ BUILDINGS = {
         "energy_consumption_fn": make_energy_consumption_fn(16, 1.14),
     },
     "solar_array": {
+        "label": "Elektrownia słoneczna",
+        "category": "production",
+        "dashboard_visible": True,
         "level_field": "solar_array_level",
         "base_cost": {"metal": 180, "crystal": 60},
         "build_time": 90,
@@ -82,24 +94,36 @@ BUILDINGS = {
         "energy_production_fn": make_energy_production_fn(40, 1.18),
     },
     "metal_storage": {
+        "label": "Magazyn metalu",
+        "category": "production",
+        "dashboard_visible": True,
         "level_field": "metal_storage_level",
         "base_cost": {"metal": 120, "crystal": 40},
         "build_time": 75,
         "cost_growth_factor": 1.28,
     },
     "crystal_storage": {
+        "label": "Magazyn kryształu",
+        "category": "production",
+        "dashboard_visible": True,
         "level_field": "crystal_storage_level",
         "base_cost": {"metal": 120, "crystal": 80},
         "build_time": 75,
         "cost_growth_factor": 1.28,
     },
     "helion_storage": {
+        "label": "Magazyn Helionu",
+        "category": "production",
+        "dashboard_visible": True,
         "level_field": "helion_storage_level",
         "base_cost": {"metal": 160, "crystal": 120},
         "build_time": 90,
         "cost_growth_factor": 1.27,
     },
     "shipyard": {
+        "label": "Stocznia",
+        "category": "infrastructure",
+        "dashboard_visible": True,
         "level_field": "shipyard_level",
         "base_cost": {"metal": 400, "crystal": 200},
         "build_time": 180,

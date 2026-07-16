@@ -12,7 +12,7 @@
             <div class="space-y-4">
                     {% for building in building_overview_rows %}
                         <div class="flex justify-between items-center {% cycle '' 'text-white/70' %}">
-                            <span class="text-sm">{{ building.label }}</span>
+                            <span class="text-sm">{{ building.config.label }}</span>
                             <span class="bg-accent-cyan/20 text-accent-cyan px-2 py-1 text-xs rounded">
                                 lvl {{ building.level|default:"0" }}
                             </span>

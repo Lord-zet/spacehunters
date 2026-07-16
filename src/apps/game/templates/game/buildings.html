@@ -1,6 +1,6 @@
 {% extends "game/base.html" %}
 {% load time_extras %}
-
+{% load static %}
 {% block title %}Budynki | {{ planet.name }}{% endblock %}
 
 {% block content %}
@@ -96,353 +96,54 @@
             <div class="absolute right-0 top-0 h-full w-32 bg-gradient-to-l from-accent-cyan/5 to-transparent pointer-events-none"></div>
         </div>
 
-
-
-
     <!-- GŁÓWNY PANEL BUDYNKÓW -->
     <div class="glass-panel hud-border p-1">
         <div class="divide-y divide-white/10">
 
-            <!-- KOPALNIA METALU -->
-            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
-                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                    <img src="#" alt="Kopalnia Metalu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.metal_mine_level|default:"0" }}</span>
-                </div>
+            {% for building in building_cards %}
 
-                <div class="flex-1 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Kopalnia Metalu</h3>
-                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Głębokie odwierty w skorupie planety pozwalające na wydobycie podstawowych rud żelaza niezbędnych do budowy floty i struktur.</p>
+                <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
+                    <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
+                        <div class="absolute inset-0 bg-gradient-to-t"></div>
+                        <img src="{% static building.config.thumb %}" alt="{{ building.label }}" class="w-full h-full object-cover">
+                        <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ building.level }}</span>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
-                            <p class="text-xs text-accent-cyan font-mono">+{{ production.metal|default:"0" }}</p>
+                    <div class="flex-1 flex flex-col justify-between">
+                        <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 items-end">
+                            <div>
+                                <h3 class="text-lg font-scifi text-white uppercase tracking-wider">{{ building.config.label }}</h3>
+                                <p class="text-xs text-white/60 mt-1 leading-relaxed">{{ building.config.description }}</p>
+                            </div>
+                            <div>
+                                <div class="flex items-end justify-end">
+                                    <form method="post">
+                                    {% csrf_token %}
+                                        <input type="hidden" name="building" value="metal_mine">
+                                        <button type="submit"
+                                            {% if building_in_progress %}disabled{% endif %}
+                                            class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
+                                            {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.metal_mine|format_duration }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.metal_mine.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.metal_mine.crystal|default:"0" }}</span></p>
-                        </div>
-                        <div class="flex items-end justify-end">
-                            <form method="post">
-                            {% csrf_token %}
-                                <input type="hidden" name="building" value="metal_mine">
-                                <button type="submit"
-                                    {% if building_in_progress %}disabled{% endif %}
-                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
-                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KOPALNIA KRYSZTAŁU -->
-            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
-                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                    <img src="#" alt="Kopalnia Kryształu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.crystal_mine_level|default:"0" }}</span>
-                </div>
-
-                <div class="flex-1 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Kopalnia Kryształu</h3>
-                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Kryształy są głównym nośnikiem energii w obwodach elektronicznych. Wydobywane z rzadkich formacji kwarcowych.</p>
-                    </div>
-
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
-                            <p class="text-xs text-accent-cyan font-mono">+{{ production.crystal|default:"0" }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.crystal_mine|format_duration }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.crystal_mine.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.crystal_mine.crystal|default:"0" }}</span></p>
-                        </div>
-                        <div class="flex items-end justify-end">
-                            <form method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="building" value="crystal_mine">
-                                <button type="submit"
-                                    {% if building_in_progress %}disabled{% endif %}
-                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
-                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
-                                </button>
-                            </form>
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
+                            {% for stat in building.stats %}
+                                <div>
+                                    <p class="text-[10px] text-white/40 uppercase">{{ stat.label }}</p>
+                                    <p class="text-xs text-accent-cyan font-mono">{{ stat.value }}</p>
+                                </div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- SYNTEZATOR HELIONU -->
-            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
-                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                    <img src="#" alt="Syntezator helionu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.helion_synthesizer_level|default:"0" }}</span>
-                </div>
-
-                <div class="flex-1 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Syntezator helionu</h3>
-                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Helion jest paliwem wykorzystywanym przez wszystkie statki.</p>
-                    </div>
-
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
-                            <p class="text-xs text-accent-cyan font-mono">+{{ production.helion|default:"0" }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.helion_synthesizer|format_duration }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.helion_synthesizer.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.helion_synthesizer.crystal|default:"0" }}</span></p>
-                        </div>
-                        <div class="flex items-end justify-end">
-                            <form method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="building" value="helion_synthesizer">
-                                <button type="submit"
-                                    {% if building_in_progress %}disabled{% endif %}
-                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
-                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ELEKTROWNIA SŁONECZNA -->
-            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
-                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                    <img src="#" alt="Elektrownia słoneczna" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.solar_array_level|default:"0" }}</span>
-                </div>
-
-                <div class="flex-1 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Elektrownia słoneczna</h3>
-                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Elektrownia produkuje energię niezbędną dla każdego budynku produkcyjnego.</p>
-                    </div>
-
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Produkcja / h</p>
-                            <p class="text-xs text-accent-cyan font-mono">+{{ energy_balance.produced|default:"0" }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.solar_array|format_duration }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.solar_array.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.solar_array.crystal|default:"0" }}</span></p>
-                        </div>
-                        <div class="flex items-end justify-end">
-                            <form method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="building" value="solar_array">
-                                <button type="submit"
-                                    {% if building_in_progress %}disabled{% endif %}
-                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
-                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- MAGAZYN METALU -->
-            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
-                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                    <img src="#" alt="Magazyn Metalu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.metal_storage_level|default:"0" }}</span>
-                </div>
-
-                <div class="flex-1 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Magazyn Metalu</h3>
-                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Ogromne silosy przeznaczone do bezpiecznego przechowywania rudy. Zwiększa limit maksymalnego składowania metalu.</p>
-                    </div>
-
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ storage_capacities.metal|default:"0" }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.metal_storage|format_duration }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.metal_storage.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.metal_storage.crystal|default:"0" }}</span></p>
-                        </div>
-                        <div class="flex items-end justify-end">
-                            <form method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="building" value="metal_storage">
-                                <button type="submit"
-                                    {% if building_in_progress %}disabled{% endif %}
-                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
-                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MAGAZYN KRYSZTAŁU -->
-            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
-                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                    <img src="#" alt="Magazyn Kryształu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.crystal_storage_level|default:"0" }}</span>
-                </div>
-
-                <div class="flex-1 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Magazyn Kryształu</h3>
-                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Termicznie izolowane komory chroniące strukturę krystaliczną przed degradacją spowodowaną wahaniami temperatur.</p>
-                    </div>
-
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ storage_capacities.crystal|default:"5.000" }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.crystal_storage|format_duration }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.crystal_storage.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.crystal_storage.crystal|default:"0" }}</span></p>
-                        </div>
-                        <div class="flex items-end justify-end">
-                            <form method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="building" value="crystal_storage">
-                                <button type="submit"
-                                    {% if building_in_progress %}disabled{% endif %}
-                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
-                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MAGAZYN HELIONU -->
-            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
-                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                    <img src="#" alt="Magazyn Helionu" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.helion_storage_level|default:"0" }}</span>
-                </div>
-
-                <div class="flex-1 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Magazyn Helionu</h3>
-                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Specjalne zbiorniki przystosowane do magazynowania ciekłego paliwa.</p>
-                    </div>
-
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Pojemność</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ storage_capacities.helion|default:"5.000" }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.helion_storage|format_duration }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.helion_storage.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.helion_storage.crystal|default:"0" }}</span></p>
-                        </div>
-                        <div class="flex items-end justify-end">
-                            <form method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="building" value="helion_storage">
-                                <button type="submit"
-                                    {% if building_in_progress %}disabled{% endif %}
-                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
-                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- STOCZNIA -->
-            <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
-                <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                    <img src="#" alt="Stocznia" class="w-full h-full object-cover">
-                    <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[10px] px-1 font-bold">LVL {{ planet_buildings.shipyard_level|default:"0" }}</span>
-                </div>
-
-                <div class="flex-1 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-scifi text-white uppercase tracking-wider">Stocznia</h3>
-                        <p class="text-xs text-white/60 mt-1 leading-relaxed">Stocznia umożliwa budowę wszelkiego rodzaju statków - od transporterów po okręty wojenne.</p>
-                    </div>
-
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-white/5 pt-4 items-end">
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase"></p>
-                            <p class="text-sm text-white"></p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Czas budowy</p>
-                            <p class="text-xs text-accent-cyan font-mono">{{ building_time.shipyard|format_duration }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-white/40 uppercase">Koszt rozbudowy</p>
-                            <p class="text-xs text-white/80">M: <span class="text-accent-cyan">{{ building_costs.shipyard.metal|default:"0" }}</span> | K: <span class="text-accent-cyan">{{ building_costs.shipyard.crystal|default:"0" }}</span></p>
-                        </div>
-                        <div class="flex items-end justify-end">
-                            <form method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="building" value="shipyard">
-                                <button type="submit"
-                                    {% if building_in_progress %}disabled{% endif %}
-                                    class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">
-                                    {% if building_in_progress %}W budowie...{% else %}Rozbuduj{% endif %}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-
+            {% endfor %}
         </div>
     </div>
+
+
 
     <!-- PANEL INFORMACYJNY (DOLNY) -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

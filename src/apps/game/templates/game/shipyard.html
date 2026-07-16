@@ -1,5 +1,6 @@
 {% extends "game/base.html" %}
 {% load time_extras %}
+{% load static %}
 
 {% block title %}Stocznia | {{ planet.name }}{% endblock %}
 
@@ -75,8 +76,8 @@
                     <div class="p-6 flex flex-col md:flex-row gap-6 hover:bg-white/5 transition-colors">
                         <!-- Miniatura -->
                         <div class="w-32 h-32 flex-shrink-0 bg-black/40 border border-white/10 rounded overflow-hidden relative">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                            <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=200" alt="{{ item.config.label }}" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t"></div>
+                            <img src="{% static item.config.thumb %}" alt="{{ item.config.label }}" class="w-full h-full object-cover">
                             <span class="absolute top-1 left-1 z-20 bg-accent-cyan/80 text-black text-[11px] px-1 font-bold">Posiadane: {{ item.owned_quantity }}</span>
                         </div>
 

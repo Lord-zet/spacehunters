@@ -27,10 +27,6 @@ from .selectors import (
 )
 
 
-def get_planet_energy_balance(planet):
-    return get_energy_balance(planet)
-
-
 def get_planet_background(planet):
     backgrounds = [
         "game/backgrounds/bg1.jpg",
@@ -55,9 +51,129 @@ def get_planet_field_usage(planet):
     }
 
 
-def get_building_overview_rows(planet, *, dashboard_only=False, category=None):
-    buildings = planet.get_buildings()
-    rows = []
+RESOURCE_LABELS = {
+    "metal": "M:",
+    "crystal": "K:",
+    "helion": "H:",
+}
+
+
+def format_seconds(seconds: int | None) -> str:
+    if seconds is None:
+        return "-"
+
+    minutes, sec = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+
+    if hours:
+        return f"{hours}h {minutes}m"
+
+    if minutes:
+        return f"{minutes}m {sec}s"
+
+    return f"{sec}s"
+
+
+def format_resource_amount(resource: str, amount: int) -> str:
+    label = RESOURCE_LABELS.get(resource, resource)
+    return f"{label} {amount}"
+
+
+def format_cost(cost: dict[str, int] | None) -> str:
+    if not cost:
+        return "-"
+
+    return " | ".join(
+        format_resource_amount(resource, amount)
+        for resource, amount in cost.items()
+    )
+
+
+def build_production_stat(config: dict, level: int) -> dict | None:
+    production_fn = config.get("production_fn")
+
+    if not production_fn:
+        return None
+
+    production = production_fn(level)
+
+    if not production:
+        return None
+
+    parts = [
+        format_resource_amount(resource, amount)
+        for resource, amount in production.items()
+    ]
+
+    return {
+        "label": "Produkcja/h",
+        "value": ", ".join(parts),
+    }
+
+
+def build_energy_stat(config: dict, level: int) -> dict | None:
+    energy_production_fn = config.get("energy_production_fn")
+
+    if not energy_production_fn:
+        return None
+
+    return {
+        "label": "Produkcja energii",
+        "value": f"{energy_production_fn(level)}",
+    }
+
+
+def build_storage_stat(planet, config: dict) -> dict | None:
+    if config.get("category") != "storage":
+        return None
+
+    resource = config.get("resource")
+
+    if not resource:
+        return None
+
+    capacity = get_storage_capacity(planet, resource)
+
+    return {
+        "label": "Pojemność",
+        "value": format_resource_amount(resource, capacity)
+    }
+
+
+def get_building_detail_stats(planet, building_code: str, config: dict, level: int) -> list[dict]:
+    stats = []
+
+    production_stat = build_production_stat(config, level)
+    if production_stat:
+        stats.append(production_stat)
+
+    energy_stat = build_energy_stat(config, level)
+    if energy_stat:
+        stats.append(energy_stat)
+
+    storage_stat = build_storage_stat(planet, config)
+    if storage_stat:
+        stats.append(storage_stat)
+
+    build_time = get_upgrade_time(planet, building_code)
+    stats.append({
+        "label": "Czas budowy",
+        "value": format_seconds(build_time),
+    })
+
+    cost = get_upgrade_cost(planet, building_code)
+    stats.append({
+        "label": "Koszt rozbudowy",
+        "value": format_cost(cost),
+    })
+
+    return stats
+
+
+def get_building_cards(planet, *, dashboard_only=False, category=None) -> list[dict]:
+    planet_buildings = planet.get_buildings()
+
+    cards = []
 
     for code, config in BUILDINGS.items():
         if dashboard_only and not config.get("dashboard_visible", False):
@@ -66,18 +182,16 @@ def get_building_overview_rows(planet, *, dashboard_only=False, category=None):
         if category is not None and config.get("category") != category:
             continue
 
-        level_field = config["level_field"]
-
-        rows.append({
+        level = getattr(planet_buildings, config["level_field"], 0)
+        cards.append({
             "code": code,
-            "label": config.get("label", code),
-            "short_label": config.get("short_label", config.get("label", code)),
-            "category": config.get("category", ""),
-            "level": getattr(buildings, level_field, 0),
-            "order": config.get("dashboard_order", 999),
+            "config": config,
+            "level": level,
+            "stats": get_building_detail_stats(planet, code, config, level),
+            "order": config.get("order", 999),
         })
 
-    return sorted(rows, key=lambda row: row["order"])
+    return sorted(cards, key=lambda card: card["order"])
 
 
 @login_required
@@ -105,12 +219,12 @@ def planet_detail(request, pk):
     context = {
         "planet": planet,
         "planet_buildings": planet.get_buildings(),
-        "building_overview_rows": get_building_overview_rows(planet, dashboard_only=True, category="production"),
+        "building_overview_rows": get_building_cards(planet, dashboard_only=True, category="production"),
         "background": background,
         "storage_capacities": get_storage_capacities(planet),
         "active_fleets": active_fleets,
         "field_usage": get_planet_field_usage(planet),
-        "energy_balance": get_planet_energy_balance(planet),
+        "energy_balance": get_energy_balance(planet),
     }
     return render(request, "game/planet_detail.html", context)
 
@@ -152,14 +266,13 @@ def planet_buildings(request, pk):
     context = {
         "planet": planet,
         "planet_buildings": planet.get_buildings(),
-        "production": get_production_per_hour(planet),
-        "building_costs": building_costs,
         "building_in_progress": planet.is_building_in_progress(),
         "background": background,
         "storage_capacities": get_storage_capacities(planet),
         "field_usage": get_planet_field_usage(planet),
         "building_time": building_time,
-        "energy_balance": get_planet_energy_balance(planet),
+        "energy_balance": get_energy_balance(planet),
+        "building_cards": get_building_cards(planet),
     }
     return render(request, "game/buildings.html", context)
 
@@ -236,6 +349,7 @@ def send_fleet(request, pk):
         "form": form,
         "background": background,
         "storage_capacities": get_storage_capacities(source_planet),
+        "energy_balance": get_energy_balance(source_planet),
     }
     return render(request, "game/send_fleet.html", context)
 
@@ -255,6 +369,8 @@ def fleet_list(request, pk):
         "planet_buildings": planet.get_buildings(),
         "background": background,
         "now": timezone.now(),
+        "storage_capacities": get_storage_capacities(planet),
+        "energy_balance": get_energy_balance(planet),
     }
     return render(request, "game/fleet_list.html", context)
 
@@ -317,7 +433,7 @@ def planet_shipyard(request, pk):
         "ship_construction_in_progress": construction.is_in_progress(),
         "active_ship_label": active_ship_label,
         "form": form,
-        "energy_balance": get_planet_energy_balance(planet),
+        "energy_balance": get_energy_balance(planet),
     }
     return render(request, "game/shipyard.html", context)
 

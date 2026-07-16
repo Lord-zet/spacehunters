@@ -13,6 +13,7 @@ SHIPS = {
         "description": ""
                        "Szybki, lekko opancerzony statek transportowy. Optymalny do transportu "
                        "ładunku między skolonizowanymi światami.",
+        "thumb": "game/ships/transporter_thumb.png",
         "base_cost": {
             "metal": 2000,
             "crystal": 1000,

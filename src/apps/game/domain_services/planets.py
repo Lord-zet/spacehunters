@@ -1,4 +1,5 @@
 from django.db import transaction
+from apps.game.domain_services.planet_generation import generate_planet_traits
 
 from apps.game.models import (
     Planet,
@@ -33,10 +34,13 @@ DEFAULT_BUILDING_LEVELS = {
 @transaction.atomic
 def create_planet(*, owner, name: str, galaxy: int, system: int, position: int, is_homeland: bool = False,
                   planet_fields_total: int = 90, resources: dict | None = None, buildings: dict | None = None,
-                  ships: dict | None = None) -> Planet:
+                  ships: dict | None = None, planet_type=None, radius_km=None, temperature_min=None,
+                  temperature_max=None, rng=None,) -> Planet:
 
     resource_data = {**DEFAULT_PLANET_RESOURCES,**(resources or {})}
     building_data = {**DEFAULT_BUILDING_LEVELS, **(buildings or {})}
+
+    generated_traits = generate_planet_traits(planet_type=planet_type, rng=rng)
 
     planet = Planet.objects.create(
         owner=owner,
@@ -46,6 +50,26 @@ def create_planet(*, owner, name: str, galaxy: int, system: int, position: int, 
         position=position,
         is_homeland=is_homeland,
         planet_fields_total=planet_fields_total,
+        planet_type=(
+            planet_type
+            if planet_type is not None
+            else generated_traits.planet_type
+        ),
+        radius_km=(
+            radius_km
+            if radius_km is not None
+            else generated_traits.radius_km
+        ),
+        temperature_min=(
+            temperature_min
+            if temperature_min is not None
+            else generated_traits.temperature_min
+        ),
+        temperature_max=(
+            temperature_max
+            if temperature_max is not None
+            else generated_traits.temperature_max
+        ),
         **resource_data,
     )
 

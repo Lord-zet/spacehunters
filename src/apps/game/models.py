@@ -17,6 +17,11 @@ class Planet(models.Model):
     system = models.PositiveIntegerField()
     position = models.PositiveIntegerField()
 
+    planet_type = models.CharField(max_length=50, default="terrestrial")
+    radius_km = models.PositiveIntegerField(default=6_000)
+    temperature_min = models.SmallIntegerField(default=-20)
+    temperature_max = models.SmallIntegerField(default=40)
+
     metal = models.BigIntegerField(default=500)
     crystal = models.BigIntegerField(default=200)
     helion = models.BigIntegerField(default=0)

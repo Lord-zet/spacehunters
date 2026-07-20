@@ -42,6 +42,10 @@ class PlanetTestMixin:
             "helion": 0,
             "is_homeland": True,
             "planet_fields_total": 50,
+            "planet_type": overrides.pop("planet_type", "terrestrial"),
+            "radius_km": overrides.pop("radius_km", 6_000),
+            "temperature_min": overrides.pop("temperature_min", -20),
+            "temperature_max": overrides.pop("temperature_max", 40),
         }
 
         buildings_data = {

@@ -10,7 +10,8 @@ User = get_user_model()
 class Command(BaseCommand):
     help = "Creates test user and its planets"
 
-    def ensure_planet(self, *, owner, galaxy, system, position, name, is_homeland):
+    def ensure_planet(self, *, owner, galaxy, system, position, name, is_homeland,
+                      planet_type, radius_km, temperature_min, temperature_max):
         planet = Planet.objects.filter(
             owner=owner,
             galaxy=galaxy,
@@ -48,6 +49,10 @@ class Command(BaseCommand):
             ships={
                 "transporter": 2,
             },
+            planet_type=planet_type,
+            radius_km=radius_km,
+            temperature_min=temperature_min,
+            temperature_max=temperature_max,
         )
 
     def handle(self, *args, **options):
@@ -65,6 +70,10 @@ class Command(BaseCommand):
             position=5,
             name="Planet1",
             is_homeland=True,
+            planet_type="terrestrial",
+            radius_km=6_371,
+            temperature_min=-20,
+            temperature_max=42,
         )
 
         self.ensure_planet(
@@ -74,6 +83,10 @@ class Command(BaseCommand):
             position=12,
             name="Planet2",
             is_homeland=False,
+            planet_type="desert",
+            radius_km=5_900,
+            temperature_min=-15,
+            temperature_max=88,
         )
 
         self.stdout.write(self.style.SUCCESS("Test data created."))

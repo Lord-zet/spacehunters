@@ -1,3 +1,6 @@
+from apps.game.domain.exceptions import UnknownPlanetTypeError
+
+
 DEFAULT_PLANET_TYPE = "terrestrial"
 
 
@@ -57,7 +60,7 @@ def get_planet_type_config(planet_type: str) -> dict:
     try:
         return PLANET_TYPES[planet_type]
     except KeyError as exc:
-        raise ValueError(f"Nieznany typ planety: {planet_type}") from exc
+        raise UnknownPlanetTypeError(f"Nieznany typ planety: {planet_type}") from exc
 
 
 def get_planet_type_choices() -> list[tuple[str, str]]:

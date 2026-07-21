@@ -76,3 +76,7 @@ class UnsupportedFleetMissionError(DomainError):
 
 class NoBuildingInProgressError(DomainError):
     pass
+
+
+class UnknownPlanetTypeError(ValueError):
+    pass

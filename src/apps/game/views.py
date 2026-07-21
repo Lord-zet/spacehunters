@@ -25,6 +25,7 @@ from .selectors import (
     get_user_homeland,
     get_user_planet_or_404,
 )
+from .presenters.planets import get_planet_trait_rows, get_planet_type_summary
 
 
 def get_planet_background(planet):
@@ -225,6 +226,8 @@ def planet_detail(request, pk):
         "active_fleets": active_fleets,
         "field_usage": get_planet_field_usage(planet),
         "energy_balance": get_energy_balance(planet),
+        "planet_trait_rows": get_planet_trait_rows(planet),
+        "planet_type_summary": get_planet_type_summary(planet),
     }
     return render(request, "game/planet_detail.html", context)
 

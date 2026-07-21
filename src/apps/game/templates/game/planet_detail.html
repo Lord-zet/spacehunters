@@ -5,23 +5,22 @@
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full font-mono">
 
-    <!-- LEWY PANEL: INFRASTRUKTURA -->
+    <!-- LEWY PANEL: STATYSTYKI ORAZ DANE FIZYCZNE PLANETY -->
     <div class="lg:col-span-3 space-y-6">
+        <!-- NOWY PANEL: FIZYCZNE DANE PLANETY -->
         <div class="glass-panel p-4 hud-border">
-            <h2 class="text-accent-cyan text-xs uppercase mb-4 border-b border-white/10 pb-1">Infrastruktura produkcyjna</h2>
-            <div class="space-y-4">
-                    {% for building in building_overview_rows %}
-                        <div class="flex justify-between items-center {% cycle '' 'text-white/70' %}">
-                            <span class="text-sm">{{ building.config.label }}</span>
-                            <span class="bg-accent-cyan/20 text-accent-cyan px-2 py-1 text-xs rounded">
-                                lvl {{ building.level|default:"0" }}
-                            </span>
-                        </div>
-                    {% empty %}
-                        <div class="text-sm text-white/50">
-                            Brak budynków do wyświetlenia.
-                        </div>
-                    {% endfor %}
+            <h2 class="text-accent-cyan text-xs uppercase mb-4 border-b border-white/10 pb-1">Parametry planety</h2>
+            <div class="space-y-3 text-xs">
+                {% for trait in planet_trait_rows %}
+                    <div class="flex justify-between items-center">
+                        <span class="text-white/50">{{ trait.label }}</span>
+                        <span class="text-white">{{ trait.value }}</span>
+                    </div>
+                {% endfor %}
+                <div class="flex justify-between items-center">
+                    <span class="text-white/50">Powierzchnia</span>
+                    <span class="text-white">{{ field_usage.used }}/{{ field_usage.total }}</span>
+                </div>
             </div>
         </div>
     </div>
@@ -37,6 +36,27 @@
         <div class="text-center">
             <h3 class="font-scifi text-2xl tracking-[0.3em] uppercase mb-2">{{ planet.name|default:"Alfa Prime" }}</h3>
             <p class="text-xs text-accent-cyan tracking-widest">[ SEKTOR {{ planet.coordinates }} ]</p>
+        </div>
+    </div>
+
+    <!-- PRAWY PANEL: INFRASTRUKTURA -->
+    <div class="lg:col-span-3 space-y-6">
+        <div class="glass-panel p-4 hud-border">
+            <h2 class="text-accent-cyan text-xs uppercase mb-4 border-b border-white/10 pb-1">Budynki Wydobywcze</h2>
+            <div class="space-y-4">
+                {% for building in building_overview_rows %}
+                    <div class="flex justify-between items-center {% cycle '' 'text-white/70' %}">
+                        <span class="text-sm">{{ building.config.label }}</span>
+                        <span class="bg-accent-cyan/20 text-accent-cyan px-2 py-1 text-xs rounded">
+                            lvl {{ building.level|default:"0" }}
+                        </span>
+                    </div>
+                {% empty %}
+                    <div class="text-sm text-white/50">
+                        Brak budynków do wyświetlenia.
+                    </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 

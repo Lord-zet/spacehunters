@@ -91,6 +91,10 @@ class PlanetTestMixin:
             ships={
                 "transporter": ships_data["transporter_count"],
             },
+            planet_type=planet_data['planet_type'],
+            radius_km=planet_data['radius_km'],
+            temperature_min=planet_data['temperature_min'],
+            temperature_max=planet_data['temperature_max'],
         )
 
         if last_resource_update is not None:

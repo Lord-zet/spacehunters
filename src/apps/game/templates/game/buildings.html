@@ -42,7 +42,11 @@
                         <p class="text-[10px] text-white/40 uppercase tracking-widest">Status inżynieryjny</p>
                         <h3 class="text-sm font-scifi uppercase">
                             {% if building_in_progress %}
-                                W budowie: <span class="text-accent-cyan">{{ planet_buildings.building_type }}</span>
+                                W budowie: <span class="text-accent-cyan">
+                                    {% if active_building_upgrade %}
+                                        {{ active_building_upgrade.label }}
+                                    {% endif %}
+                                </span>
                             {% else %}
                                 <span class="text-white/60">Brak aktywnej budowy</span>
                             {% endif %}

@@ -26,6 +26,7 @@ from .selectors import (
     get_user_planet_or_404,
 )
 from .presenters.planets import get_planet_trait_rows, get_planet_type_summary
+from .presenters.buildings import get_active_building_upgrade_summary
 
 
 def get_planet_background(planet):
@@ -276,6 +277,7 @@ def planet_buildings(request, pk):
         "building_time": building_time,
         "energy_balance": get_energy_balance(planet),
         "building_cards": get_building_cards(planet),
+        "active_building_upgrade": get_active_building_upgrade_summary(planet.get_buildings())
     }
     return render(request, "game/buildings.html", context)
 

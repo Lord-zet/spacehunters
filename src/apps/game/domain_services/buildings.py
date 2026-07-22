@@ -55,6 +55,11 @@ def get_building_config(building_name):
     return BUILDINGS.get(building_name)
 
 
+def get_building_label(building_name: str) -> str:
+    config = get_building_config(building_name)
+    return config.get("label", building_name)
+
+
 def get_building_level(planet, config):
     buildings = planet.get_buildings()
     return getattr(buildings, config["level_field"])

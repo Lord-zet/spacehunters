@@ -119,7 +119,7 @@
                                 <div class="flex items-end justify-end">
                                     <form method="post">
                                     {% csrf_token %}
-                                        <input type="hidden" name="building" value="metal_mine">
+                                        <input type="hidden" name="building" value="{{ building.code }}">
                                         <button type="submit"
                                             {% if building_in_progress %}disabled{% endif %}
                                             class="{% if building_in_progress %}opacity-50 grayscale cursor-not-allowed border-white/20 text-white/40{% else %}bg-accent-cyan/10 hover:bg-accent-cyan/30 border-accent-cyan/50 text-accent-cyan hover:scale-105 active:scale-95{% endif %} border px-4 py-1 text-xs uppercase font-scifi transition-all">

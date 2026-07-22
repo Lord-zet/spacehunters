@@ -1,6 +1,22 @@
 from apps.game.planet_types import get_planet_type_config
 
 
+def get_planet_background(planet):
+    backgrounds = [
+        "game/backgrounds/bg1.jpg",
+    ]
+    return backgrounds[planet.id % len(backgrounds)]
+
+
+def get_planet_field_usage(planet):
+    buildings = planet.get_buildings()
+    return {
+        "used": buildings.get_used_fields(),
+        "free": buildings.get_free_fields(),
+        "total": planet.planet_fields_total,
+    }
+
+
 def format_temperature_range(temperature_min: int, temperature_max: int) -> str:
     return f"{temperature_min}°C do {temperature_max}°C"
 

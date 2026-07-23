@@ -217,6 +217,7 @@ class Fleet(models.Model):
     )
     metal = models.BigIntegerField(default=0)
     crystal = models.BigIntegerField(default=0)
+    helion = models.BigIntegerField(default=0)
     helion_cost = models.BigIntegerField(default=0)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OUTBOUND)
     mission_type = models.CharField(

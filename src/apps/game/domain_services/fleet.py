@@ -183,7 +183,7 @@ def deliver_fleet_resources_to_planet(fleet, planet) -> None:
     planet.crystal += fleet.crystal
     planet.helion += fleet.helion
 
-    planet.save(update_fields=["metal", "crystal"])
+    planet.save(update_fields=["metal", "crystal", "helion"])
 
 
 def add_fleet_ships_to_planet(fleet, planet) -> None:
@@ -212,7 +212,7 @@ def handle_transport_arrival(fleet, *, at) -> None:
     fleet.helion = 0
     fleet.status = Fleet.Status.RETURNING
 
-    fleet.save(update_fields=["metal", "crystal", "status"])
+    fleet.save(update_fields=["metal", "crystal", "helion", "status"])
 
 
 def handle_station_arrival(fleet, *, at) -> None:
@@ -238,7 +238,7 @@ def handle_station_arrival(fleet, *, at) -> None:
     fleet.status = Fleet.Status.COMPLETED
     fleet.return_time = None
 
-    fleet.save(update_fields=["metal", "crystal", "status", "return_time"])
+    fleet.save(update_fields=["metal", "crystal", "helion", "status", "return_time"])
 
 
 def handle_fleet_return(fleet, *, at) -> None:

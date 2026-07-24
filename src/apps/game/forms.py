@@ -63,6 +63,13 @@ class SendFleetForm(forms.Form):
         initial=0,
         widget=forms.NumberInput(),
     )
+    helion_to_send = forms.IntegerField(
+        label="Ilość Helionu",
+        required=False,
+        min_value=0,
+        initial=0,
+        widget=forms.NumberInput(),
+    )
     target_planet = forms.ModelChoiceField(
         queryset=Planet.objects.none(),
         label="Planeta docelowa",
@@ -88,6 +95,10 @@ class SendFleetForm(forms.Form):
             "class": TAILWIND_FLEET_RESOURCE_INPUT,
             "placeholder": "0",
         })
+        self.fields["helion_to_send"].widget.attrs.update({
+            "class": TAILWIND_FLEET_RESOURCE_INPUT,
+            "placeholder": "0",
+        })
         self.fields["target_planet"].widget.attrs.update({
             "class": TAILWIND_FLEET_TARGET_INPUT,
             "placeholder": "0",
@@ -107,6 +118,9 @@ class SendFleetForm(forms.Form):
 
     def clean_crystal_to_send(self):
         return self.cleaned_data.get("crystal_to_send") or 0
+
+    def clean_helion_to_send(self):
+        return self.cleaned_data.get("helion_to_send") or 0
 
 
 class ShipConstructionForm(forms.Form):

@@ -147,6 +147,7 @@ def send_fleet(request, pk):
             target_planet = form.cleaned_data.get("target_planet")
             metal_to_send = form.cleaned_data.get("metal_to_send")
             crystal_to_send = form.cleaned_data.get("crystal_to_send")
+            helion_to_send = form.cleaned_data.get("helion_to_send")
 
             try:
                 if mission_type == Fleet.MissionType.STATION:
@@ -156,6 +157,7 @@ def send_fleet(request, pk):
                         tc,
                         metal_to_send,
                         crystal_to_send,
+                        helion_to_send,
                         request.user,
                     )
                     messages.success(
@@ -171,6 +173,7 @@ def send_fleet(request, pk):
                         tc,
                         metal_to_send,
                         crystal_to_send,
+                        helion_to_send,
                         request.user,
                     )
                     messages.success(

@@ -84,6 +84,17 @@
                             <button type="button" class="bg-white/5 px-2 py-2 text-[10px] border border-white/10 hover:text-accent-cyan uppercase">Max</button>
                         </div>
                     </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-white/40 uppercase">Helion</span>
+                            <span class="text-white/80">Dostępne: {{ planet.helion|default:"0" }}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            {{ form.helion_to_send }}
+                            <button type="button" class="bg-white/5 px-2 py-2 text-[10px] border border-white/10 hover:text-accent-cyan uppercase">Max</button>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="mt-6 flex items-center justify-between p-4 bg-accent-cyan/5 border border-accent-cyan/20 rounded">

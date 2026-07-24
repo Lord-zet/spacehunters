@@ -48,6 +48,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             transporter_count=3,
             metal=1000,
             crystal=500,
+            helion=0,
             user=user,
         )
 
@@ -91,6 +92,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
                 transporter_count=3,
                 metal=1000,
                 crystal=500,
+                helion=0,
                 user=user,
             )
 
@@ -129,6 +131,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
                 transporter_count=3,
                 metal=1000,
                 crystal=500,
+                helion=0,
                 user=user,
             )
 
@@ -167,6 +170,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
                 transporter_count=2,
                 metal=500,
                 crystal=200,
+                helion=0,
                 user=user,
             )
 
@@ -205,6 +209,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
                 transporter_count=1,
                 metal=900,
                 crystal=200,
+                helion=0,
                 user=user,
             )
 
@@ -249,6 +254,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             transporter_count=2,
             metal=1500,
             crystal=500,
+            helion=0,
             user=user,
         )
 
@@ -520,3 +526,43 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
 
         self.assertEqual(fleet.status, Fleet.Status.RETURNING)
         self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 7)
+
+    def test_transport_arrival_delivers_helion_cargo(self):
+        now = timezone.now()
+
+        user = self.create_user("helion_arrival")
+        source = self.create_planet(
+            owner=user,
+            helion=1_000,
+            transporter_count=1,
+            last_resource_update=now,
+        )
+        target = self.create_planet(
+            owner=user,
+            name="Target",
+            galaxy=1,
+            system=2,
+            position=2,
+            helion=50,
+            transporter_count=0,
+            is_homeland=False,
+            last_resource_update=now,
+        )
+
+        fleet = send_transport_fleet(
+            user=user,
+            source_planet=source,
+            target_planet=target,
+            transporter_count=1,
+            metal=0,
+            crystal=0,
+            helion=200,
+        )
+
+        process_fleets_for_user(user, at=fleet.arrival_time)
+
+        target.refresh_from_db()
+        fleet.refresh_from_db()
+
+        self.assertEqual(target.helion, 250)
+        self.assertEqual(fleet.helion, 0)

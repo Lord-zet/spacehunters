@@ -53,6 +53,7 @@ class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):
             transporter_count=3,
             metal=1000,
             crystal=500,
+            helion=0,
             user=user,
         )
 
@@ -101,6 +102,7 @@ class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):
                 transporter_count=3,
                 metal=1000,
                 crystal=500,
+                helion=0,
                 user=user,
             )
 

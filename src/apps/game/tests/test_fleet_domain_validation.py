@@ -53,6 +53,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 transporter_count=1,
                 metal=100,
                 crystal=0,
+                helion=0,
                 user=user,
             )
 
@@ -92,6 +93,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 ship_quantities={"transporter": 1},
                 metal=100,
                 crystal=0,
+                helion=0,
                 user=user,
                 mission_type="unsupported",
             )
@@ -132,6 +134,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 ship_quantities={"ghost_ship": 1},
                 metal=100,
                 crystal=0,
+                helion=0,
                 user=user,
                 mission_type=Fleet.MissionType.TRANSPORT,
             )
@@ -172,6 +175,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 ship_quantities={},
                 metal=100,
                 crystal=0,
+                helion=0,
                 user=user,
                 mission_type=Fleet.MissionType.TRANSPORT,
             )
@@ -212,6 +216,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 ship_quantities={"transporter": -1},
                 metal=100,
                 crystal=0,
+                helion=0,
                 user=user,
                 mission_type=Fleet.MissionType.TRANSPORT,
             )
@@ -252,6 +257,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 ship_quantities={"transporter": 0},
                 metal=100,
                 crystal=0,
+                helion=0,
                 user=user,
                 mission_type=Fleet.MissionType.TRANSPORT,
             )

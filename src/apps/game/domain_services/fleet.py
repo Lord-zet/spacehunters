@@ -92,8 +92,14 @@ def transport_capacity(transporter_count: int) -> int:
     return calculate_cargo_capacity({TRANSPORTER_CODE: transporter_count})
 
 
-def can_carry_resources(ship_quantities: dict[str, int], metal: int, crystal: int) -> bool:
-    return (metal + crystal) <= calculate_cargo_capacity(ship_quantities)
+def get_total_cargo_amount(*, metal: int = 0, crystal: int = 0, helion: int = 0) -> int:
+    return metal + crystal + helion
+
+def can_carry_resources(ship_quantities: dict[str, int], metal: int = 0, crystal: int = 0, helion: int = 0) -> bool:
+    return (
+            get_total_cargo_amount(metal=metal, crystal=crystal, helion=helion)
+            <= calculate_cargo_capacity(ship_quantities)
+    )
 
 
 def has_enough_transporters(planet, transporter_count: int) -> bool:
@@ -101,8 +107,8 @@ def has_enough_transporters(planet, transporter_count: int) -> bool:
     return transporter.quantity >= transporter_count
 
 
-def has_enough_resources_for_transport(planet, metal: int, crystal: int) -> bool:
-    return planet.metal >= metal and planet.crystal >= crystal
+def has_enough_resources_for_transport(planet, metal: int, crystal: int, helion: int) -> bool:
+    return planet.metal >= metal and planet.crystal >= crystal and planet.helion >= helion
 
 
 def has_enough_helion_for_flight(planet, helion_cost: int) -> bool:
@@ -175,6 +181,7 @@ def add_planet_ships(planet, ship_code: str, quantity: int) -> None:
 def deliver_fleet_resources_to_planet(fleet, planet) -> None:
     planet.metal += fleet.metal
     planet.crystal += fleet.crystal
+    planet.helion += fleet.helion
 
     planet.save(update_fields=["metal", "crystal"])
 
@@ -202,6 +209,7 @@ def handle_transport_arrival(fleet, *, at) -> None:
 
     fleet.metal = 0
     fleet.crystal = 0
+    fleet.helion = 0
     fleet.status = Fleet.Status.RETURNING
 
     fleet.save(update_fields=["metal", "crystal", "status"])
@@ -226,6 +234,7 @@ def handle_station_arrival(fleet, *, at) -> None:
 
     fleet.metal = 0
     fleet.crystal = 0
+    fleet.helion = 0
     fleet.status = Fleet.Status.COMPLETED
     fleet.return_time = None
 
@@ -300,6 +309,7 @@ def _send_fleet_mission(
     ship_quantities: dict[str, int],
     metal: int,
     crystal: int,
+    helion: int,
     user,
     mission_type: str,
 ):
@@ -317,7 +327,7 @@ def _send_fleet_mission(
     if source_planet.id == target_planet.id:
         raise SamePlanetTransportError("Nie można wysłać floty na tę samą planetę.")
 
-    if metal < 0 or crystal < 0:
+    if metal < 0 or crystal < 0 or helion <0:
         raise FleetError("Nie można wysłać ujemnej ilości surowców.")
 
     if mission_type == Fleet.MissionType.STATION and source_planet.owner_id != target_planet.owner_id:
@@ -325,10 +335,10 @@ def _send_fleet_mission(
 
     ensure_planet_has_enough_ships(source_planet, ship_quantities)
 
-    if not has_enough_resources_for_transport(source_planet, metal, crystal):
+    if not has_enough_resources_for_transport(source_planet, metal, crystal, helion):
         raise NotEnoughResourcesError("Nie masz wystarczających zasobów.")
 
-    if not can_carry_resources(ship_quantities, metal, crystal):
+    if not can_carry_resources(ship_quantities, metal, crystal, helion):
         raise CargoCapacityExceededError("Ładunek nie mieści się w pojemności floty.")
 
     helion_cost = calculate_helion_cost_for_flight(
@@ -343,7 +353,7 @@ def _send_fleet_mission(
     deduct_planet_ships(source_planet, ship_quantities)
     source_planet.metal -= metal
     source_planet.crystal -= crystal
-    source_planet.helion -= helion_cost
+    source_planet.helion -= helion + helion_cost
     source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
     flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet)
@@ -358,6 +368,7 @@ def _send_fleet_mission(
         target_planet=target_planet,
         metal=metal,
         crystal=crystal,
+        helion=helion,
         helion_cost=helion_cost,
         mission_type=mission_type,
         status=Fleet.Status.OUTBOUND,
@@ -371,25 +382,27 @@ def _send_fleet_mission(
     return fleet
 
 
-def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, user):
+def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, helion, user):
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
         ship_quantities={TRANSPORTER_CODE: transporter_count},
         metal=metal,
         crystal=crystal,
+        helion=helion,
         user=user,
         mission_type=Fleet.MissionType.TRANSPORT,
     )
 
 
-def send_stationing_fleet(source_planet, target_planet, transporter_count, metal, crystal, user):
+def send_stationing_fleet(source_planet, target_planet, transporter_count, metal, crystal, helion, user):
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
         ship_quantities={TRANSPORTER_CODE: transporter_count},
         metal=metal,
         crystal=crystal,
+        helion=helion,
         user=user,
         mission_type=Fleet.MissionType.STATION,
     )

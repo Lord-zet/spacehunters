@@ -3,6 +3,10 @@ from django import forms
 from .models import Planet, Fleet
 
 from .ships import SHIPS
+from apps.game.fleet_speed_profiles import (
+    DEFAULT_FLEET_SPEED_PROFILE,
+    get_fleet_speed_profile_choices,
+)
 
 
 TAILWIND_INPUT = (
@@ -35,6 +39,9 @@ TAILWIND_FLEET_MISSION_TYPE = (
     "w-full bg-black/60 border border-white/10 rounded px-3 py-2 text-sm focus:border-accent-cyan outline-none appearance-none cursor-pointer"
 )
 TAILWIND_FLEET_TARGET_INPUT = (
+    "w-full bg-black/60 border border-white/10 rounded px-3 py-2 text-sm focus:border-accent-cyan outline-none appearance-none cursor-pointer"
+)
+TAILWIND_FLEET_SPEED_PROFILE = (
     "w-full bg-black/60 border border-white/10 rounded px-3 py-2 text-sm focus:border-accent-cyan outline-none appearance-none cursor-pointer"
 )
 
@@ -75,6 +82,11 @@ class SendFleetForm(forms.Form):
         label="Planeta docelowa",
         empty_label="Wybierz planetę",
     )
+    speed_profile = forms.ChoiceField(
+        choices=get_fleet_speed_profile_choices(),
+        initial=DEFAULT_FLEET_SPEED_PROFILE,
+        label="Profil prędkości",
+    )
 
     def __init__(self, *args, user=None, source_planet=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -101,6 +113,10 @@ class SendFleetForm(forms.Form):
         })
         self.fields["target_planet"].widget.attrs.update({
             "class": TAILWIND_FLEET_TARGET_INPUT,
+            "placeholder": "0",
+        })
+        self.fields["speed_profile"].widget.attrs.update({
+            "class": TAILWIND_FLEET_SPEED_PROFILE,
             "placeholder": "0",
         })
 

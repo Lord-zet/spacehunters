@@ -148,6 +148,7 @@ def send_fleet(request, pk):
             metal_to_send = form.cleaned_data.get("metal_to_send")
             crystal_to_send = form.cleaned_data.get("crystal_to_send")
             helion_to_send = form.cleaned_data.get("helion_to_send")
+            speed_profile = form.cleaned_data["speed_profile"]
 
             try:
                 if mission_type == Fleet.MissionType.STATION:
@@ -159,6 +160,7 @@ def send_fleet(request, pk):
                         crystal_to_send,
                         helion_to_send,
                         request.user,
+                        speed_profile,
                     )
                     messages.success(
                         request,
@@ -175,6 +177,7 @@ def send_fleet(request, pk):
                         crystal_to_send,
                         helion_to_send,
                         request.user,
+                        speed_profile,
                     )
                     messages.success(
                         request,

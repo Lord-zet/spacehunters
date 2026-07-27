@@ -220,6 +220,10 @@ class Fleet(models.Model):
     helion = models.BigIntegerField(default=0)
     helion_cost = models.BigIntegerField(default=0)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OUTBOUND)
+    speed_profile = models.CharField(
+        max_length=30,
+        default="standard",
+    )
     mission_type = models.CharField(
         max_length=30,
         choices=MissionType.choices,

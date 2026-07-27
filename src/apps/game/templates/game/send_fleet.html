@@ -60,9 +60,22 @@
                 </div>
             </div>
 
-            <!-- SEKCJA 3: ŁADUNEK -->
+            <!-- SEKCJA 3: PROFIL PRĘDKOŚCI -->
             <div class="lg:col-span-2 mt-4">
-                <h3 class="text-accent-orange text-xs uppercase border-b border-white/10 pb-2 mb-4">3. Załadunek Surowców</h3>
+                <h3 class="text-accent-orange text-xs uppercase border-b border-white/10 pb-2 mb-4">3. Prędkość</h3>
+                    <label class="block text-[10px] text-white/40 uppercase mb-1">Profil prędkości</label>
+
+                    {{ form.speed_profile }}
+                    {% if form.speed_profile.help_text %}
+                        <p class="text-xs text-white/50">{{ form.speed_profile.help_text }}</p>
+                    {% endif %}
+
+                    {{ form.speed_profile.errors }}
+            </div>
+
+            <!-- SEKCJA 4: ŁADUNEK -->
+            <div class="lg:col-span-2 mt-4">
+                <h3 class="text-accent-orange text-xs uppercase border-b border-white/10 pb-2 mb-4">4. Załadunek Surowców</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <div class="flex justify-between text-[10px]">

@@ -23,6 +23,12 @@ from apps.game.domain_services.travel import calculate_distance, calculate_fligh
 from apps.game.ships import SHIPS
 from .resources import synchronize_resources, RESOURCE_STATE_FIELDS
 from .sync import advance_planet_state
+from apps.game.fleet_speed_profiles import (
+    DEFAULT_FLEET_SPEED_PROFILE,
+    get_fleet_fuel_multiplier,
+    get_fleet_speed_multiplier,
+)
+
 
 
 TRANSPORTER_CODE = "transporter"
@@ -65,14 +71,22 @@ def calculate_fleet_base_fuel_burn(ship_quantities: dict[str, int]) -> int:
     return total
 
 
-def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantities: dict[str, int]) -> int:
+def apply_fuel_multiplier(base_cost: int, fuel_multiplier: float) -> int:
+    if base_cost <= 0:
+        return 0
+
+    return int(math.ceil(base_cost * fuel_multiplier))
+
+
+def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantities: dict[str, int], fuel_multiplier=1.0) -> int:
     base_burn = calculate_fleet_base_fuel_burn(ship_quantities)
     if base_burn <= 0:
         return 0
 
     distance = calculate_distance(source_planet, target_planet)
     raw_cost = (base_burn * distance) / HELION_DISTANCE_DIVISOR
-    return max(MIN_HELION_COST, math.ceil(raw_cost))
+    final_cost = apply_fuel_multiplier(int(raw_cost), fuel_multiplier)
+    return max(MIN_HELION_COST, math.ceil(final_cost))
 
 
 def calculate_cargo_capacity(ship_quantities: dict[str, int]) -> int:
@@ -86,10 +100,6 @@ def calculate_cargo_capacity(ship_quantities: dict[str, int]) -> int:
         total += ship_config.get("cargo_capacity", 0) * quantity
 
     return total
-
-
-def transport_capacity(transporter_count: int) -> int:
-    return calculate_cargo_capacity({TRANSPORTER_CODE: transporter_count})
 
 
 def get_total_cargo_amount(*, metal: int = 0, crystal: int = 0, helion: int = 0) -> int:
@@ -312,6 +322,7 @@ def _send_fleet_mission(
     helion: int,
     user,
     mission_type: str,
+    speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
 ):
     now = timezone.now()
 
@@ -341,10 +352,12 @@ def _send_fleet_mission(
     if not can_carry_resources(ship_quantities, metal, crystal, helion):
         raise CargoCapacityExceededError("Ładunek nie mieści się w pojemności floty.")
 
+    fuel_multiplier = get_fleet_fuel_multiplier(speed_profile)
     helion_cost = calculate_helion_cost_for_flight(
         source_planet,
         target_planet,
         ship_quantities,
+        fuel_multiplier,
     )
 
     if not has_enough_helion_for_flight(source_planet, helion_cost):
@@ -356,7 +369,8 @@ def _send_fleet_mission(
     source_planet.helion -= helion + helion_cost
     source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
-    flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet)
+    speed_multiplier = get_fleet_speed_multiplier(speed_profile)
+    flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet, speed_multiplier)
     flight_duration = timedelta(seconds=flight_time_seconds)
 
     arrival_time = now + flight_duration
@@ -372,6 +386,7 @@ def _send_fleet_mission(
         helion_cost=helion_cost,
         mission_type=mission_type,
         status=Fleet.Status.OUTBOUND,
+        speed_profile=speed_profile,
         departure_time=now,
         arrival_time=arrival_time,
         return_time=return_time,
@@ -382,7 +397,8 @@ def _send_fleet_mission(
     return fleet
 
 
-def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, helion, user):
+def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, helion, user,
+                         speed_profile=DEFAULT_FLEET_SPEED_PROFILE,):
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
@@ -390,12 +406,14 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
         metal=metal,
         crystal=crystal,
         helion=helion,
+        speed_profile=speed_profile,
         user=user,
         mission_type=Fleet.MissionType.TRANSPORT,
     )
 
 
-def send_stationing_fleet(source_planet, target_planet, transporter_count, metal, crystal, helion, user):
+def send_stationing_fleet(source_planet, target_planet, transporter_count, metal, crystal, helion, user,
+                          speed_profile=DEFAULT_FLEET_SPEED_PROFILE,):
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
@@ -403,6 +421,7 @@ def send_stationing_fleet(source_planet, target_planet, transporter_count, metal
         metal=metal,
         crystal=crystal,
         helion=helion,
+        speed_profile=speed_profile,
         user=user,
         mission_type=Fleet.MissionType.STATION,
     )

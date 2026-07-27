@@ -80,3 +80,7 @@ class NoBuildingInProgressError(DomainError):
 
 class UnknownPlanetTypeError(ValueError):
     pass
+
+
+class UnknownFleetSpeedProfileError(ValueError):
+    pass

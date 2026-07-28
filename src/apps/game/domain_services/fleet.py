@@ -205,42 +205,59 @@ def add_fleet_ships_to_planet(fleet, planet) -> None:
         )
 
 
+def get_safe_fleet_event_time(event_time, *planets):
+    safe_time = event_time
+
+    for planet in planets:
+        if (
+            planet.last_resource_update
+            and planet.last_resource_update > safe_time
+        ):
+            safe_time = planet.last_resource_update
+
+    return safe_time
+
+
 def handle_transport_arrival(fleet, *, at) -> None:
-    advance_result = advance_planet_state(
-        fleet.target_planet,
-        at=at,
+    target_planet = (
+        Planet.objects
+        .select_for_update()
+        .get(pk=fleet.target_planet_id)
     )
+
+    safe_event_time = get_safe_fleet_event_time(at, target_planet)
+
+    advance_result = advance_planet_state(target_planet, at=safe_event_time)
+
     target_planet = advance_result.planet
 
-    deliver_fleet_resources_to_planet(
-        fleet,
-        target_planet,
-    )
+    deliver_fleet_resources_to_planet(fleet, target_planet)
 
+    fleet.status = Fleet.Status.RETURNING
     fleet.metal = 0
     fleet.crystal = 0
     fleet.helion = 0
-    fleet.status = Fleet.Status.RETURNING
 
-    fleet.save(update_fields=["metal", "crystal", "helion", "status"])
+    target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+    fleet.save(update_fields=["status", "metal", "crystal", "helion"])
 
 
 def handle_station_arrival(fleet, *, at) -> None:
-    advance_result = advance_planet_state(
-        fleet.target_planet,
-        at=at,
+    target_planet = (
+        Planet.objects
+        .select_for_update()
+        .get(pk=fleet.target_planet_id)
     )
+
+    safe_event_time = get_safe_fleet_event_time(at, target_planet)
+
+    advance_result = advance_planet_state(target_planet, at=safe_event_time)
+
     target_planet = advance_result.planet
 
-    deliver_fleet_resources_to_planet(
-        fleet,
-        target_planet,
-    )
+    deliver_fleet_resources_to_planet(fleet, target_planet)
 
-    add_fleet_ships_to_planet(
-        fleet,
-        target_planet,
-    )
+    add_fleet_ships_to_planet(fleet, target_planet)
 
     fleet.metal = 0
     fleet.crystal = 0
@@ -248,22 +265,28 @@ def handle_station_arrival(fleet, *, at) -> None:
     fleet.status = Fleet.Status.COMPLETED
     fleet.return_time = None
 
+    target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+
     fleet.save(update_fields=["metal", "crystal", "helion", "status", "return_time"])
 
 
 def handle_fleet_return(fleet, *, at) -> None:
-    advance_result = advance_planet_state(
-        fleet.source_planet,
-        at=at,
+    source_planet = (
+        Planet.objects
+        .select_for_update()
+        .get(pk=fleet.source_planet_id)
     )
+
+    safe_event_time = get_safe_fleet_event_time(at, source_planet)
+
+    advance_result = advance_planet_state(source_planet, at=safe_event_time)
     source_planet = advance_result.planet
 
-    add_fleet_ships_to_planet(
-        fleet,
-        source_planet,
-    )
+    add_fleet_ships_to_planet(fleet, source_planet)
 
     fleet.status = Fleet.Status.COMPLETED
+
+    source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
     fleet.save(update_fields=["status"])
 
 
@@ -323,8 +346,9 @@ def _send_fleet_mission(
     user,
     mission_type: str,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
+    at=None,
 ):
-    now = timezone.now()
+    now = at or timezone.now()
 
     source_planet = Planet.objects.select_for_update().get(pk=source_planet.pk)
     target_planet = Planet.objects.select_for_update().get(pk=target_planet.pk)
@@ -398,7 +422,7 @@ def _send_fleet_mission(
 
 
 def send_transport_fleet(source_planet, target_planet, transporter_count, metal, crystal, helion, user,
-                         speed_profile=DEFAULT_FLEET_SPEED_PROFILE,):
+                         speed_profile=DEFAULT_FLEET_SPEED_PROFILE, at=None):
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
@@ -409,11 +433,12 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, metal,
         speed_profile=speed_profile,
         user=user,
         mission_type=Fleet.MissionType.TRANSPORT,
+        at=at,
     )
 
 
 def send_stationing_fleet(source_planet, target_planet, transporter_count, metal, crystal, helion, user,
-                          speed_profile=DEFAULT_FLEET_SPEED_PROFILE,):
+                          speed_profile=DEFAULT_FLEET_SPEED_PROFILE, at=None):
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
@@ -424,78 +449,110 @@ def send_stationing_fleet(source_planet, target_planet, transporter_count, metal
         speed_profile=speed_profile,
         user=user,
         mission_type=Fleet.MissionType.STATION,
+        at=at,
     )
 
 
 @dataclass(frozen=True, slots=True)
 class FleetEvent:
-    fleet: Fleet
+    event_time: object
+    fleet_id: int
     event_type: str
-    event_time: timezone.datetime
 
 
-@transaction.atomic
-def process_fleets_for_user(user, *, at=None):
-    now = at or timezone.now()
+FLEET_EVENT_ARRIVAL = "arrival"
+FLEET_EVENT_RETURN = "return"
 
-    outbound_fleets = list(
+
+FLEET_EVENT_PRIORITY = {
+    FLEET_EVENT_ARRIVAL: 10,
+    FLEET_EVENT_RETURN: 20,
+}
+
+
+def get_due_fleet_events(owner, *, at):
+    events = []
+
+    fleets = list(
         Fleet.objects
         .select_for_update()
         .select_related("target_planet", "source_planet")
         .prefetch_related("ships")
-        .filter(
-            Q(owner=user) | Q(target_planet__owner=user),
-            status=Fleet.Status.OUTBOUND,
-            arrival_time__lte=now,
-        )
+        .filter(Q(owner=owner) | Q(target_planet__owner=owner))
+        .exclude(status=Fleet.Status.COMPLETED)
     )
 
-    returning_fleets = list(
-        Fleet.objects
-        .select_for_update()
-        .select_related("source_planet", "target_planet")
-        .prefetch_related("ships")
-        .filter(
-            owner=user,
-            status=Fleet.Status.RETURNING,
-            return_time__lte=now,
-        )
-    )
+    for fleet in fleets:
+        if fleet.status == Fleet.Status.OUTBOUND:
+            if fleet.arrival_time and fleet.arrival_time <= at:
+                events.append(
+                    FleetEvent(
+                        event_time=fleet.arrival_time,
+                        fleet_id=fleet.pk,
+                        event_type=FLEET_EVENT_ARRIVAL,
+                    )
+                )
 
-    events = [
-        FleetEvent(
-            fleet=fleet,
-            event_type="arrival",
-            event_time=fleet.arrival_time,
-        )
-        for fleet in outbound_fleets
-    ]
+            # Ważne: jeśli użytkownik czekał aż flota zdążyła już wrócić,
+            # dodajemy też return event w tej samej rundzie.
+            if fleet.return_time and fleet.return_time <= at:
+                events.append(
+                    FleetEvent(
+                        event_time=fleet.return_time,
+                        fleet_id=fleet.pk,
+                        event_type=FLEET_EVENT_RETURN,
+                    )
+                )
 
-    events.extend(
-        FleetEvent(
-            fleet=fleet,
-            event_type="return",
-            event_time=fleet.return_time,
-        )
-        for fleet in returning_fleets
-        if fleet.return_time is not None
-    )
+        elif fleet.status == Fleet.Status.RETURNING and fleet.return_time and fleet.return_time <= at:
+            events.append(
+                FleetEvent(
+                    event_time=fleet.return_time,
+                    fleet_id=fleet.pk,
+                    event_type=FLEET_EVENT_RETURN,
+                )
+            )
 
-    events.sort(
-        key=lambda event: (
-            event.event_time,
-            event.fleet.pk,
-            event.event_type,
+    return sorted(events, key=lambda event: (
+        event.event_time,
+        FLEET_EVENT_PRIORITY[event.event_type],
+        event.fleet_id)
         )
-    )
+
+
+@transaction.atomic
+def process_fleets_for_user(user, *, at=None):
+    target_time = at or timezone.now()
+    processed_events = []
+
+    events = get_due_fleet_events(user, at=target_time)
 
     for event in events:
-        if event.event_type == "arrival":
-            handle_outbound_fleet_arrival(event.fleet, at=event.event_time)
-            continue
+        fleet = (
+            Fleet.objects
+            .select_for_update()
+            .select_related(
+                "source_planet",
+                "target_planet",
+            )
+            .prefetch_related("ships")
+            .get(pk=event.fleet_id)
+        )
 
-        if event.event_type == "return":
-            handle_fleet_return(event.fleet, at=event.event_time)
-            continue
+        if event.event_type == FLEET_EVENT_ARRIVAL:
+            if fleet.status != Fleet.Status.OUTBOUND:
+                continue
 
-        raise FleetError("Nieobsługiwany typ zdarzenia floty.")
+            handle_outbound_fleet_arrival(fleet, at=event.event_time)
+
+            processed_events.append(event)
+
+        elif event.event_type == FLEET_EVENT_RETURN:
+            if fleet.status != Fleet.Status.RETURNING:
+                continue
+
+            handle_fleet_return(fleet, at=event.event_time)
+
+            processed_events.append(event)
+
+    return processed_events

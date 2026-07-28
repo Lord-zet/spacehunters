@@ -566,3 +566,52 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
 
         self.assertEqual(target.helion, 250)
         self.assertEqual(fleet.helion, 0)
+
+    def test_overdue_transport_arrival_does_not_rewind_target_planet_state(self):
+        base_time = timezone.now()
+        user = self.create_user("overdue_fleet_user")
+
+        source = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
+            helion=10_000,
+            transporter_count=1,
+            last_resource_update=base_time,
+        )
+        target = self.create_planet(
+            owner=user,
+            name="Target",
+            galaxy=1,
+            system=2,
+            position=1,
+            metal=100,
+            transporter_count=0,
+            is_homeland=False,
+            last_resource_update=base_time,
+        )
+
+        fleet = send_transport_fleet(
+            user=user,
+            source_planet=source,
+            target_planet=target,
+            transporter_count=1,
+            metal=200,
+            crystal=0,
+            helion=0,
+            speed_profile="standard",
+            at=base_time,
+        )
+
+        target.last_resource_update = fleet.arrival_time + timezone.timedelta(minutes=5)
+        target.save(update_fields=["last_resource_update"])
+
+        process_fleets_for_user(user, at=fleet.arrival_time + timezone.timedelta(minutes=10))
+
+        target.refresh_from_db()
+        fleet.refresh_from_db()
+
+        self.assertEqual(target.metal, 300)
+        self.assertEqual(fleet.status, Fleet.Status.RETURNING)

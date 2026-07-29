@@ -181,18 +181,15 @@ def get_safe_fleet_event_time(event_time, *planets):
     return safe_time
 
 
+def _prepare_planet_for_fleet_event(planet_id, at):
+    planet = Planet.objects.select_for_update().get(pk=planet_id)
+    safe_event_time = get_safe_fleet_event_time(at, planet)
+    advance_result = advance_planet_state(planet, at=safe_event_time)
+    return advance_result.planet
+
+
 def handle_transport_arrival(fleet, *, at) -> None:
-    target_planet = (
-        Planet.objects
-        .select_for_update()
-        .get(pk=fleet.target_planet_id)
-    )
-
-    safe_event_time = get_safe_fleet_event_time(at, target_planet)
-
-    advance_result = advance_planet_state(target_planet, at=safe_event_time)
-
-    target_planet = advance_result.planet
+    target_planet = _prepare_planet_for_fleet_event(fleet.target_planet_id)
 
     fleet_resource_fields, _ = transfer_resources(
         source=fleet,
@@ -207,17 +204,7 @@ def handle_transport_arrival(fleet, *, at) -> None:
 
 
 def handle_station_arrival(fleet, *, at) -> None:
-    target_planet = (
-        Planet.objects
-        .select_for_update()
-        .get(pk=fleet.target_planet_id)
-    )
-
-    safe_event_time = get_safe_fleet_event_time(at, target_planet)
-
-    advance_result = advance_planet_state(target_planet, at=safe_event_time)
-
-    target_planet = advance_result.planet
+    target_planet = _prepare_planet_for_fleet_event(fleet.target_planet_id)
 
     fleet_resource_fields, _ = transfer_resources(
         source=fleet,

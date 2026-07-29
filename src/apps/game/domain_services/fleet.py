@@ -44,10 +44,6 @@ from apps.game.fleet_speed_profiles import (
 TRANSPORTER_CODE = "transporter"
 HELION_DISTANCE_DIVISOR = 1000
 MIN_HELION_COST = 1
-SUPPORTED_FLEET_MISSIONS = {
-    Fleet.MissionType.TRANSPORT,
-    Fleet.MissionType.STATION,
-}
 
 
 def calculate_fleet_base_fuel_burn(ship_quantities: dict[str, int]) -> int:
@@ -195,44 +191,79 @@ def get_safe_fleet_event_time(event_time, *planets):
     return safe_time
 
 
-def _prepare_planet_for_fleet_event(planet_id, at):
-    planet = Planet.objects.select_for_update().get(pk=planet_id)
+def prepare_planet_for_fleet_event(planet_id, at):
+    planet = (
+        Planet.objects
+        .select_for_update()
+        .get(pk=planet_id)
+    )
     safe_event_time = get_safe_fleet_event_time(at, planet)
     advance_result = advance_planet_state(planet, at=safe_event_time)
     return advance_result.planet
 
 
-def handle_transport_arrival(fleet, *, at) -> None:
-    target_planet = _prepare_planet_for_fleet_event(fleet.target_planet_id, at)
+class BaseMission:
+    """Klasa bazowa dla wszystkich misji flot."""
 
-    fleet_resource_fields, _ = transfer_resources(
-        source=fleet,
-        target=target_planet,
-    )
+    def validate_dispatch(self, source_planet, target_planet, user):
+        """Specyficzna walidacja dla danego typu misji przed wylotem."""
+        pass
 
-    fleet.status = Fleet.Status.RETURNING
+    def calculate_return_time(self, arrival_time, flight_duration):
+        """Oblicza czas powrotu floty (domyślnie powrót trwa tyle samo co dolot)."""
+        return arrival_time + flight_duration
 
-    target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+    def handle_arrival(self, fleet, *, at):
+        """Zdarzenie wywoływane w momencie dotarcia floty do celu."""
+        raise NotImplementedError("Subclasses must implement handle_arrival")
 
-    fleet.save(update_fields=[*fleet_resource_fields, "status"])
+
+class TransportMission(BaseMission):
+    def handle_arrival(self, fleet, *, at):
+        target_planet = prepare_planet_for_fleet_event(fleet.target_planet_id, at)
+
+        fleet_resource_fields, _ = transfer_resources(source=fleet, target=target_planet)
+
+        fleet.status = Fleet.Status.RETURNING
+
+        target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+        fleet.save(update_fields=[*fleet_resource_fields, "status"])
 
 
-def handle_station_arrival(fleet, *, at) -> None:
-    target_planet = _prepare_planet_for_fleet_event(fleet.target_planet_id, at)
+class StationMission(BaseMission):
+    def validate_dispatch(self, source_planet, target_planet, user):
+        if source_planet.owner_id != target_planet.owner_id:
+            raise InvalidStationingTargetError("Misja stacjonowania jest możliwa tylko na własną planetę.")
 
-    fleet_resource_fields, _ = transfer_resources(
-        source=fleet,
-        target=target_planet,
-    )
+    def calculate_return_time(self, arrival_time, flight_duration):
+        # Misja stacjonuj nie wraca
+        return None
 
-    add_fleet_ships_to_planet(fleet, target_planet)
+    def handle_arrival(self, fleet, *, at):
+        target_planet = prepare_planet_for_fleet_event(fleet.target_planet_id, at)
 
-    fleet.status = Fleet.Status.COMPLETED
-    fleet.return_time = None
+        fleet_resource_fields, _ = transfer_resources(source=fleet, target=target_planet)
 
-    target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+        add_fleet_ships_to_planet(fleet, target_planet)
 
-    fleet.save(update_fields=[*fleet_resource_fields, "status", "return_time"])
+        fleet.status = Fleet.Status.COMPLETED
+        fleet.return_time = None
+
+        target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+        fleet.save(update_fields=[*fleet_resource_fields, "status", "return_time"])
+
+
+MISSION_HANDLERS = {
+    Fleet.MissionType.TRANSPORT: TransportMission(),
+    Fleet.MissionType.STATION: StationMission(),
+}
+
+
+def get_mission_handler(mission_type: str) -> BaseMission:
+    handler = MISSION_HANDLERS.get(mission_type)
+    if not handler:
+        raise UnsupportedFleetMissionError("Nieobsługiwany typ misji floty.")
+    return handler
 
 
 def handle_fleet_return(fleet, *, at) -> None:
@@ -254,29 +285,14 @@ def handle_fleet_return(fleet, *, at) -> None:
     fleet.save(update_fields=["status"])
 
 
-FLEET_ARRIVAL_HANDLERS = {
-    Fleet.MissionType.TRANSPORT: handle_transport_arrival,
-    Fleet.MissionType.STATION: handle_station_arrival,
-}
-
-
 def handle_outbound_fleet_arrival(fleet, *, at) -> None:
-    handler = FLEET_ARRIVAL_HANDLERS.get(fleet.mission_type)
-
-    if handler is None:
-        raise UnsupportedFleetMissionError("Nieobsługiwany typ misji floty.")
-
-    handler(fleet, at=at)
+    handler = get_mission_handler(fleet.mission_type)
+    handler.handle_arrival(fleet, at=at)
 
 
 def ensure_source_planet_belongs_to_user(source_planet, user) -> None:
     if source_planet.owner_id != user.id:
         raise PlanetOwnershipError("Planeta źródłowa nie należy do tego gracza.")
-
-
-def ensure_supported_mission_type(mission_type: str) -> None:
-    if mission_type not in SUPPORTED_FLEET_MISSIONS:
-        raise UnsupportedFleetMissionError("Nieobsługiwany typ misji floty.")
 
 
 def validate_ship_quantities(ship_quantities: dict[str, int]) -> None:
@@ -313,7 +329,9 @@ def _send_fleet_mission(
     now = at or timezone.now()
 
     cargo = normalize_resource_amounts(cargo)
-    ensure_supported_mission_type(mission_type)
+
+    # Pobieramy handler misji i walidujemy
+    mission_handler = get_mission_handler(mission_type)
 
     source_planet = Planet.objects.select_for_update().get(pk=source_planet.pk)
     target_planet = Planet.objects.get(pk=target_planet.pk)
@@ -323,8 +341,8 @@ def _send_fleet_mission(
     if source_planet.id == target_planet.id:
         raise SamePlanetTransportError("Nie można wysłać floty na tę samą planetę.")
 
-    if mission_type == Fleet.MissionType.STATION and source_planet.owner_id != target_planet.owner_id:
-        raise InvalidStationingTargetError("Misja stacjonowania jest możliwa tylko na własną planetę.")
+    # Wywołanie specyficznej walidacji dla danego typu misji (np. czy cel należy do nas przy stacjonowaniu)
+    mission_handler.validate_dispatch(source_planet, target_planet, user)
 
     synchronize_resources(source_planet, at=now, save=False)
 
@@ -364,10 +382,9 @@ def _send_fleet_mission(
     flight_duration = timedelta(seconds=flight_time_seconds)
 
     arrival_time = now + flight_duration
-    if mission_type == Fleet.MissionType.TRANSPORT:
-        return_time = arrival_time + flight_duration
-    else:
-        return_time = None
+
+    # Przekazanie decyzji o powrocie do handlera (stacjonuj zwraca None, transport zwraca +flight_duration)
+    return_time = mission_handler.calculate_return_time(arrival_time, flight_duration)
 
     fleet_resource_fields = resource_amounts_to_model_fields(cargo, include_missing=True, default=0)
 
@@ -481,7 +498,7 @@ def get_due_fleet_events(owner, *, at):
         event.event_time,
         FLEET_EVENT_PRIORITY[event.event_type],
         event.fleet.pk)
-        )
+    )
 
 
 @transaction.atomic

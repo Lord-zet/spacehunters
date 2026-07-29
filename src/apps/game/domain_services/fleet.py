@@ -71,22 +71,16 @@ def calculate_fleet_base_fuel_burn(ship_quantities: dict[str, int]) -> int:
     return total
 
 
-def apply_fuel_multiplier(base_cost: int, fuel_multiplier: float) -> int:
-    if base_cost <= 0:
-        return 0
-
-    return int(math.ceil(base_cost * fuel_multiplier))
-
-
-def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantities: dict[str, int], fuel_multiplier=1.0) -> int:
+def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantities: dict[str, int],
+                                     fuel_multiplier=1.0) -> int:
     base_burn = calculate_fleet_base_fuel_burn(ship_quantities)
     if base_burn <= 0:
         return 0
 
     distance = calculate_distance(source_planet, target_planet)
-    raw_cost = (base_burn * distance) / HELION_DISTANCE_DIVISOR
-    final_cost = apply_fuel_multiplier(int(raw_cost), fuel_multiplier)
-    return max(MIN_HELION_COST, math.ceil(final_cost))
+    raw_cost = base_burn * distance * fuel_multiplier / HELION_DISTANCE_DIVISOR
+
+    return max(MIN_HELION_COST, math.ceil(raw_cost))
 
 
 def calculate_cargo_capacity(ship_quantities: dict[str, int]) -> int:

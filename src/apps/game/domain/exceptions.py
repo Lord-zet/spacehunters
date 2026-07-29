@@ -84,3 +84,11 @@ class UnknownPlanetTypeError(ValueError):
 
 class UnknownFleetSpeedProfileError(ValueError):
     pass
+
+
+class InvalidResourceAmountError(DomainError):
+    def __init__(self, *, resource, amount: int):
+        self.resource = resource
+        self.amount = amount
+
+        super().__init__(f"Ilość zasobu {resource.value} nie może być ujemna: {amount}.")

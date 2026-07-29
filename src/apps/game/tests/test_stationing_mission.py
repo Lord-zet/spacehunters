@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from apps.game.domain.exceptions import InvalidStationingTargetError
 from apps.game.domain_services.fleet import send_stationing_fleet, process_fleets_for_user
+from apps.game.domain_services.resources import Resource
 from apps.game.models import Fleet, FleetShip
 from .helpers import PlanetTestMixin
 
@@ -42,9 +43,11 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
             source_planet=source_planet,
             target_planet=target_planet,
             transporter_count=3,
-            metal=1000,
-            crystal=500,
-            helion=0,
+            cargo={
+                Resource.METAL: 1000,
+                Resource.CRYSTAL: 500,
+                Resource.HELION: 0,
+            },
             user=user,
         )
 
@@ -161,9 +164,11 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
                 source_planet=source_planet,
                 target_planet=target_planet,
                 transporter_count=3,
-                metal=1000,
-                crystal=500,
-                helion=0,
+                cargo={
+                    Resource.METAL: 1000,
+                    Resource.CRYSTAL: 500,
+                    Resource.HELION: 0,
+                },
                 user=user1,
             )
 

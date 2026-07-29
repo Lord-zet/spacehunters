@@ -3,7 +3,6 @@ from django.utils import timezone
 
 from apps.game.domain.exceptions import (
     FleetError,
-    NotEnoughTransportersError,
     PlanetOwnershipError,
     UnknownShipError,
     UnsupportedFleetMissionError,
@@ -15,6 +14,7 @@ from apps.game.domain_services.fleet import (
 from apps.game.models import Fleet
 
 from .helpers import PlanetTestMixin
+from apps.game.domain_services.resources import Resource
 
 
 class FleetDomainValidationTests(PlanetTestMixin, TestCase):
@@ -51,9 +51,11 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 source_planet=source_planet,
                 target_planet=target_planet,
                 transporter_count=1,
-                metal=100,
-                crystal=0,
-                helion=0,
+                cargo={
+                    Resource.METAL: 100,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
                 user=user,
             )
 
@@ -91,9 +93,11 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 source_planet=source_planet,
                 target_planet=target_planet,
                 ship_quantities={"transporter": 1},
-                metal=100,
-                crystal=0,
-                helion=0,
+                cargo={
+                    Resource.METAL: 100,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
                 user=user,
                 mission_type="unsupported",
             )
@@ -132,9 +136,11 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 source_planet=source_planet,
                 target_planet=target_planet,
                 ship_quantities={"ghost_ship": 1},
-                metal=100,
-                crystal=0,
-                helion=0,
+                cargo={
+                    Resource.METAL: 100,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
                 user=user,
                 mission_type=Fleet.MissionType.TRANSPORT,
             )
@@ -173,9 +179,11 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 source_planet=source_planet,
                 target_planet=target_planet,
                 ship_quantities={},
-                metal=100,
-                crystal=0,
-                helion=0,
+                cargo={
+                    Resource.METAL: 100,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
                 user=user,
                 mission_type=Fleet.MissionType.TRANSPORT,
             )
@@ -214,9 +222,11 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 source_planet=source_planet,
                 target_planet=target_planet,
                 ship_quantities={"transporter": -1},
-                metal=100,
-                crystal=0,
-                helion=0,
+                cargo={
+                    Resource.METAL: 100,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
                 user=user,
                 mission_type=Fleet.MissionType.TRANSPORT,
             )
@@ -255,9 +265,11 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
                 source_planet=source_planet,
                 target_planet=target_planet,
                 ship_quantities={"transporter": 0},
-                metal=100,
-                crystal=0,
-                helion=0,
+                cargo={
+                    Resource.METAL: 100,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
                 user=user,
                 mission_type=Fleet.MissionType.TRANSPORT,
             )

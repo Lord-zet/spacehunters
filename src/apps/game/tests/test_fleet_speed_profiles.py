@@ -4,6 +4,7 @@ from django.utils import timezone
 from apps.game.domain_services.fleet import send_transport_fleet
 
 from .helpers import PlanetTestMixin
+from apps.game.domain_services.resources import Resource
 
 
 class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
@@ -37,9 +38,11 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             source_planet=source,
             target_planet=target,
             transporter_count=1,
-            metal=0,
-            crystal=0,
-            helion=0,
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
             speed_profile="fast",
         )
 
@@ -75,9 +78,11 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             source_planet=source,
             target_planet=target,
             transporter_count=1,
-            metal=0,
-            crystal=0,
-            helion=0,
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
             speed_profile="standard",
         )
 
@@ -86,9 +91,11 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             source_planet=source,
             target_planet=target,
             transporter_count=1,
-            metal=0,
-            crystal=0,
-            helion=0,
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
             speed_profile="fast",
         )
 
@@ -124,9 +131,11 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             source_planet=source,
             target_planet=target,
             transporter_count=1,
-            metal=0,
-            crystal=0,
-            helion=0,
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
             speed_profile="standard",
         )
 
@@ -135,9 +144,11 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             source_planet=source,
             target_planet=target,
             transporter_count=1,
-            metal=0,
-            crystal=0,
-            helion=0,
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
             speed_profile="fast",
         )
 
@@ -173,9 +184,11 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             source_planet=source,
             target_planet=target,
             transporter_count=1,
-            metal=0,
-            crystal=0,
-            helion=0,
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
             speed_profile="standard",
         )
 
@@ -184,9 +197,11 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             source_planet=source,
             target_planet=target,
             transporter_count=1,
-            metal=0,
-            crystal=0,
-            helion=0,
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
             speed_profile="economy",
         )
 

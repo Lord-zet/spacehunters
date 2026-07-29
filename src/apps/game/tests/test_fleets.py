@@ -8,8 +8,10 @@ from apps.game.domain.exceptions import (
     NotEnoughResourcesError,
     NotEnoughTransportersError,
     SamePlanetTransportError,
+    InvalidResourceAmountError,
 )
 from .helpers import PlanetTestMixin
+from apps.game.domain_services.resources import Resource
 
 
 class SendTransportFleetTests(PlanetTestMixin, TestCase):
@@ -46,9 +48,11 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             source_planet=source_planet,
             target_planet=target_planet,
             transporter_count=3,
-            metal=1000,
-            crystal=500,
-            helion=0,
+            cargo={
+                Resource.METAL: 1000,
+                Resource.CRYSTAL: 500,
+                Resource.HELION: 0,
+            },
             user=user,
         )
 
@@ -90,9 +94,11 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
                 source_planet=planet,
                 target_planet=planet,
                 transporter_count=3,
-                metal=1000,
-                crystal=500,
-                helion=0,
+                cargo={
+                    Resource.METAL: 1000,
+                    Resource.CRYSTAL: 500,
+                    Resource.HELION: 0,
+                },
                 user=user,
             )
 
@@ -129,9 +135,11 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
                 source_planet=source_planet,
                 target_planet=target_planet,
                 transporter_count=3,
-                metal=1000,
-                crystal=500,
-                helion=0,
+                cargo={
+                    Resource.METAL: 1000,
+                    Resource.CRYSTAL: 500,
+                    Resource.HELION: 0,
+                },
                 user=user,
             )
 
@@ -168,9 +176,11 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
                 source_planet=source_planet,
                 target_planet=target_planet,
                 transporter_count=2,
-                metal=500,
-                crystal=200,
-                helion=0,
+                cargo={
+                    Resource.METAL: 500,
+                    Resource.CRYSTAL: 200,
+                    Resource.HELION: 0,
+                },
                 user=user,
             )
 
@@ -207,9 +217,11 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
                 source_planet=source_planet,
                 target_planet=target_planet,
                 transporter_count=1,
-                metal=900,
-                crystal=200,
-                helion=0,
+                cargo={
+                    Resource.METAL: 900,
+                    Resource.CRYSTAL: 200,
+                    Resource.HELION: 0,
+                },
                 user=user,
             )
 
@@ -252,9 +264,11 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             source_planet=source_planet,
             target_planet=target_planet,
             transporter_count=2,
-            metal=1500,
-            crystal=500,
-            helion=0,
+            cargo={
+                Resource.METAL: 1500,
+                Resource.CRYSTAL: 500,
+                Resource.HELION: 0,
+            },
             user=user,
         )
 
@@ -554,9 +568,11 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             source_planet=source,
             target_planet=target,
             transporter_count=1,
-            metal=0,
-            crystal=0,
-            helion=200,
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 200,
+            },
         )
 
         process_fleets_for_user(user, at=fleet.arrival_time)
@@ -598,9 +614,11 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             source_planet=source,
             target_planet=target,
             transporter_count=1,
-            metal=200,
-            crystal=0,
-            helion=0,
+            cargo={
+                Resource.METAL: 200,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
             speed_profile="standard",
             at=base_time,
         )
@@ -615,3 +633,51 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
 
         self.assertEqual(target.metal, 300)
         self.assertEqual(fleet.status, Fleet.Status.RETURNING)
+
+    def test_raises_for_negative_cargo(self):
+        user = self.create_user("fleet1")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Earth",
+            galaxy=1,
+            system=1,
+            position=1,
+            metal=5000,
+            crystal=3000,
+            helion=500,
+            transporter_count=10,
+            last_resource_update=now,
+        )
+        target_planet = self.create_planet(
+            owner=user,
+            name="Mars",
+            galaxy=1,
+            system=2,
+            position=2,
+            metal=100,
+            crystal=50,
+            transporter_count=0,
+            is_homeland=False,
+            last_resource_update=now,
+        )
+
+        with self.assertRaises(InvalidResourceAmountError) as ctx:
+            send_transport_fleet(
+                source_planet=source_planet,
+                target_planet=target_planet,
+                transporter_count=3,
+                cargo={
+                    Resource.METAL: -1000,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
+                user=user,
+            )
+
+        source_planet.refresh_from_db()
+
+        self.assertEqual(str(ctx.exception), "Ilość zasobu metal nie może być ujemna: -1000.")
+        self.assertEqual(source_planet.metal, 5000)
+        self.assertEqual(target_planet.metal, 100)

@@ -7,6 +7,7 @@ from apps.game.fleet_speed_profiles import (
     DEFAULT_FLEET_SPEED_PROFILE,
     get_fleet_speed_profile_choices,
 )
+from .domain_services.resources import Resource
 
 
 TAILWIND_INPUT = (
@@ -56,21 +57,21 @@ class SendFleetForm(forms.Form):
         required=True,
         min_value=1,
     )
-    metal_to_send = forms.IntegerField(
+    metal = forms.IntegerField(
         label="Ilość metalu",
         required=False,
         min_value=0,
         initial=0,
         widget=forms.NumberInput(),
     )
-    crystal_to_send = forms.IntegerField(
+    crystal = forms.IntegerField(
         label="Ilość kryształu",
         required=False,
         min_value=0,
         initial=0,
         widget=forms.NumberInput(),
     )
-    helion_to_send = forms.IntegerField(
+    helion = forms.IntegerField(
         label="Ilość Helionu",
         required=False,
         min_value=0,
@@ -99,15 +100,15 @@ class SendFleetForm(forms.Form):
             "class": TAILWIND_FLEET_SHIP_INPUT,
             "placeholder": "0",
         })
-        self.fields["metal_to_send"].widget.attrs.update({
+        self.fields["metal"].widget.attrs.update({
             "class": TAILWIND_FLEET_RESOURCE_INPUT,
             "placeholder": "0",
         })
-        self.fields["crystal_to_send"].widget.attrs.update({
+        self.fields["crystal"].widget.attrs.update({
             "class": TAILWIND_FLEET_RESOURCE_INPUT,
             "placeholder": "0",
         })
-        self.fields["helion_to_send"].widget.attrs.update({
+        self.fields["helion"].widget.attrs.update({
             "class": TAILWIND_FLEET_RESOURCE_INPUT,
             "placeholder": "0",
         })
@@ -129,14 +130,19 @@ class SendFleetForm(forms.Form):
         self.user = user
         self.source_planet = source_planet
 
-    def clean_metal_to_send(self):
-        return self.cleaned_data.get("metal_to_send") or 0
+    def clean_metal(self):
+        return self.cleaned_data.get("metal") or 0
 
-    def clean_crystal_to_send(self):
-        return self.cleaned_data.get("crystal_to_send") or 0
+    def clean_crystal(self):
+        return self.cleaned_data.get("crystal") or 0
 
-    def clean_helion_to_send(self):
-        return self.cleaned_data.get("helion_to_send") or 0
+    def clean_helion(self):
+        return self.cleaned_data.get("helion") or 0
+
+    def get_cargo(self) -> dict[Resource, int]:
+        if not self.is_valid():
+            raise ValueError("Nie można pobrać cargo z niepoprawnego formularza.")
+        return {resource: self.cleaned_data[resource.value] for resource in Resource}
 
 
 class ShipConstructionForm(forms.Form):

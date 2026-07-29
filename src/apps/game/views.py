@@ -10,7 +10,6 @@ from .buildings import BUILDINGS
 from .ships import SHIPS
 from .domain_services.fleet import send_transport_fleet, send_stationing_fleet
 from .domain_services.buildings import start_building_upgrade, get_upgrade_cost, get_upgrade_time, cancel_building_upgrade
-from .domain_services.resources import get_production_per_hour, get_storage_capacity
 from .domain_services.sync import advance_user_state
 from .domain_services.shipyard import (
     start_ship_construction,
@@ -145,22 +144,18 @@ def send_fleet(request, pk):
             mission_type = form.cleaned_data.get("mission_type")
             tc = form.cleaned_data.get("transporter_count")
             target_planet = form.cleaned_data.get("target_planet")
-            metal_to_send = form.cleaned_data.get("metal_to_send")
-            crystal_to_send = form.cleaned_data.get("crystal_to_send")
-            helion_to_send = form.cleaned_data.get("helion_to_send")
+            cargo = form.get_cargo()
             speed_profile = form.cleaned_data["speed_profile"]
 
             try:
                 if mission_type == Fleet.MissionType.STATION:
                     fleet = send_stationing_fleet(
-                        source_planet,
-                        target_planet,
-                        tc,
-                        metal_to_send,
-                        crystal_to_send,
-                        helion_to_send,
-                        request.user,
-                        speed_profile,
+                        source_planet=source_planet,
+                        target_planet=target_planet,
+                        transporter_count=tc,
+                        cargo=cargo,
+                        user=request.user,
+                        speed_profile=speed_profile,
                     )
                     messages.success(
                         request,
@@ -170,14 +165,12 @@ def send_fleet(request, pk):
                     )
                 else:
                     fleet = send_transport_fleet(
-                        source_planet,
-                        target_planet,
-                        tc,
-                        metal_to_send,
-                        crystal_to_send,
-                        helion_to_send,
-                        request.user,
-                        speed_profile,
+                        source_planet=source_planet,
+                        target_planet=target_planet,
+                        transporter_count=tc,
+                        cargo=cargo,
+                        user=request.user,
+                        speed_profile=speed_profile,
                     )
                     messages.success(
                         request,

@@ -51,7 +51,7 @@ class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):
         fleet = send_transport_fleet(
             source_planet=source_planet,
             target_planet=target_planet,
-            transporter_count=3,
+            ship_quantities=3,
             cargo={
                 Resource.METAL: 1000,
                 Resource.CRYSTAL: 500,
@@ -102,7 +102,7 @@ class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):
             send_transport_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                transporter_count=3,
+                ship_quantities=3,
                 cargo={
                     Resource.METAL: 1000,
                     Resource.CRYSTAL: 500,

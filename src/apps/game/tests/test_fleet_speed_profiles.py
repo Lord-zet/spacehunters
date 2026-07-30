@@ -37,7 +37,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            transporter_count=1,
+            ship_quantities=1,
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -77,7 +77,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            transporter_count=1,
+            ship_quantities=1,
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -90,7 +90,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            transporter_count=1,
+            ship_quantities=1,
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -130,7 +130,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            transporter_count=1,
+            ship_quantities=1,
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -143,7 +143,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            transporter_count=1,
+            ship_quantities=1,
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -183,7 +183,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            transporter_count=1,
+            ship_quantities=1,
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -196,7 +196,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            transporter_count=1,
+            ship_quantities=1,
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,

@@ -152,7 +152,7 @@ def send_fleet(request, pk):
                     fleet = send_stationing_fleet(
                         source_planet=source_planet,
                         target_planet=target_planet,
-                        transporter_count=tc,
+                        ship_quantities=tc,
                         cargo=cargo,
                         user=request.user,
                         speed_profile=speed_profile,
@@ -167,7 +167,7 @@ def send_fleet(request, pk):
                     fleet = send_transport_fleet(
                         source_planet=source_planet,
                         target_planet=target_planet,
-                        transporter_count=tc,
+                        ship_quantities=tc,
                         cargo=cargo,
                         user=request.user,
                         speed_profile=speed_profile,

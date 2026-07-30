@@ -41,7 +41,8 @@ from apps.game.fleet_speed_profiles import (
     get_fleet_speed_multiplier,
 )
 
-TRANSPORTER_CODE = "transporter"
+
+DEFAULT_TRANSPORTER_CODE = "transporter"
 HELION_DISTANCE_DIVISOR = 1000
 MIN_HELION_COST = 1
 
@@ -69,13 +70,17 @@ def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantiti
 
 
 def calculate_cargo_capacity(ship_quantities: dict[str, int]) -> int:
+    """
+    Oblicza łączną ładowność dla dowolnej mieszanki statków we flocie. Dowolny statek w konfiguracji
+    SHIPS posiadający parametr 'cargo_capacity' będzie brał udział w ładowności floty.
+    """
     total = 0
 
     for ship_code, quantity in ship_quantities.items():
         if quantity <= 0:
             continue
 
-        ship_config = SHIPS[ship_code]
+        ship_config = SHIPS.get(ship_code, {})
         total += ship_config.get("cargo_capacity", 0) * quantity
 
     return total
@@ -101,9 +106,10 @@ def check_and_get_planet_ships(planet, ship_quantities: dict[str, int]) -> list[
         planet_ship = ship_map.get(ship_code)
 
         if not planet_ship or planet_ship.quantity < required_quantity:
-            if ship_code == TRANSPORTER_CODE:
+            # Zachowujemy klasyczny wyjątek dla transportowców, ale uniwersalizujemy dla reszty
+            if "transporter" in ship_code:
                 raise NotEnoughTransportersError("Nie masz wystarczającej liczby transportowców.")
-            raise FleetError("Nie masz wystarczającej liczby statków.")
+            raise FleetError(f"Nie masz wystarczającej liczby statków ({ship_code}).")
 
     return existing_ships
 
@@ -315,6 +321,16 @@ def validate_ship_quantities(ship_quantities: dict[str, int]) -> None:
         raise FleetError("Flota musi zawierać co najmniej jeden statek.")
 
 
+def _normalize_ship_quantities(ship_quantities: dict[str, int] | int) -> dict[str, int]:
+    """
+    Pomocnicza funkcja zapewniająca wsteczną kompatybilność.
+    Jeśli stary kod lub testy przekażą int (liczba transporterów), zamienia go w słownik.
+    """
+    if isinstance(ship_quantities, int):
+        return {DEFAULT_TRANSPORTER_CODE: ship_quantities}
+    return ship_quantities
+
+
 @transaction.atomic
 def _send_fleet_mission(
     source_planet,
@@ -407,12 +423,23 @@ def _send_fleet_mission(
     return fleet
 
 
-def send_transport_fleet(source_planet, target_planet, transporter_count, cargo: ResourceAmounts, user,
-                         speed_profile=DEFAULT_FLEET_SPEED_PROFILE, at=None):
+def send_transport_fleet(
+    source_planet,
+    target_planet,
+    ship_quantities: dict[str, int] | int,
+    cargo: ResourceAmounts,
+    user,
+    speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
+    at=None
+):
+    """
+    Wysyła flotę z misją Transportu.'ship_quantities' przyjmuje słownik {'small_transporter': 5, 'recycler': 2}
+    lub zaciąga klasycznie int (liczba małych transporterów).
+    """
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
-        ship_quantities={TRANSPORTER_CODE: transporter_count},
+        ship_quantities=_normalize_ship_quantities(ship_quantities),
         cargo=cargo,
         speed_profile=speed_profile,
         user=user,
@@ -421,12 +448,22 @@ def send_transport_fleet(source_planet, target_planet, transporter_count, cargo:
     )
 
 
-def send_stationing_fleet(source_planet, target_planet, transporter_count, cargo: ResourceAmounts, user,
-                          speed_profile=DEFAULT_FLEET_SPEED_PROFILE, at=None):
+def send_stationing_fleet(
+    source_planet,
+    target_planet,
+    ship_quantities: dict[str, int] | int,
+    cargo: ResourceAmounts,
+    user,
+    speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
+    at=None
+):
+    """
+    Wysyła flotę z misją Stacjonowania. 'ship_quantities' przyjmuje słownik lub int.
+    """
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
-        ship_quantities={TRANSPORTER_CODE: transporter_count},
+        ship_quantities=_normalize_ship_quantities(ship_quantities),
         cargo=cargo,
         speed_profile=speed_profile,
         user=user,

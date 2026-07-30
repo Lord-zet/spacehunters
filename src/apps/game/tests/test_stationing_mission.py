@@ -42,7 +42,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
         fleet = send_stationing_fleet(
             source_planet=source_planet,
             target_planet=target_planet,
-            transporter_count=3,
+            ship_quantities=3,
             cargo={
                 Resource.METAL: 1000,
                 Resource.CRYSTAL: 500,
@@ -163,7 +163,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
             send_stationing_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                transporter_count=3,
+                ship_quantities=3,
                 cargo={
                     Resource.METAL: 1000,
                     Resource.CRYSTAL: 500,

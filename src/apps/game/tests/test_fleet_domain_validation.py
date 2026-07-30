@@ -50,7 +50,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             send_transport_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                transporter_count=1,
+                ship_quantities=1,
                 cargo={
                     Resource.METAL: 100,
                     Resource.CRYSTAL: 0,

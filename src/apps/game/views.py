@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .models import Planet, Fleet
+from .models import Planet, Fleet, PlanetShip
 from .forms import SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
@@ -142,41 +142,37 @@ def send_fleet(request, pk):
 
         if form.is_valid():
             mission_type = form.cleaned_data.get("mission_type")
-            tc = form.cleaned_data.get("transporter_count")
+            ship_quantities = form.get_ship_quantities()
             target_planet = form.cleaned_data.get("target_planet")
             cargo = form.get_cargo()
             speed_profile = form.cleaned_data["speed_profile"]
 
+            MISSION_DISPATCHERS = {
+                Fleet.MissionType.STATION: send_stationing_fleet,
+                Fleet.MissionType.TRANSPORT: send_transport_fleet,
+            }
+
+            dispatcher = MISSION_DISPATCHERS.get(mission_type)
+
             try:
-                if mission_type == Fleet.MissionType.STATION:
-                    fleet = send_stationing_fleet(
-                        source_planet=source_planet,
-                        target_planet=target_planet,
-                        ship_quantities=tc,
-                        cargo=cargo,
-                        user=request.user,
-                        speed_profile=speed_profile,
-                    )
-                    messages.success(
-                        request,
-                        f"Wysłano flotę ({fleet.transporter_count} szt.) stacjonowania "
-                        f"z planety {fleet.source_planet.name} na {fleet.target_planet.name}. "
-                        f"Koszt lotu: {fleet.helion_cost} helionu."
-                    )
-                else:
-                    fleet = send_transport_fleet(
-                        source_planet=source_planet,
-                        target_planet=target_planet,
-                        ship_quantities=tc,
-                        cargo=cargo,
-                        user=request.user,
-                        speed_profile=speed_profile,
-                    )
-                    messages.success(
-                        request,
-                        f"Wysłano flotę ({fleet.transporter_count} szt.) transportową "
-                        f"z planety {fleet.source_planet.name} na {fleet.target_planet.name}. "
-                        f"Koszt lotu: {fleet.helion_cost} helionu."
+                if not dispatcher:
+                    raise DomainError("Nieobsługiwany typ misji.")
+
+                fleet = dispatcher(
+                    source_planet=source_planet,
+                    target_planet=target_planet,
+                    ship_quantities=ship_quantities,
+                    cargo=cargo,
+                    user=request.user,
+                    speed_profile=speed_profile,
+                )
+
+                total_ships = sum(ship_quantities.values())
+                messages.success(
+                    request,
+                    f"Wysłano flotę ({total_ships} szt. statków) "
+                    f"z planety {fleet.source_planet.name} na {fleet.target_planet.name}. "
+                    f"Koszt lotu: {fleet.helion_cost} helionu."
                 )
             except Planet.DoesNotExist:
                 messages.error(request, "Nie znaleziono planety.")

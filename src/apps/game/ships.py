@@ -1,6 +1,3 @@
-def transporter_total_cargo(quantity: int) -> int:
-    return 1000 * quantity
-
 
 SHIPS = {
     "transporter": {

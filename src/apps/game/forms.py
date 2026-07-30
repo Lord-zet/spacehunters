@@ -52,11 +52,6 @@ class SendFleetForm(forms.Form):
         initial=Fleet.MissionType.TRANSPORT,
         label="Misja",
     )
-    transporter_count = forms.IntegerField(
-        label="Ilość transporterów",
-        required=True,
-        min_value=1,
-    )
     metal = forms.IntegerField(
         label="Ilość metalu",
         required=False,
@@ -96,10 +91,6 @@ class SendFleetForm(forms.Form):
             "class": TAILWIND_FLEET_MISSION_TYPE,
             "placeholder": "0",
         })
-        self.fields["transporter_count"].widget.attrs.update({
-            "class": TAILWIND_FLEET_SHIP_INPUT,
-            "placeholder": "0",
-        })
         self.fields["metal"].widget.attrs.update({
             "class": TAILWIND_FLEET_RESOURCE_INPUT,
             "placeholder": "0",
@@ -130,6 +121,18 @@ class SendFleetForm(forms.Form):
         self.user = user
         self.source_planet = source_planet
 
+        for ship_code, config in SHIPS.items():
+            field_name = f"ship_{ship_code}"
+            self.fields[field_name] = forms.IntegerField(
+                label=config["label"],
+                required=False,
+                min_value=0,
+                initial=0,
+                widget=forms.NumberInput(attrs={
+                    "class": TAILWIND_FLEET_SHIP_INPUT
+                })
+            )
+
     def clean_metal(self):
         return self.cleaned_data.get("metal") or 0
 
@@ -139,10 +142,37 @@ class SendFleetForm(forms.Form):
     def clean_helion(self):
         return self.cleaned_data.get("helion") or 0
 
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Walidujemy, czy gracz podał przynajmniej 1 statek jakiegokolwiek typu
+        ship_quantities = {
+            ship_code: cleaned_data.get(f"ship_{ship_code}") or 0
+            for ship_code in SHIPS.keys()
+        }
+        if sum(ship_quantities.values()) <= 0:
+            raise forms.ValidationError("Musisz wybrać co najmniej jeden statek do wysłania.")
+
+        return cleaned_data
+
     def get_cargo(self) -> dict[Resource, int]:
         if not self.is_valid():
             raise ValueError("Nie można pobrać cargo z niepoprawnego formularza.")
         return {resource: self.cleaned_data[resource.value] for resource in Resource}
+
+    def get_ship_quantities(self) -> dict[str, int]:
+        """
+        Zwraca słownik {'transporter': 5, 'large_transporter': 2} zawierający tylko
+        statki z ilością większą niż 0.
+        """
+        if not self.is_valid():
+            raise ValueError("Nie można pobrać statków z niepoprawnego formularza.")
+
+        return {
+            ship_code: self.cleaned_data[f"ship_{ship_code}"]
+            for ship_code in SHIPS.keys()
+            if self.cleaned_data.get(f"ship_{ship_code}", 0) > 0
+        }
 
 
 class ShipConstructionForm(forms.Form):

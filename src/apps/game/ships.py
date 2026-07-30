@@ -20,4 +20,21 @@ SHIPS = {
             "helion": 0,
         },
     },
+    "large_transporter": {
+        "label": "Duży Transporter",
+        "cargo_capacity": 5000,
+        "base_speed": 0.8,
+        "fuel_burn": 30,
+        "build_time": 480,
+        "required_shipyard_level": 3,
+        "description": ""
+                       "Potężny statek handlowy o wzmocnionym pancerzu. Wolniejszy niż jego mniejszy odpowiednik, "
+                       "ale potrafi przetransportować znacznie większe ilości surowców.",
+        "thumb": "game/ships/large_transporter_thumb.png",
+        "base_cost": {
+            "metal": 6000,
+            "crystal": 4000,
+            "helion": 0,
+        },
+    },
 }

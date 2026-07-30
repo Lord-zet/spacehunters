@@ -1,6 +1,3 @@
-def transporter_total_cargo(quantity: int) -> int:
-    return 1000 * quantity
-
 
 SHIPS = {
     "transporter": {
@@ -17,6 +14,23 @@ SHIPS = {
         "base_cost": {
             "metal": 2000,
             "crystal": 1000,
+            "helion": 0,
+        },
+    },
+    "large_transporter": {
+        "label": "Duży Transporter",
+        "cargo_capacity": 5000,
+        "base_speed": 0.8,
+        "fuel_burn": 30,
+        "build_time": 480,
+        "required_shipyard_level": 3,
+        "description": ""
+                       "Potężny statek handlowy o wzmocnionym pancerzu. Wolniejszy niż jego mniejszy odpowiednik, "
+                       "ale potrafi przetransportować znacznie większe ilości surowców.",
+        "thumb": "game/ships/large_transporter_thumb.png",
+        "base_cost": {
+            "metal": 6000,
+            "crystal": 4000,
             "helion": 0,
         },
     },

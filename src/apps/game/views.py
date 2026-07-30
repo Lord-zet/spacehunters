@@ -4,11 +4,11 @@ from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .models import Planet, Fleet, PlanetShip
+from .models import Planet, Fleet
 from .forms import SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
-from .domain_services.fleet import send_transport_fleet, send_stationing_fleet
+from .domain_services.fleet import send_transport_fleet, send_stationing_fleet, get_planet_ships_display
 from .domain_services.buildings import start_building_upgrade, get_upgrade_cost, get_upgrade_time, cancel_building_upgrade
 from .domain_services.sync import advance_user_state
 from .domain_services.shipyard import (
@@ -192,6 +192,7 @@ def send_fleet(request, pk):
         "background": background,
         "storage_capacities": get_storage_capacities(source_planet),
         "energy_balance": get_energy_balance(source_planet),
+        "planet_ships": get_planet_ships_display(source_planet, form),
     }
     return render(request, "game/send_fleet.html", context)
 

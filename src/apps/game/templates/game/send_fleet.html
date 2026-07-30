@@ -15,10 +15,12 @@
 
     <!-- ZESTAWIENIE POSIADANYCH STATKÓW -->
     <div class="glass-panel p-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 border-b-2 border-accent-cyan/30">
-        <div class="text-center p-2 border border-white/5 rounded bg-white/5">
-            <p class="text-[11px] text-white/40 uppercase">Transporter</p>
-            <p class="text-lg font-scifi text-accent-cyan">{{ planet.transporter_count|default:"0" }}</p>
-        </div>
+        {% for ship in planet_ships %}
+            <div class="text-center p-2 border border-white/5 rounded bg-white/5">
+                <p class="text-[11px] text-white/40 uppercase">{{ ship.label }}</p>
+                <p class="text-lg font-scifi text-accent-cyan">{{ ship.quantity |default:"0" }}</p>
+            </div>
+        {% endfor %}
 
     </div>
 
@@ -33,14 +35,19 @@
                 <h3 class="text-accent-orange text-xs uppercase border-b border-white/10 pb-2 mb-4">1. Formowanie Eskadry</h3>
 
                 <div class="space-y-3">
-                    <div class="flex items-center justify-between group">
-                        <label class="text-sm text-white/70">Transporter</label>
-                        <div class="flex items-center space-x-2">
-                            {{ form.transporter_count }}
-                            <button type="button" class="text-[10px] text-accent-cyan hover:text-white uppercase">Max</button>
+                    {% for ship in planet_ships %}
+                        <div class="flex items-center justify-between group">
+                            <label class="text-sm text-white/70">{{ ship.label }}</label>
+                            {% if ship.form_field %}
+                                <div class="flex items-center space-x-2">
+                                    {{ ship.form_field }}
+                                    <button type="button" class="text-[10px] text-accent-cyan hover:text-white uppercase">Max</button>
+                                </div>
+                            {% endif %}
                         </div>
-                    </div>
-
+                    {% empty %}
+                        <p>Brak statków w stoczni na tej planecie.</p>
+                    {% endfor %}
                 </div>
             </div>
 

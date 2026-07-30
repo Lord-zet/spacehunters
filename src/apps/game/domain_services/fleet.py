@@ -47,6 +47,32 @@ HELION_DISTANCE_DIVISOR = 1000
 MIN_HELION_COST = 1
 
 
+def get_planet_ships_display(planet, form=None):
+    """
+    Pobiera ilości statków dla planety z bazy i łączy je ze słownikiem SHIPS
+    oraz odpowiadającymi im polami z formularza SendFleetForm.
+    """
+    planet_ships = {
+        ship.ship_code: ship.quantity
+        for ship in PlanetShip.objects.filter(planet=planet)
+    }
+
+    result = []
+    for code, config in SHIPS.items():
+        ship_data = {
+            "code": code,
+            "label": config["label"],
+            "quantity": planet_ships.get(code, 0),
+            "thumb": config.get("thumb"),
+            "cargo_capacity": config.get("cargo_capacity", 0),
+            "description": config.get("description", ""),
+            "form_field": form[f"ship_{code}"] if form and f"ship_{code}" in form.fields else None,
+        }
+        result.append(ship_data)
+
+    return result
+
+
 def calculate_fleet_base_fuel_burn(ship_quantities: dict[str, int]) -> int:
     total = 0
     for ship_code, quantity in ship_quantities.items():

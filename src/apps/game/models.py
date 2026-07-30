@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .buildings import BUILDINGS
+from .ships import SHIPS
 
 
 class Planet(models.Model):
@@ -233,21 +234,6 @@ class Fleet(models.Model):
     arrival_time = models.DateTimeField()
     return_time = models.DateTimeField(null=True, blank=True)
 
-    def get_ship_quantity(self, ship_code: str) -> int:
-        prefetched = getattr(self, "_prefetched_objects_cache", {})
-        if "ships" in prefetched:
-            for ship in self.ships.all():
-                if ship.ship_code == ship_code:
-                    return ship.quantity
-            return 0
-
-        ship = self.ships.filter(ship_code=ship_code).first()
-        return ship.quantity if ship else 0
-
-    @property
-    def transporter_count(self):
-        return self.get_ship_quantity("transporter")
-
     @property
     def next_event_at(self):
         if self.status == self.Status.OUTBOUND:
@@ -255,6 +241,31 @@ class Fleet(models.Model):
         if self.status == self.Status.RETURNING:
             return self.return_time
         return None
+
+    @property
+    def ships_display(self) -> list[dict]:
+        """
+        Zwraca listę słowników ze szczegółami statków we flocie, łącząc dane
+        z bazy (quantity) z bazą konfiguracyjną SHIPS.
+        """
+        result = []
+        # self.ships.all() zamiast filter(), aby wykorzystać cache'owany prefetch_related
+        for fleet_ship in self.ships.all():
+            if fleet_ship.quantity <= 0:
+                continue
+
+            config = SHIPS.get(fleet_ship.ship_code, {})
+            result.append({
+                "code": fleet_ship.ship_code,
+                "label": config.get("label", fleet_ship.ship_code),
+                "quantity": fleet_ship.quantity,
+                "thumb": config.get("thumb"),
+            })
+        return result
+
+    @property
+    def total_ships_count(self) -> int:
+        return sum(ship.quantity for ship in self.ships.all())
 
     def __str__(self):
         return f"{self.source_planet} -> {self.target_planet}"

@@ -3,11 +3,11 @@ from apps.game.domain_services.buildings import get_building_label, get_upgrade_
 from apps.game.domain_services.resources import get_storage_capacity
 
 
-def get_storage_capacities(planet):
+def get_storage_capacities(buildings):
     return {
-        "metal": get_storage_capacity(planet, "metal"),
-        "crystal": get_storage_capacity(planet, "crystal"),
-        "helion": get_storage_capacity(planet, "helion"),
+        "metal": get_storage_capacity(buildings, "metal"),
+        "crystal": get_storage_capacity(buildings, "crystal"),
+        "helion": get_storage_capacity(buildings, "helion"),
     }
 
 
@@ -60,10 +60,7 @@ def build_production_stat(config: dict, level: int) -> dict | None:
     if not production:
         return None
 
-    parts = [
-        format_resource_amount(resource, amount)
-        for resource, amount in production.items()
-    ]
+    parts = [str(amount) for resource, amount in production.items()]
 
     return {
         "label": "Produkcja/h",
@@ -83,7 +80,7 @@ def build_energy_stat(config: dict, level: int) -> dict | None:
     }
 
 
-def build_storage_stat(planet, config: dict) -> dict | None:
+def build_storage_stat(buildings, config: dict) -> dict | None:
     if config.get("category") != "storage":
         return None
 
@@ -92,15 +89,15 @@ def build_storage_stat(planet, config: dict) -> dict | None:
     if not resource:
         return None
 
-    capacity = get_storage_capacity(planet, resource)
+    capacity = get_storage_capacity(buildings, resource)
 
     return {
         "label": "Pojemność",
-        "value": format_resource_amount(resource, capacity)
+        "value": str(capacity)
     }
 
 
-def get_building_detail_stats(planet, building_code: str, config: dict, level: int) -> list[dict]:
+def get_building_detail_stats(buildings, config: dict, level: int) -> list[dict]:
     stats = []
 
     production_stat = build_production_stat(config, level)
@@ -111,17 +108,17 @@ def get_building_detail_stats(planet, building_code: str, config: dict, level: i
     if energy_stat:
         stats.append(energy_stat)
 
-    storage_stat = build_storage_stat(planet, config)
+    storage_stat = build_storage_stat(buildings, config)
     if storage_stat:
         stats.append(storage_stat)
 
-    build_time = get_upgrade_time(planet, building_code)
+    build_time = get_upgrade_time(buildings, config)
     stats.append({
         "label": "Czas budowy",
         "value": format_seconds(build_time),
     })
 
-    cost = get_upgrade_cost(planet, building_code)
+    cost = get_upgrade_cost(buildings, config)
     stats.append({
         "label": "Koszt rozbudowy",
         "value": format_cost(cost),
@@ -130,9 +127,19 @@ def get_building_detail_stats(planet, building_code: str, config: dict, level: i
     return stats
 
 
-def get_building_cards(planet, *, dashboard_only=False, category=None) -> list[dict]:
-    planet_buildings = planet.get_buildings()
+def get_building_card(buildings, building_code, config):
+    level = buildings.get_level(config['level_field'])
 
+    return {
+            "code": building_code,
+            "config": config,
+            "level": level,
+            "stats": get_building_detail_stats(buildings, config, level),
+            "order": config.get("order", 999),
+        }
+
+
+def get_building_cards(buildings, dashboard_only=False, category=None):
     cards = []
 
     for code, config in BUILDINGS.items():
@@ -142,14 +149,7 @@ def get_building_cards(planet, *, dashboard_only=False, category=None) -> list[d
         if category is not None and config.get("category") != category:
             continue
 
-        level = getattr(planet_buildings, config["level_field"], 0)
-        cards.append({
-            "code": code,
-            "config": config,
-            "level": level,
-            "stats": get_building_detail_stats(planet, code, config, level),
-            "order": config.get("order", 999),
-        })
+        cards.append(get_building_card(buildings, code, config))
 
     return sorted(cards, key=lambda card: card["order"])
 

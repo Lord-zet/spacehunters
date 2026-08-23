@@ -18,7 +18,7 @@ class HelionResourceTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=3,
         )
 
-        production = get_production_per_hour(planet)
+        production = get_production_per_hour(planet.get_buildings())
 
         self.assertIn("helion", production)
         self.assertEqual(
@@ -31,7 +31,7 @@ class HelionResourceTests(PlanetTestMixin, TestCase):
             helion_storage_level=2,
         )
 
-        capacity = get_storage_capacity(planet, "helion")
+        capacity = get_storage_capacity(planet.get_buildings(), "helion")
 
         self.assertEqual(capacity, get_storage_capacity_for_level(2))
 
@@ -51,6 +51,6 @@ class HelionResourceTests(PlanetTestMixin, TestCase):
 
         self.assertLessEqual(
             planet.helion,
-            get_storage_capacity(planet, "helion"),
+            get_storage_capacity(planet.get_buildings(), "helion"),
         )
         self.assertEqual(planet.last_resource_update, target_time)

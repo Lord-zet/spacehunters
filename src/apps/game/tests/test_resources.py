@@ -27,7 +27,7 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
             crystal_mine_level=1,
         )
 
-        production = get_production_per_hour(planet)
+        production = get_production_per_hour(planet.get_buildings())
         target_time = start_time + timezone.timedelta(hours=2)
 
         synchronize_resources(planet, at=target_time, save=True)
@@ -59,8 +59,8 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
             crystal_storage_level=1,
         )
 
-        metal_capacity = get_storage_capacity(planet, "metal")
-        crystal_capacity = get_storage_capacity(planet, "crystal")
+        metal_capacity = get_storage_capacity(planet.get_buildings(), "metal")
+        crystal_capacity = get_storage_capacity(planet.get_buildings(), "crystal")
         target_time = start_time + timezone.timedelta(hours=24)
 
         synchronize_resources(planet, at=target_time, save=True)
@@ -143,7 +143,7 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
             crystal_storage_level=10,
         )
 
-        production = get_production_per_hour(planet)
+        production = get_production_per_hour(planet.get_buildings())
         target_time = start_time + timezone.timedelta(hours=2)
 
         synchronize_resources(planet, at=target_time, save=False)
@@ -187,9 +187,9 @@ class StorageCapacityTests(PlanetTestMixin, TestCase):
             helion_storage_level=1,
         )
 
-        self.assertEqual(get_storage_capacity(planet, "metal"), get_storage_capacity_for_level(3))
-        self.assertEqual(get_storage_capacity(planet, "crystal"), get_storage_capacity_for_level(2))
-        self.assertEqual(get_storage_capacity(planet, "helion"), get_storage_capacity_for_level(1))
+        self.assertEqual(get_storage_capacity(planet.get_buildings(), "metal"), get_storage_capacity_for_level(3))
+        self.assertEqual(get_storage_capacity(planet.get_buildings(), "crystal"), get_storage_capacity_for_level(2))
+        self.assertEqual(get_storage_capacity(planet.get_buildings(), "helion"), get_storage_capacity_for_level(1))
 
 
 class ResourceProductionProgressionTests(PlanetTestMixin, TestCase):
@@ -211,7 +211,7 @@ class ResourceProductionProgressionTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=0,
         )
 
-        production = get_production_per_hour(planet)
+        production = get_production_per_hour(planet.get_buildings())
 
         self.assertLess(production["metal"], 5000)
 
@@ -235,8 +235,8 @@ class ResourceProductionProgressionTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=0,
         )
 
-        prod_1 = get_production_per_hour(planet_lvl_1)["metal"]
-        prod_5 = get_production_per_hour(planet_lvl_5)["metal"]
+        prod_1 = get_production_per_hour(planet_lvl_1.get_buildings())["metal"]
+        prod_5 = get_production_per_hour(planet_lvl_5.get_buildings())["metal"]
 
         self.assertGreater(prod_5, prod_1)
         self.assertLess(prod_5, 1000)

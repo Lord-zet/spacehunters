@@ -7,6 +7,7 @@ from apps.game.domain_services.buildings import (
     get_upgrade_cost,
     get_upgrade_time,
     get_upgrade_cost_multiplier,
+    get_building_config
 )
 from apps.game.domain.exceptions import (
     BuildingAlreadyInProgressError,
@@ -32,7 +33,9 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
         )
 
         building_name = "metal_mine"
-        cost = get_upgrade_cost(planet, building_name)
+        buildings = planet.get_buildings()
+        config = get_building_config(building_name)
+        cost = get_upgrade_cost(buildings, config)
 
         start_building_upgrade(
             planet,
@@ -226,7 +229,9 @@ class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=0,
         )
 
-        cost = get_upgrade_cost(planet, "helion_synthesizer")
+        buildings = planet.get_buildings()
+        config = get_building_config("helion_synthesizer")
+        cost = get_upgrade_cost(buildings, config)
 
         self.assertGreater(cost["metal"], 0)
         self.assertGreater(cost["crystal"], 0)
@@ -236,7 +241,9 @@ class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=0,
         )
 
-        upgrade_time = get_upgrade_time(planet, "helion_synthesizer")
+        buildings = planet.get_buildings()
+        config = get_building_config("helion_synthesizer")
+        upgrade_time = get_upgrade_time(buildings, config)
 
         self.assertGreater(upgrade_time, 0)
 
@@ -247,7 +254,9 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=0,
         )
 
-        cost = get_upgrade_cost(planet, "helion_synthesizer")
+        buildings = planet.get_buildings()
+        config = get_building_config("helion_synthesizer")
+        cost = get_upgrade_cost(buildings, config)
 
         self.assertGreater(cost["metal"], 0)
         self.assertGreater(cost["crystal"], 0)
@@ -256,8 +265,10 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
         planet = self.create_planet(
             metal_mine_level=0,
         )
+        buildings = planet.get_buildings()
+        config = get_building_config("metal_mine")
 
-        self.assertEqual(get_upgrade_cost(planet, "metal_mine"), {"metal": 100})
+        self.assertEqual(get_upgrade_cost(buildings, config), {"metal": 100})
 
         planet = self.create_planet(
             owner=self.create_user("cost_lvl_1"),
@@ -266,7 +277,8 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
             position=1,
             metal_mine_level=1,
         )
-        self.assertEqual(get_upgrade_cost(planet, "metal_mine"), {"metal": 250})
+        buildings = planet.get_buildings()
+        self.assertEqual(get_upgrade_cost(buildings, config), {"metal": 250})
 
         planet = self.create_planet(
             owner=self.create_user("cost_lvl_2"),
@@ -275,14 +287,17 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
             position=2,
             metal_mine_level=2,
         )
-        self.assertEqual(get_upgrade_cost(planet, "metal_mine"), {"metal": 450})
+        buildings = planet.get_buildings()
+        self.assertEqual(get_upgrade_cost(buildings, config), {"metal": 450})
 
     def test_high_levels_are_significantly_more_expensive_than_old_linear_curve(self):
         planet = self.create_planet(
             metal_mine_level=20,
         )
 
-        cost = get_upgrade_cost(planet, "metal_mine")
+        buildings = planet.get_buildings()
+        config = get_building_config("metal_mine")
+        cost = get_upgrade_cost(buildings, config)
 
         self.assertGreater(cost["metal"], 50000)
 
@@ -312,6 +327,8 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
             crystal_mine_level=18,
         )
 
-        cost = get_upgrade_cost(planet, "crystal_mine")["metal"]
+        buildings = planet.get_buildings()
+        config = get_building_config("crystal_mine")
+        cost = get_upgrade_cost(buildings, config)["metal"]
 
         self.assertEqual(cost % 50, 0)

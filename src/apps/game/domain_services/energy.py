@@ -31,10 +31,7 @@ class PlanetEnergyBalance:
         return self.consumed > self.produced
 
 
-def get_energy_production(planet, *, buildings=None) -> int:
-    if buildings is None:
-        buildings = planet.get_buildings()
-
+def get_energy_production(buildings) -> int:
     total = 0
 
     for config in BUILDINGS.values():
@@ -43,16 +40,13 @@ def get_energy_production(planet, *, buildings=None) -> int:
         if not energy_production_fn:
             continue
 
-        level = getattr(buildings, config["level_field"])
+        level = buildings.get_level(config['level_field'])
         total += energy_production_fn(level)
 
     return total
 
 
-def get_energy_consumption(planet, *, buildings=None) -> int:
-    if buildings is None:
-        buildings = planet.get_buildings()
-
+def get_energy_consumption(buildings) -> int:
     total = 0
 
     for config in BUILDINGS.values():
@@ -61,25 +55,16 @@ def get_energy_consumption(planet, *, buildings=None) -> int:
         if not energy_consumption_fn:
             continue
 
-        level = getattr(buildings, config["level_field"])
+        level = buildings.get_level(config['level_field'])
         total += energy_consumption_fn(level)
 
     return total
 
 
-def get_energy_balance(planet, *, buildings=None) -> PlanetEnergyBalance:
-    if buildings is None:
-        buildings = planet.get_buildings()
-
+def get_energy_balance(buildings) -> PlanetEnergyBalance:
     return PlanetEnergyBalance(
-        produced=get_energy_production(
-            planet,
-            buildings=buildings,
-        ),
-        consumed=get_energy_consumption(
-            planet,
-            buildings=buildings,
-        ),
+        produced=get_energy_production(buildings),
+        consumed=get_energy_consumption(buildings),
     )
 
 def apply_energy_efficiency_to_production(

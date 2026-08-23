@@ -10,6 +10,7 @@ from apps.game.domain_services.buildings import (
     cancel_building_upgrade,
     get_upgrade_cost,
     start_building_upgrade,
+    get_building_config
 )
 
 from .helpers import PlanetTestMixin
@@ -31,7 +32,9 @@ class BuildingCancellationTests(PlanetTestMixin, TestCase):
             last_resource_update=now,
         )
 
-        cost = get_upgrade_cost(planet, "metal_mine")
+        buildings = planet.get_buildings()
+        config = get_building_config("metal_mine")
+        cost = get_upgrade_cost(buildings, config)
         start_building_upgrade(planet, "metal_mine", at=now)
         result = cancel_building_upgrade(planet, at=now)
         planet = self.reload_planet(planet)
@@ -128,7 +131,9 @@ class BuildingCancellationTests(PlanetTestMixin, TestCase):
             last_resource_update=now,
         )
 
-        expected_cost = get_upgrade_cost(planet, "metal_mine")
+        buildings = planet.get_buildings()
+        config = get_building_config("metal_mine")
+        expected_cost = get_upgrade_cost(buildings, config)
         start_building_upgrade(planet, "metal_mine", at=now)
         planet = self.reload_planet(planet)
 

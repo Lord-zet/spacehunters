@@ -26,7 +26,7 @@ class PlanetEnergyTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=0,
         )
 
-        self.assertGreater(get_energy_production(planet),0)
+        self.assertGreater(get_energy_production(planet.get_buildings()),0)
 
     def test_mines_consume_energy(self):
         planet = self.create_planet(
@@ -36,7 +36,7 @@ class PlanetEnergyTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=1,
         )
 
-        self.assertGreater(get_energy_consumption(planet),0)
+        self.assertGreater(get_energy_consumption(planet.get_buildings()),0)
 
     def test_energy_balance_reports_shortage(self):
         planet = self.create_planet(
@@ -46,7 +46,7 @@ class PlanetEnergyTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=1,
         )
 
-        balance = get_energy_balance(planet)
+        balance = get_energy_balance(planet.get_buildings())
 
         self.assertEqual(balance.produced, 0)
         self.assertGreater(balance.consumed, 0)
@@ -61,7 +61,7 @@ class PlanetEnergyTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=0,
         )
 
-        balance = get_energy_balance(planet)
+        balance = get_energy_balance(planet.get_buildings())
 
         self.assertGreaterEqual(balance.produced, balance.consumed)
         self.assertFalse(balance.is_shortage)
@@ -75,7 +75,7 @@ class PlanetEnergyTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=0,
         )
 
-        production = get_production_per_hour(planet)
+        production = get_production_per_hour(planet.get_buildings())
 
         self.assertEqual(production["metal"], 0)
 
@@ -87,8 +87,9 @@ class PlanetEnergyTests(PlanetTestMixin, TestCase):
             helion_synthesizer_level=0,
         )
 
-        raw_production = get_raw_production_per_hour(planet)
-        effective_production = get_production_per_hour(planet)
+        buildings = planet.get_buildings()
+        raw_production = get_raw_production_per_hour(buildings)
+        effective_production = get_production_per_hour(buildings)
 
         self.assertEqual(
             raw_production["metal"],

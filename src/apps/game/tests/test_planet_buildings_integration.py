@@ -43,7 +43,7 @@ class PlanetBuildingsIntegrationTests(TestCase):
         )
 
     def test_production_uses_levels_from_planet_buildings(self):
-        production = get_production_per_hour(self.planet)
+        production = get_production_per_hour(self.planet.get_buildings())
 
         self.assertEqual(
             production["metal"],
@@ -52,7 +52,7 @@ class PlanetBuildingsIntegrationTests(TestCase):
         self.assertEqual(production.get("crystal"), 0)
 
     def test_storage_capacity_uses_storage_level_from_planet_buildings(self):
-        capacity = get_storage_capacity(self.planet, "metal")
+        capacity = get_storage_capacity(self.planet.get_buildings(), "metal")
         self.assertEqual(capacity, get_storage_capacity_for_level(1))
 
     def test_start_building_upgrade_saves_progress_on_planet_buildings(self):

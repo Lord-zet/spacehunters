@@ -243,11 +243,7 @@ def apply_fractional_resource_production(
     whole_units, new_remainder = divmod(total_micro, RESOURCE_PRECISION_MICRO)
 
     current_amount = getattr(planet, resource, 0)
-    capacity = get_storage_capacity(
-        planet,
-        resource,
-        buildings=buildings,
-    )
+    capacity = get_storage_capacity(buildings, resource)
     free_space = max(capacity - current_amount, 0)
 
     if free_space <= 0:
@@ -281,10 +277,7 @@ def get_storage_capacity_for_level(level: int) -> int:
     return round_up_to_nice_number(raw_value)
 
 
-def get_storage_capacity(planet, resource: str, *, buildings=None) -> int:
-    if buildings is None:
-        buildings = planet.get_buildings()
-
+def get_storage_capacity(buildings, resource: str) -> int:
     storage_levels = {
         "metal": buildings.metal_storage_level,
         "crystal": buildings.crystal_storage_level,
@@ -294,14 +287,11 @@ def get_storage_capacity(planet, resource: str, *, buildings=None) -> int:
     return get_storage_capacity_for_level(level)
 
 
-def get_raw_production_per_hour(planet, *, buildings=None) -> dict:
-    if buildings is None:
-        buildings = planet.get_buildings()
-
+def get_raw_production_per_hour(buildings) -> dict:
     total = {}
 
     for config in BUILDINGS.values():
-        level = getattr(buildings, config["level_field"])
+        level = buildings.get_level(config['level_field'])
 
         production_fn = config.get("production_fn")
         if not production_fn:
@@ -315,12 +305,9 @@ def get_raw_production_per_hour(planet, *, buildings=None) -> dict:
     return total
 
 
-def get_production_per_hour(planet, *, buildings=None) -> dict:
-    if buildings is None:
-        buildings = planet.get_buildings()
-
-    raw_production = get_raw_production_per_hour(planet, buildings=buildings)
-    energy_balance = get_energy_balance(planet, buildings=buildings)
+def get_production_per_hour(buildings) -> dict:
+    raw_production = get_raw_production_per_hour(buildings)
+    energy_balance = get_energy_balance(buildings)
 
     return apply_energy_efficiency_to_production(raw_production, energy_balance)
 
@@ -335,7 +322,7 @@ def synchronize_resources(planet, at=None, *, save=False, buildings=None):
     if buildings is None:
         buildings = planet.get_buildings()
 
-    production = get_production_per_hour(planet, buildings=buildings)
+    production = get_production_per_hour(buildings)
 
     for resource, per_hour in production.items():
         apply_fractional_resource_production(

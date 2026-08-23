@@ -9,7 +9,7 @@ from .forms import SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
 from .domain_services.fleet import send_transport_fleet, send_stationing_fleet, get_planet_ships_display
-from .domain_services.buildings import start_building_upgrade, get_upgrade_cost, get_upgrade_time, cancel_building_upgrade
+from .domain_services.buildings import start_building_upgrade, get_upgrade_cost, cancel_building_upgrade
 from .domain_services.sync import advance_user_state
 from .domain_services.shipyard import (
     start_ship_construction,
@@ -58,16 +58,17 @@ def planet_detail(request, pk):
     request.session["active_planet_id"] = planet.id
 
     background = get_planet_background(planet)
+    buildings = planet.get_buildings()
 
     context = {
         "planet": planet,
-        "planet_buildings": planet.get_buildings(),
-        "building_overview_rows": get_building_cards(planet, dashboard_only=True, category="production"),
+        "planet_buildings": buildings,
+        "building_overview_rows": get_building_cards(buildings, dashboard_only=True, category="production"),
         "background": background,
-        "storage_capacities": get_storage_capacities(planet),
+        "storage_capacities": get_storage_capacities(buildings),
         "active_fleets": active_fleets,
         "field_usage": get_planet_field_usage(planet),
-        "energy_balance": get_energy_balance(planet),
+        "energy_balance": get_energy_balance(buildings),
         "planet_trait_rows": get_planet_trait_rows(planet),
         "planet_type_summary": get_planet_type_summary(planet),
     }
@@ -97,28 +98,20 @@ def planet_buildings(request, pk):
 
         return redirect("game:buildings", pk=planet.pk)
 
-    building_costs = {
-        name: get_upgrade_cost(planet, name)
-        for name in BUILDINGS.keys()
-    }
-    building_time = {
-        name: get_upgrade_time(planet, name)
-        for name in BUILDINGS.keys()
-    }
+    buildings = planet.get_buildings()
 
     background = get_planet_background(planet)
 
     context = {
         "planet": planet,
-        "planet_buildings": planet.get_buildings(),
+        "planet_buildings": buildings,
         "building_in_progress": planet.is_building_in_progress(),
         "background": background,
-        "storage_capacities": get_storage_capacities(planet),
+        "storage_capacities": get_storage_capacities(buildings),
         "field_usage": get_planet_field_usage(planet),
-        "building_time": building_time,
-        "energy_balance": get_energy_balance(planet),
-        "building_cards": get_building_cards(planet),
-        "active_building_upgrade": get_active_building_upgrade_summary(planet.get_buildings())
+        "energy_balance": get_energy_balance(buildings),
+        "building_cards": get_building_cards(buildings),
+        "active_building_upgrade": get_active_building_upgrade_summary(buildings)
     }
     return render(request, "game/buildings.html", context)
 
@@ -183,15 +176,16 @@ def send_fleet(request, pk):
     else:
         form = SendFleetForm(user=request.user, source_planet=source_planet)
 
+    buildings = source_planet.get_buildings()
     background = get_planet_background(source_planet)
 
     context = {
         "planet": source_planet,
-        "planet_buildings": source_planet.get_buildings(),
+        "planet_buildings": buildings,
         "form": form,
         "background": background,
-        "storage_capacities": get_storage_capacities(source_planet),
-        "energy_balance": get_energy_balance(source_planet),
+        "storage_capacities": get_storage_capacities(buildings),
+        "energy_balance": get_energy_balance(buildings),
         "planet_ships": get_planet_ships_display(source_planet, form),
     }
     return render(request, "game/send_fleet.html", context)
@@ -204,16 +198,17 @@ def fleet_list(request, pk):
     fleets = get_user_fleets(request.user)
     planet = get_user_planet_or_404(request.user, pk)
 
+    buildings = planet.get_buildings()
     background = get_planet_background(planet)
 
     context = {
         "fleets": fleets,
         "planet": planet,
-        "planet_buildings": planet.get_buildings(),
+        "planet_buildings": buildings,
         "background": background,
         "now": timezone.now(),
-        "storage_capacities": get_storage_capacities(planet),
-        "energy_balance": get_energy_balance(planet),
+        "storage_capacities": get_storage_capacities(buildings),
+        "energy_balance": get_energy_balance(buildings),
     }
     return render(request, "game/fleet_list.html", context)
 
@@ -265,18 +260,20 @@ def planet_shipyard(request, pk):
         for code, config in SHIPS.items()
     }
 
+    buildings = planet.get_buildings()
+
     context = {
         "planet": planet,
-        "planet_buildings": planet.get_buildings(),
+        "planet_buildings": buildings,
         "background": background,
-        "storage_capacities": get_storage_capacities(planet),
+        "storage_capacities": get_storage_capacities(buildings),
         "field_usage": get_planet_field_usage(planet),
         "shipyard_ships": shipyard_ships,
         "ship_construction": construction,
         "ship_construction_in_progress": construction.is_in_progress(),
         "active_ship_label": active_ship_label,
         "form": form,
-        "energy_balance": get_energy_balance(planet),
+        "energy_balance": get_energy_balance(buildings),
     }
     return render(request, "game/shipyard.html", context)
 

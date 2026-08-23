@@ -60,11 +60,6 @@ def get_building_label(building_name: str) -> str:
     return config.get("label", building_name)
 
 
-def get_building_level(planet, config):
-    buildings = planet.get_buildings()
-    return getattr(buildings, config["level_field"])
-
-
 def calculate_upgrade_cost(
     current_level,
     base_cost,
@@ -89,12 +84,8 @@ def calculate_upgrade_cost(
     return result
 
 
-def get_upgrade_cost(planet, building_name):
-    config = get_building_config(building_name)
-    if not config:
-        return None
-
-    current_level = get_building_level(planet, config)
+def get_upgrade_cost(buildings, config):
+    current_level = buildings.get_level(config['level_field'])
     growth_factor = config.get("cost_growth_factor", DEFAULT_COST_GROWTH_FACTOR)
 
     return calculate_upgrade_cost(
@@ -121,12 +112,8 @@ def calculate_upgrade_time(current_level, base_build_time, multiplier=1.3):
     return int(base_build_time * (multiplier ** next_level))
 
 
-def get_upgrade_time(planet, building_name):
-    config = get_building_config(building_name)
-    if not config:
-        return None
-
-    current_level = get_building_level(planet, config)
+def get_upgrade_time(buildings, config):
+    current_level = buildings.get_level(config['level_field'])
     multiplier = config.get("build_time_multiplier", 1.3)
     return calculate_upgrade_time(current_level, config["build_time"], multiplier)
 
@@ -150,7 +137,7 @@ def start_building_upgrade(planet, building_name, *, at=None):
     if not buildings.has_free_field(at=now):
         raise NoFreePlanetFieldsError("Brak wolnych pól na planecie.")
 
-    cost = get_upgrade_cost(planet, building_name)
+    cost = get_upgrade_cost(buildings, config)
     if cost is None:
         raise UnknownBuildingError("Nieznany budynek.")
 
@@ -162,7 +149,7 @@ def start_building_upgrade(planet, building_name, *, at=None):
     buildings.building_type = building_name
     buildings.building_cost_paid = dict(cost)
 
-    upgrade_time = get_upgrade_time(planet, building_name)
+    upgrade_time = get_upgrade_time(buildings, config)
     buildings.building_ends_at = now + timedelta(seconds=upgrade_time)
 
     buildings.save(update_fields=["building_type", "building_ends_at", "building_cost_paid"])
@@ -200,7 +187,7 @@ def finish_locked_building_if_ready(buildings, *, at=None):
         return False
 
     level_field = config["level_field"]
-    current_level = getattr(buildings, level_field)
+    current_level = buildings.get_level(level_field)
     setattr(buildings, level_field, current_level + 1)
 
     buildings.building_type = ""

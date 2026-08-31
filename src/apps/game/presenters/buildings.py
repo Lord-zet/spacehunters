@@ -1,6 +1,10 @@
 from ..buildings import BUILDINGS
-from apps.game.domain_services.buildings import get_building_label, get_upgrade_cost, get_upgrade_time
-from apps.game.domain_services.resources import get_storage_capacity
+from apps.game.domain_services.buildings import (
+    get_build_cost_for_level,
+    get_build_time_for_level,
+    get_building_label,
+)
+from apps.game.domain_services.resources import get_storage_capacity, get_storage_capacity_for_level
 
 
 def get_storage_capacities(buildings):
@@ -80,7 +84,7 @@ def build_energy_stat(config: dict, level: int) -> dict | None:
     }
 
 
-def build_storage_stat(buildings, config: dict) -> dict | None:
+def build_storage_stat(config: dict, level: int) -> dict | None:
     if config.get("category") != "storage":
         return None
 
@@ -89,7 +93,7 @@ def build_storage_stat(buildings, config: dict) -> dict | None:
     if not resource:
         return None
 
-    capacity = get_storage_capacity(buildings, resource)
+    capacity = get_storage_capacity_for_level(level)
 
     return {
         "label": "Pojemność",
@@ -97,7 +101,7 @@ def build_storage_stat(buildings, config: dict) -> dict | None:
     }
 
 
-def get_building_detail_stats(buildings, config: dict, level: int) -> list[dict]:
+def get_building_level_stats(config: dict, level: int) -> list[dict]:
     stats = []
 
     production_stat = build_production_stat(config, level)
@@ -108,23 +112,50 @@ def get_building_detail_stats(buildings, config: dict, level: int) -> list[dict]
     if energy_stat:
         stats.append(energy_stat)
 
-    storage_stat = build_storage_stat(buildings, config)
+    storage_stat = build_storage_stat(config, level)
     if storage_stat:
         stats.append(storage_stat)
 
-    build_time = get_upgrade_time(buildings, config)
+    return stats
+
+
+def get_building_upgrade_stats(config: dict, target_level: int) -> list[dict]:
+    stats = []
+
+    build_time = get_build_time_for_level(config, target_level)
     stats.append({
         "label": "Czas budowy",
         "value": format_seconds(build_time),
     })
 
-    cost = get_upgrade_cost(buildings, config)
+    cost = get_build_cost_for_level(config, target_level)
     stats.append({
         "label": "Koszt rozbudowy",
         "value": format_cost(cost),
     })
 
     return stats
+
+
+def get_building_detail_stats(config: dict, level: int) -> list[dict]:
+    target_level = level + 1
+    return [
+        *get_building_level_stats(config, level),
+        *get_building_upgrade_stats(config, target_level),
+    ]
+
+
+def get_building_level_row(config: dict, level: int, *, is_next: bool = False) -> dict:
+    level_stats = get_building_level_stats(config, level)
+    upgrade_stats = get_building_upgrade_stats(config, level)
+
+    return {
+        "level": level,
+        "is_next": is_next,
+        "stats": level_stats,
+        "upgrade_stats": upgrade_stats,
+        "columns": [*level_stats, *upgrade_stats],
+    }
 
 
 def get_building_card(buildings, building_code, config):
@@ -134,7 +165,7 @@ def get_building_card(buildings, building_code, config):
             "code": building_code,
             "config": config,
             "level": level,
-            "stats": get_building_detail_stats(buildings, config, level),
+            "stats": get_building_detail_stats(config, level),
             "order": config.get("order", 999),
         }
 

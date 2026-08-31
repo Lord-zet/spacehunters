@@ -26,6 +26,8 @@ EARLY_COST_MULTIPLIERS = [
 
 DEFAULT_COST_GROWTH_FACTOR = 1.33
 
+DEFAULT_BUILD_TIME_MULTIPLIER = 1.3
+
 BUILDING_CANCEL_REFUND_PERCENT = 50
 
 
@@ -60,14 +62,23 @@ def get_building_label(building_name: str) -> str:
     return config.get("label", building_name)
 
 
-def calculate_upgrade_cost(
-    current_level,
-    base_cost,
+def calculate_build_cost(
+    target_level: int,
+    base_cost: dict[str, int],
     growth_factor: float = DEFAULT_COST_GROWTH_FACTOR,
-):
-    next_level = current_level + 1
+) -> dict[str, int]:
+    """
+    Cost of reaching target_level.
+
+    Example:
+        calculate_build_cost(3, ...)
+        -> cost of upgrade 2 -> 3
+    """
+    if target_level <= 0:
+        raise ValueError("target_level must be greater than 0")
+
     level_multiplier = get_upgrade_cost_multiplier(
-        next_level,
+        target_level,
         growth_factor=growth_factor,
     )
 
@@ -76,7 +87,7 @@ def calculate_upgrade_cost(
     for resource, base in base_cost.items():
         raw_cost = base * level_multiplier
 
-        if next_level <= len(EARLY_COST_MULTIPLIERS):
+        if target_level <= len(EARLY_COST_MULTIPLIERS):
             result[resource] = int(round(raw_cost))
         else:
             result[resource] = round_building_cost(raw_cost)
@@ -84,12 +95,10 @@ def calculate_upgrade_cost(
     return result
 
 
-def get_upgrade_cost(buildings, config):
-    current_level = buildings.get_level(config['level_field'])
+def get_build_cost_for_level(config: dict, target_level: int) -> dict[str, int]:
     growth_factor = config.get("cost_growth_factor", DEFAULT_COST_GROWTH_FACTOR)
-
-    return calculate_upgrade_cost(
-        current_level,
+    return calculate_build_cost(
+        target_level,
         config["base_cost"],
         growth_factor=growth_factor,
     )
@@ -107,15 +116,27 @@ def spend_resources(planet, cost):
         setattr(planet, resource, getattr(planet, resource) - amount)
 
 
-def calculate_upgrade_time(current_level, base_build_time, multiplier=1.3):
-    next_level = current_level + 1
-    return int(base_build_time * (multiplier ** next_level))
+def calculate_build_time(
+    target_level: int,
+    base_build_time: int,
+    multiplier: float = DEFAULT_BUILD_TIME_MULTIPLIER,
+) -> int:
+    """
+    Time needed to reach target_level.
+
+    Example:
+        calculate_build_time(3, ...)
+        -> duration of upgrade 2 -> 3
+    """
+    if target_level <= 0:
+        raise ValueError("target_level must be greater than 0")
+
+    return int(base_build_time * (multiplier ** target_level))
 
 
-def get_upgrade_time(buildings, config):
-    current_level = buildings.get_level(config['level_field'])
-    multiplier = config.get("build_time_multiplier", 1.3)
-    return calculate_upgrade_time(current_level, config["build_time"], multiplier)
+def get_build_time_for_level(config: dict, target_level: int) -> int:
+    multiplier = config.get("build_time_multiplier", DEFAULT_BUILD_TIME_MULTIPLIER)
+    return calculate_build_time(target_level, config["build_time"], multiplier)
 
 
 @transaction.atomic
@@ -137,7 +158,10 @@ def start_building_upgrade(planet, building_name, *, at=None):
     if not buildings.has_free_field(at=now):
         raise NoFreePlanetFieldsError("Brak wolnych pól na planecie.")
 
-    cost = get_upgrade_cost(buildings, config)
+    current_level = buildings.get_level(config["level_field"])
+    target_level = current_level + 1
+
+    cost = get_build_cost_for_level(config, target_level)
     if cost is None:
         raise UnknownBuildingError("Nieznany budynek.")
 
@@ -149,7 +173,7 @@ def start_building_upgrade(planet, building_name, *, at=None):
     buildings.building_type = building_name
     buildings.building_cost_paid = dict(cost)
 
-    upgrade_time = get_upgrade_time(buildings, config)
+    upgrade_time = get_build_time_for_level(config, target_level)
     buildings.building_ends_at = now + timedelta(seconds=upgrade_time)
 
     buildings.save(update_fields=["building_type", "building_ends_at", "building_cost_paid"])

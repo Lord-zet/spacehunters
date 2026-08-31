@@ -2,12 +2,21 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.game.domain_services.buildings import (
+    calculate_build_cost,
+    calculate_build_time,
     finish_building_if_ready,
     start_building_upgrade,
-    get_upgrade_cost,
-    get_upgrade_time,
+    get_build_cost_for_level,
+    get_build_time_for_level,
     get_upgrade_cost_multiplier,
     get_building_config
+)
+from apps.game.domain_services.resources import get_storage_capacity_for_level
+from apps.game.presenters.buildings import (
+    get_building_detail_stats,
+    get_building_level_row,
+    get_building_level_stats,
+    get_building_upgrade_stats,
 )
 from apps.game.domain.exceptions import (
     BuildingAlreadyInProgressError,
@@ -35,7 +44,8 @@ class StartBuildingUpgradeTests(PlanetTestMixin, TestCase):
         building_name = "metal_mine"
         buildings = planet.get_buildings()
         config = get_building_config(building_name)
-        cost = get_upgrade_cost(buildings, config)
+        target_level = buildings.get_level(config["level_field"]) + 1
+        cost = get_build_cost_for_level(config, target_level)
 
         start_building_upgrade(
             planet,
@@ -231,7 +241,8 @@ class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
 
         buildings = planet.get_buildings()
         config = get_building_config("helion_synthesizer")
-        cost = get_upgrade_cost(buildings, config)
+        target_level = buildings.get_level(config["level_field"]) + 1
+        cost = get_build_cost_for_level(config, target_level)
 
         self.assertGreater(cost["metal"], 0)
         self.assertGreater(cost["crystal"], 0)
@@ -243,12 +254,34 @@ class FinishBuildingIfReadyTests(PlanetTestMixin, TestCase):
 
         buildings = planet.get_buildings()
         config = get_building_config("helion_synthesizer")
-        upgrade_time = get_upgrade_time(buildings, config)
+        target_level = buildings.get_level(config["level_field"]) + 1
+        upgrade_time = get_build_time_for_level(config, target_level)
 
         self.assertGreater(upgrade_time, 0)
 
 
 class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
+    def test_calculate_build_cost_uses_target_level(self):
+        base_cost = {"metal": 100}
+
+        self.assertEqual(calculate_build_cost(1, base_cost), {"metal": 100})
+        self.assertEqual(calculate_build_cost(2, base_cost), {"metal": 250})
+        self.assertEqual(calculate_build_cost(3, base_cost), {"metal": 450})
+
+    def test_calculate_build_cost_rejects_non_positive_target_level(self):
+        with self.assertRaises(ValueError):
+            calculate_build_cost(0, {"metal": 100})
+
+    def test_calculate_build_time_uses_target_level(self):
+        self.assertEqual(
+            calculate_build_time(3, base_build_time=60, multiplier=1.3),
+            int(60 * (1.3 ** 3)),
+        )
+
+    def test_calculate_build_time_rejects_non_positive_target_level(self):
+        with self.assertRaises(ValueError):
+            calculate_build_time(0, base_build_time=60)
+
     def test_level_zero_building_has_non_zero_cost(self):
         planet = self.create_planet(
             helion_synthesizer_level=0,
@@ -256,7 +289,8 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
 
         buildings = planet.get_buildings()
         config = get_building_config("helion_synthesizer")
-        cost = get_upgrade_cost(buildings, config)
+        target_level = buildings.get_level(config["level_field"]) + 1
+        cost = get_build_cost_for_level(config, target_level)
 
         self.assertGreater(cost["metal"], 0)
         self.assertGreater(cost["crystal"], 0)
@@ -268,7 +302,8 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
         buildings = planet.get_buildings()
         config = get_building_config("metal_mine")
 
-        self.assertEqual(get_upgrade_cost(buildings, config), {"metal": 100})
+        target_level = buildings.get_level(config["level_field"]) + 1
+        self.assertEqual(get_build_cost_for_level(config, target_level), {"metal": 100})
 
         planet = self.create_planet(
             owner=self.create_user("cost_lvl_1"),
@@ -278,7 +313,8 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
             metal_mine_level=1,
         )
         buildings = planet.get_buildings()
-        self.assertEqual(get_upgrade_cost(buildings, config), {"metal": 250})
+        target_level = buildings.get_level(config["level_field"]) + 1
+        self.assertEqual(get_build_cost_for_level(config, target_level), {"metal": 250})
 
         planet = self.create_planet(
             owner=self.create_user("cost_lvl_2"),
@@ -288,7 +324,8 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
             metal_mine_level=2,
         )
         buildings = planet.get_buildings()
-        self.assertEqual(get_upgrade_cost(buildings, config), {"metal": 450})
+        target_level = buildings.get_level(config["level_field"]) + 1
+        self.assertEqual(get_build_cost_for_level(config, target_level), {"metal": 450})
 
     def test_high_levels_are_significantly_more_expensive_than_old_linear_curve(self):
         planet = self.create_planet(
@@ -297,7 +334,8 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
 
         buildings = planet.get_buildings()
         config = get_building_config("metal_mine")
-        cost = get_upgrade_cost(buildings, config)
+        target_level = buildings.get_level(config["level_field"]) + 1
+        cost = get_build_cost_for_level(config, target_level)
 
         self.assertGreater(cost["metal"], 50000)
 
@@ -329,6 +367,40 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
 
         buildings = planet.get_buildings()
         config = get_building_config("crystal_mine")
-        cost = get_upgrade_cost(buildings, config)["metal"]
+        target_level = buildings.get_level(config["level_field"]) + 1
+        cost = get_build_cost_for_level(config, target_level)["metal"]
 
         self.assertEqual(cost % 50, 0)
+
+
+class BuildingPresenterStatsTests(TestCase):
+    def test_storage_level_stats_use_explicit_level(self):
+        config = get_building_config("metal_storage")
+
+        stats = get_building_level_stats(config, level=3)
+
+        self.assertIn(
+            {
+                "label": "Pojemność",
+                "value": str(get_storage_capacity_for_level(3)),
+            },
+            stats,
+        )
+
+    def test_detail_stats_show_current_level_and_next_upgrade(self):
+        config = get_building_config("metal_mine")
+
+        detail_stats = get_building_detail_stats(config, level=2)
+        next_level_upgrade_stats = get_building_upgrade_stats(config, target_level=3)
+
+        self.assertEqual(detail_stats[-2:], next_level_upgrade_stats)
+
+    def test_level_row_cost_and_time_reach_that_level(self):
+        config = get_building_config("metal_mine")
+
+        row = get_building_level_row(config, level=3, is_next=True)
+
+        self.assertEqual(row["level"], 3)
+        self.assertTrue(row["is_next"])
+        self.assertEqual(row["upgrade_stats"], get_building_upgrade_stats(config, target_level=3))
+        self.assertEqual(row["columns"], [*row["stats"], *row["upgrade_stats"]])

@@ -8,7 +8,7 @@ from apps.game.domain_services.buildings import (
     BUILDING_CANCEL_REFUND_PERCENT,
     calculate_building_cancel_refund,
     cancel_building_upgrade,
-    get_upgrade_cost,
+    get_build_cost_for_level,
     start_building_upgrade,
     get_building_config
 )
@@ -34,7 +34,8 @@ class BuildingCancellationTests(PlanetTestMixin, TestCase):
 
         buildings = planet.get_buildings()
         config = get_building_config("metal_mine")
-        cost = get_upgrade_cost(buildings, config)
+        target_level = buildings.get_level(config["level_field"]) + 1
+        cost = get_build_cost_for_level(config, target_level)
         start_building_upgrade(planet, "metal_mine", at=now)
         result = cancel_building_upgrade(planet, at=now)
         planet = self.reload_planet(planet)
@@ -133,7 +134,8 @@ class BuildingCancellationTests(PlanetTestMixin, TestCase):
 
         buildings = planet.get_buildings()
         config = get_building_config("metal_mine")
-        expected_cost = get_upgrade_cost(buildings, config)
+        target_level = buildings.get_level(config["level_field"]) + 1
+        expected_cost = get_build_cost_for_level(config, target_level)
         start_building_upgrade(planet, "metal_mine", at=now)
         planet = self.reload_planet(planet)
 

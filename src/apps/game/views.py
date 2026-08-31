@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import Http404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -9,7 +10,7 @@ from .forms import SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
 from .domain_services.fleet import send_transport_fleet, send_stationing_fleet, get_planet_ships_display
-from .domain_services.buildings import start_building_upgrade, get_upgrade_cost, cancel_building_upgrade
+from .domain_services.buildings import start_building_upgrade, cancel_building_upgrade
 from .domain_services.sync import advance_user_state
 from .domain_services.shipyard import (
     start_ship_construction,
@@ -33,7 +34,9 @@ from .presenters.planets import (
 from .presenters.buildings import (
     get_active_building_upgrade_summary,
     get_storage_capacities,
-    get_building_cards
+    get_building_cards,
+    get_building_card,
+    get_building_level_row,
 )
 
 
@@ -305,3 +308,37 @@ def cancel_building(request, pk):
         )
 
     return redirect("game:buildings", pk=planet.pk)
+
+
+@login_required
+def building_detail(request, pk, building_code):
+    planet = get_user_planet_or_404(request.user, pk)
+
+    advance_result = advance_user_state(request.user, planet=planet)
+    planet = advance_result.planet
+
+    request.session["active_planet_id"] = planet.id
+
+    if advance_result.building_finished:
+        messages.success(request, "Budowa została zakończona.")
+
+    config = BUILDINGS.get(building_code)
+    if config is None:
+        raise Http404("Building not found")
+
+    buildings = planet.get_buildings()
+    building = get_building_card(buildings, building_code, config)
+
+    current_level = buildings.get_level(config["level_field"])
+
+    level_rows = [
+        get_building_level_row(config, level)
+        for level in range(current_level + 1, current_level + 11)
+    ]
+
+    context = {
+        "planet": planet,
+        "building": building,
+        "level_rows": level_rows,
+    }
+    return render(request, "game/building_detail.html", context)

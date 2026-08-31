@@ -11,6 +11,13 @@ from apps.game.domain_services.buildings import (
     get_upgrade_cost_multiplier,
     get_building_config
 )
+from apps.game.domain_services.resources import get_storage_capacity_for_level
+from apps.game.presenters.buildings import (
+    get_building_detail_stats,
+    get_building_level_row,
+    get_building_level_stats,
+    get_building_upgrade_stats,
+)
 from apps.game.domain.exceptions import (
     BuildingAlreadyInProgressError,
     NotEnoughResourcesError,
@@ -364,3 +371,34 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
         cost = get_build_cost_for_level(config, target_level)["metal"]
 
         self.assertEqual(cost % 50, 0)
+
+
+class BuildingPresenterStatsTests(TestCase):
+    def test_storage_level_stats_use_explicit_level(self):
+        config = get_building_config("metal_storage")
+
+        stats = get_building_level_stats(config, level=3)
+
+        self.assertIn(
+            {
+                "label": "Pojemność",
+                "value": str(get_storage_capacity_for_level(3)),
+            },
+            stats,
+        )
+
+    def test_detail_stats_show_current_level_and_next_upgrade(self):
+        config = get_building_config("metal_mine")
+
+        detail_stats = get_building_detail_stats(config, level=2)
+        next_level_upgrade_stats = get_building_upgrade_stats(config, target_level=3)
+
+        self.assertEqual(detail_stats[-2:], next_level_upgrade_stats)
+
+    def test_level_row_cost_and_time_reach_that_level(self):
+        config = get_building_config("metal_mine")
+
+        row = get_building_level_row(config, level=3)
+
+        self.assertEqual(row["level"], 3)
+        self.assertEqual(row["upgrade_stats"], get_building_upgrade_stats(config, target_level=3))

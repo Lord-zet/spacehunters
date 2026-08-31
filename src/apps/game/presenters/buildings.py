@@ -145,11 +145,16 @@ def get_building_detail_stats(config: dict, level: int) -> list[dict]:
     ]
 
 
-def get_building_level_row(config: dict, level: int) -> dict:
+def get_building_level_row(config: dict, level: int, *, is_next: bool = False) -> dict:
+    level_stats = get_building_level_stats(config, level)
+    upgrade_stats = get_building_upgrade_stats(config, level)
+
     return {
         "level": level,
-        "stats": get_building_level_stats(config, level),
-        "upgrade_stats": get_building_upgrade_stats(config, level),
+        "is_next": is_next,
+        "stats": level_stats,
+        "upgrade_stats": upgrade_stats,
+        "columns": [*level_stats, *upgrade_stats],
     }
 
 

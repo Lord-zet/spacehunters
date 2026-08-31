@@ -121,6 +121,10 @@
                             </div>
                             <div>
                                 <div class="flex items-end justify-end">
+                                    <a href="{% url 'game:building_detail' planet.pk building.code %}"
+                                       class="mr-3 border border-white/20 px-4 py-1 text-xs uppercase font-scifi text-white/60 transition-all hover:border-accent-cyan/50 hover:text-accent-cyan">
+                                        Szczegóły
+                                    </a>
                                     <form method="post">
                                     {% csrf_token %}
                                         <input type="hidden" name="building" value="{{ building.code }}">

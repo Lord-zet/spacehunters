@@ -398,7 +398,9 @@ class BuildingPresenterStatsTests(TestCase):
     def test_level_row_cost_and_time_reach_that_level(self):
         config = get_building_config("metal_mine")
 
-        row = get_building_level_row(config, level=3)
+        row = get_building_level_row(config, level=3, is_next=True)
 
         self.assertEqual(row["level"], 3)
+        self.assertTrue(row["is_next"])
         self.assertEqual(row["upgrade_stats"], get_building_upgrade_stats(config, target_level=3))
+        self.assertEqual(row["columns"], [*row["stats"], *row["upgrade_stats"]])

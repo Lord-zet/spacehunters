@@ -330,15 +330,25 @@ def building_detail(request, pk, building_code):
     building = get_building_card(buildings, building_code, config)
 
     current_level = buildings.get_level(config["level_field"])
+    next_level = current_level + 1
 
     level_rows = [
-        get_building_level_row(config, level)
-        for level in range(current_level + 1, current_level + 11)
+        get_building_level_row(config, level, is_next=(level == next_level))
+        for level in range(next_level, next_level + 10)
     ]
+    column_names = [
+        stat["label"] for stat in level_rows[0]["columns"]
+    ] if level_rows else []
 
     context = {
         "planet": planet,
         "building": building,
+        "building_in_progress": planet.is_building_in_progress(),
+        "next_level": next_level,
         "level_rows": level_rows,
+        "building_in_progress": planet.is_building_in_progress(),
+        "storage_capacities": get_storage_capacities(buildings),
+        "energy_balance": get_energy_balance(buildings),
+        "column_names": column_names,
     }
     return render(request, "game/building_detail.html", context)

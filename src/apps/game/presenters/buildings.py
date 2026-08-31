@@ -1,5 +1,9 @@
 from ..buildings import BUILDINGS
-from apps.game.domain_services.buildings import get_building_label, get_upgrade_cost, get_upgrade_time
+from apps.game.domain_services.buildings import (
+    get_build_cost_for_level,
+    get_build_time_for_level,
+    get_building_label,
+)
 from apps.game.domain_services.resources import get_storage_capacity
 
 
@@ -99,6 +103,7 @@ def build_storage_stat(buildings, config: dict) -> dict | None:
 
 def get_building_detail_stats(buildings, config: dict, level: int) -> list[dict]:
     stats = []
+    target_level = level + 1
 
     production_stat = build_production_stat(config, level)
     if production_stat:
@@ -112,13 +117,13 @@ def get_building_detail_stats(buildings, config: dict, level: int) -> list[dict]
     if storage_stat:
         stats.append(storage_stat)
 
-    build_time = get_upgrade_time(buildings, config)
+    build_time = get_build_time_for_level(config, target_level)
     stats.append({
         "label": "Czas budowy",
         "value": format_seconds(build_time),
     })
 
-    cost = get_upgrade_cost(buildings, config)
+    cost = get_build_cost_for_level(config, target_level)
     stats.append({
         "label": "Koszt rozbudowy",
         "value": format_cost(cost),

@@ -41,10 +41,10 @@ def rename_planet(planet: Planet, new_name: str) -> Planet:
     normalized_name = new_name.strip()
 
     if not normalized_name:
-        raise InvalidPlanetNameError("Nazwa planety nie moze byc pusta.")
+        raise InvalidPlanetNameError("Nazwa planety nie może być pusta.")
 
     if len(normalized_name) > PLANET_NAME_MAX_LENGTH:
-        raise InvalidPlanetNameError("Nazwa planety jest zbyt dluga.")
+        raise InvalidPlanetNameError("Nazwa planety jest zbyt długa.")
 
     locked_planet = Planet.objects.select_for_update().get(pk=planet.pk)
 
@@ -55,7 +55,7 @@ def rename_planet(planet: Planet, new_name: str) -> Planet:
         .exists()
     )
     if name_exists:
-        raise PlanetNameAlreadyExistsError("Masz juz planete o takiej nazwie.")
+        raise PlanetNameAlreadyExistsError("Planeta o podanej nazwie już istnieje.")
 
     if locked_planet.name == normalized_name:
         return locked_planet

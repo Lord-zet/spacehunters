@@ -25,6 +25,7 @@ class RenamePlanetForm(forms.Form):
             "class": TAILWIND_INPUT,
             "placeholder": "Nowa nazwa planety",
             "autocomplete": "off",
+            "x-ref": "planetNameInput",
         }),
     )
 
@@ -48,7 +49,7 @@ class RenamePlanetForm(forms.Form):
             queryset = queryset.exclude(pk=self.planet.pk)
 
         if queryset.exists():
-            raise forms.ValidationError("Masz już planetę o takiej nazwie.")
+            raise forms.ValidationError("Planeta o podanej nazwie już istnieje.")
 
         return name
 

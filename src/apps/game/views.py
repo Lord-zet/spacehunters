@@ -6,11 +6,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .models import Planet, Fleet
-from .forms import SendFleetForm, ShipConstructionForm
+from .forms import RenamePlanetForm, SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
 from .domain_services.fleet import send_transport_fleet, send_stationing_fleet, get_planet_ships_display
 from .domain_services.buildings import start_building_upgrade, cancel_building_upgrade
+from .domain_services.planets import rename_planet as update_planet_name
 from .domain_services.sync import advance_user_state
 from .domain_services.shipyard import (
     start_ship_construction,
@@ -74,6 +75,7 @@ def planet_detail(request, pk):
         "energy_balance": get_energy_balance(buildings),
         "planet_trait_rows": get_planet_trait_rows(planet),
         "planet_type_summary": get_planet_type_summary(planet),
+        "rename_planet_form": RenamePlanetForm(initial={"name": planet.name}),
     }
     return render(request, "game/planet_detail.html", context)
 
@@ -123,6 +125,26 @@ def planet_buildings(request, pk):
 def switch_planet(request, pk):
     planet = get_user_planet_or_404(request.user, pk)
     request.session["active_planet_id"] = planet.id
+    return redirect("game:planet_detail", pk=planet.pk)
+
+
+@login_required
+@require_POST
+def rename_planet(request, pk):
+    planet = get_user_planet_or_404(request.user, pk)
+    form = RenamePlanetForm(request.POST, user=request.user, planet=planet)
+
+    if form.is_valid():
+        try:
+            update_planet_name(planet, form.cleaned_data["name"])
+        except DomainError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, "Nazwa planety została zmieniona.")
+    else:
+        first_error = next(iter(form.errors.values()))[0]
+        messages.error(request, first_error)
+
     return redirect("game:planet_detail", pk=planet.pk)
 
 

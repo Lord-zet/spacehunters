@@ -33,8 +33,43 @@
              <div class="absolute w-80 h-80 rounded-full border border-white/10 animate-[spin_40s_linear_infinite_reverse]"></div>
         </div>
 
-        <div class="text-center">
-            <h3 class="font-scifi text-2xl tracking-[0.3em] uppercase mb-2">{{ planet.name|default:"Alfa Prime" }}</h3>
+        <div class="text-center" x-data="{ renaming: false }">
+            <div class="flex items-center justify-center gap-3 mb-2">
+                <h3 class="font-scifi text-2xl tracking-[0.3em] uppercase break-words">{{ planet.name|default:"Alfa Prime" }}</h3>
+                <button type="button"
+                        class="shrink-0 p-2 rounded-full border border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/10 hover:border-accent-cyan transition-colors"
+                        title="Zmien nazwe planety"
+                        aria-label="Zmien nazwe planety"
+                        @click="renaming = !renaming; if (renaming) $nextTick(() => $refs.planetNameInput.focus())"
+                        :aria-expanded="renaming.toString()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                </button>
+            </div>
+
+            <form x-show="renaming"
+                  x-transition
+                  method="post"
+                  action="{% url 'game:rename_planet' planet.pk %}"
+                  class="mx-auto mb-4 flex max-w-md flex-col gap-3 sm:flex-row"
+                  style="display: none;">
+                {% csrf_token %}
+                {{ rename_planet_form.name }}
+                <div class="flex gap-2 justify-center">
+                    <button type="submit"
+                            class="px-4 py-2 rounded border border-accent-cyan/40 bg-accent-cyan/10 text-xs uppercase tracking-widest text-accent-cyan hover:bg-accent-cyan/20 transition-colors">
+                        Zapisz
+                    </button>
+                    <button type="button"
+                            class="px-4 py-2 rounded border border-white/10 bg-black/30 text-xs uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                            @click="renaming = false">
+                        Anuluj
+                    </button>
+                </div>
+            </form>
+
             <p class="text-xs text-accent-cyan tracking-widest">[ SEKTOR {{ planet.coordinates }} ]</p>
         </div>
     </div>

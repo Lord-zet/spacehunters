@@ -15,6 +15,44 @@ TAILWIND_INPUT = (
     "focus:border-accent-cyan outline-none transition-all text-white"
 )
 
+
+class RenamePlanetForm(forms.Form):
+    name = forms.CharField(
+        label="Nazwa planety",
+        max_length=100,
+        min_length=2,
+        widget=forms.TextInput(attrs={
+            "class": TAILWIND_INPUT,
+            "placeholder": "Nowa nazwa planety",
+            "autocomplete": "off",
+        }),
+    )
+
+    def __init__(self, *args, user=None, planet=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.planet = planet
+
+    def clean_name(self):
+        name = self.cleaned_data["name"].strip()
+
+        if not name:
+            raise forms.ValidationError("Nazwa planety nie może być pusta.")
+
+        queryset = Planet.objects.filter(name__iexact=name)
+
+        if self.user is not None:
+            queryset = queryset.filter(owner=self.user)
+
+        if self.planet is not None:
+            queryset = queryset.exclude(pk=self.planet.pk)
+
+        if queryset.exists():
+            raise forms.ValidationError("Masz już planetę o takiej nazwie.")
+
+        return name
+
+
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

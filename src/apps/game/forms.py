@@ -1,6 +1,6 @@
 from django.contrib.auth.forms import AuthenticationForm
 from django import forms
-from .models import Planet, Fleet
+from .models import Planet, Fleet, PLANET_NAME_MAX_LENGTH
 
 from .ships import SHIPS
 from apps.game.fleet_speed_profiles import (
@@ -19,7 +19,7 @@ TAILWIND_INPUT = (
 class RenamePlanetForm(forms.Form):
     name = forms.CharField(
         label="Nazwa planety",
-        max_length=100,
+        max_length=PLANET_NAME_MAX_LENGTH,
         min_length=2,
         widget=forms.TextInput(attrs={
             "class": TAILWIND_INPUT,

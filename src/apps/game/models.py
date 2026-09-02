@@ -7,13 +7,16 @@ from .buildings import BUILDINGS
 from .ships import SHIPS
 
 
+PLANET_NAME_MAX_LENGTH = 100
+
+
 class Planet(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="planets"
     )
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=PLANET_NAME_MAX_LENGTH)
     galaxy = models.PositiveIntegerField(default=1)
     system = models.PositiveIntegerField()
     position = models.PositiveIntegerField()

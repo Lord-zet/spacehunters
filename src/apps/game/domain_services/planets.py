@@ -3,11 +3,16 @@ from apps.game.domain_services.planet_generation import generate_planet_traits
 
 from apps.game.models import (
     Planet,
+    PLANET_NAME_MAX_LENGTH,
     PlanetBuildings,
     PlanetShip,
     PlanetShipConstruction,
 )
 from apps.game.ships import SHIPS
+from apps.game.domain.exceptions import (
+    InvalidPlanetNameError,
+    PlanetNameAlreadyExistsError,
+)
 
 
 DEFAULT_PLANET_RESOURCES = {
@@ -29,6 +34,35 @@ DEFAULT_BUILDING_LEVELS = {
     "building_type": "",
     "building_ends_at": None,
 }
+
+
+@transaction.atomic
+def rename_planet(planet: Planet, new_name: str) -> Planet:
+    normalized_name = new_name.strip()
+
+    if not normalized_name:
+        raise InvalidPlanetNameError("Nazwa planety nie moze byc pusta.")
+
+    if len(normalized_name) > PLANET_NAME_MAX_LENGTH:
+        raise InvalidPlanetNameError("Nazwa planety jest zbyt dluga.")
+
+    locked_planet = Planet.objects.select_for_update().get(pk=planet.pk)
+
+    name_exists = (
+        Planet.objects
+        .filter(owner_id=locked_planet.owner_id, name__iexact=normalized_name)
+        .exclude(pk=locked_planet.pk)
+        .exists()
+    )
+    if name_exists:
+        raise PlanetNameAlreadyExistsError("Masz juz planete o takiej nazwie.")
+
+    if locked_planet.name == normalized_name:
+        return locked_planet
+
+    locked_planet.name = normalized_name
+    locked_planet.save(update_fields=["name"])
+    return locked_planet
 
 
 @transaction.atomic

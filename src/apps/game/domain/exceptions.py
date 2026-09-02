@@ -70,6 +70,14 @@ class PlanetOwnershipError(DomainError):
     pass
 
 
+class InvalidPlanetNameError(DomainError):
+    pass
+
+
+class PlanetNameAlreadyExistsError(DomainError):
+    pass
+
+
 class UnsupportedFleetMissionError(DomainError):
     pass
 

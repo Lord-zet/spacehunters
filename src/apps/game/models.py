@@ -7,7 +7,7 @@ from .buildings import BUILDINGS
 from .ships import SHIPS
 
 
-PLANET_NAME_MAX_LENGTH = 100
+PLANET_NAME_MAX_LENGTH = 50
 
 
 class Planet(models.Model):

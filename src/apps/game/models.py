@@ -294,3 +294,68 @@ class FleetShip(models.Model):
 
     def __str__(self):
         return f"{self.fleet_id}:{self.ship_code}={self.quantity}"
+
+
+class Report(models.Model):
+    class Category(models.TextChoices):
+        ESPIONAGE = "espionage", "Raporty szpiegowskie"
+
+    class ReportType(models.TextChoices):
+        PLANET_SCAN = "planet_scan", "Skan planety"
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reports",
+    )
+    category = models.CharField(
+        max_length=30,
+        choices=Category.choices,
+    )
+    report_type = models.CharField(
+        max_length=50,
+        choices=ReportType.choices,
+    )
+    title = models.CharField(max_length=120)
+    summary = models.TextField(blank=True, default="")
+    payload = models.JSONField(default=dict, blank=True)
+    source_planet = models.ForeignKey(
+        Planet,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="source_reports",
+    )
+    target_planet = models.ForeignKey(
+        Planet,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="target_reports",
+    )
+    fleet = models.ForeignKey(
+        Fleet,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reports",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["owner", "category", "-created_at"],
+                name="report_owner_cat_created_idx",
+            ),
+            models.Index(fields=["owner", "read_at"], name="report_owner_read_idx"),
+        ]
+
+    @property
+    def is_read(self):
+        return self.read_at is not None
+
+    def __str__(self):
+        return self.title

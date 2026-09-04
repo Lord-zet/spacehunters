@@ -142,6 +142,11 @@
                         Ruch floty
                     </a>
                 </li>
+                <li>
+                    <a href="{% url 'game:reports' pk=planet.id %}" class="flex items-center p-3 transition-colors hover:bg-white/10 rounded-lg {% if request.resolver_match.url_name == 'reports' or request.resolver_match.url_name == 'report_detail' %}nav-link-active{% endif %}">
+                        Raporty
+                    </a>
+                </li>
             </ul>
         </nav>
 

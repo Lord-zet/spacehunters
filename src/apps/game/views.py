@@ -9,7 +9,12 @@ from .models import Planet, Fleet
 from .forms import RenamePlanetForm, SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
-from .domain_services.fleet import send_transport_fleet, send_stationing_fleet, get_planet_ships_display
+from .domain_services.fleet import (
+    get_planet_ships_display,
+    send_espionage_fleet,
+    send_stationing_fleet,
+    send_transport_fleet,
+)
 from .domain_services.buildings import start_building_upgrade, cancel_building_upgrade
 from .domain_services.planets import rename_planet as update_planet_name
 from .domain_services.sync import advance_user_state
@@ -22,6 +27,9 @@ from .domain_services.energy import get_energy_balance
 from apps.game.domain.exceptions import DomainError
 from .selectors import (
     get_active_fleets_for_user,
+    get_unread_reports_count,
+    get_user_report_or_404,
+    get_user_reports,
     get_user_fleets,
     get_user_homeland,
     get_user_planet_or_404,
@@ -38,6 +46,11 @@ from .presenters.buildings import (
     get_building_cards,
     get_building_card,
     get_building_level_row,
+)
+from .presenters.reports import (
+    get_report_category_tabs,
+    get_report_planet_intel_rows,
+    get_valid_report_category,
 )
 
 
@@ -166,6 +179,7 @@ def send_fleet(request, pk):
             speed_profile = form.cleaned_data["speed_profile"]
 
             MISSION_DISPATCHERS = {
+                Fleet.MissionType.ESPIONAGE: send_espionage_fleet,
                 Fleet.MissionType.STATION: send_stationing_fleet,
                 Fleet.MissionType.TRANSPORT: send_transport_fleet,
             }
@@ -236,6 +250,57 @@ def fleet_list(request, pk):
         "energy_balance": get_energy_balance(buildings),
     }
     return render(request, "game/fleet_list.html", context)
+
+
+@login_required
+def reports(request, pk):
+    advance_user_state(request.user)
+
+    planet = get_user_planet_or_404(request.user, pk)
+    category = get_valid_report_category(request.GET.get("category"))
+    report_list = get_user_reports(request.user, category=category)
+
+    buildings = planet.get_buildings()
+    background = get_planet_background(planet)
+
+    context = {
+        "planet": planet,
+        "planet_buildings": buildings,
+        "background": background,
+        "storage_capacities": get_storage_capacities(buildings),
+        "energy_balance": get_energy_balance(buildings),
+        "reports": report_list,
+        "active_category": category,
+        "category_tabs": get_report_category_tabs(active_category=category),
+        "unread_reports_count": get_unread_reports_count(request.user),
+    }
+    return render(request, "game/reports.html", context)
+
+
+@login_required
+def report_detail(request, pk, report_id):
+    advance_user_state(request.user)
+
+    planet = get_user_planet_or_404(request.user, pk)
+    report = get_user_report_or_404(request.user, report_id)
+
+    if report.read_at is None:
+        report.read_at = timezone.now()
+        report.save(update_fields=["read_at"])
+
+    buildings = planet.get_buildings()
+    background = get_planet_background(planet)
+
+    context = {
+        "planet": planet,
+        "planet_buildings": buildings,
+        "background": background,
+        "storage_capacities": get_storage_capacities(buildings),
+        "energy_balance": get_energy_balance(buildings),
+        "report": report,
+        "planet_intel_rows": get_report_planet_intel_rows(report),
+    }
+    return render(request, "game/report_detail.html", context)
 
 
 @login_required

@@ -9,7 +9,12 @@ from .models import Planet, Fleet
 from .forms import RenamePlanetForm, SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
-from .domain_services.fleet import send_transport_fleet, send_stationing_fleet, get_planet_ships_display
+from .domain_services.fleet import (
+    get_planet_ships_display,
+    send_espionage_fleet,
+    send_stationing_fleet,
+    send_transport_fleet,
+)
 from .domain_services.buildings import start_building_upgrade, cancel_building_upgrade
 from .domain_services.planets import rename_planet as update_planet_name
 from .domain_services.sync import advance_user_state
@@ -174,6 +179,7 @@ def send_fleet(request, pk):
             speed_profile = form.cleaned_data["speed_profile"]
 
             MISSION_DISPATCHERS = {
+                Fleet.MissionType.ESPIONAGE: send_espionage_fleet,
                 Fleet.MissionType.STATION: send_stationing_fleet,
                 Fleet.MissionType.TRANSPORT: send_transport_fleet,
             }

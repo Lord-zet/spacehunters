@@ -203,6 +203,7 @@ class Fleet(models.Model):
     class MissionType(models.TextChoices):
         TRANSPORT = "transport", "Transport"
         STATION = "station", "Station"
+        ESPIONAGE = "espionage", "Espionage"
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

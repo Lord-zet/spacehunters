@@ -35,6 +35,7 @@ from apps.game.domain_services.resources import (
     normalize_resource_amounts
 )
 from .sync import advance_planet_state
+from .reports import create_espionage_report
 from apps.game.fleet_speed_profiles import (
     DEFAULT_FLEET_SPEED_PROFILE,
     get_fleet_fuel_multiplier,
@@ -285,9 +286,27 @@ class StationMission(BaseMission):
         fleet.save(update_fields=[*fleet_resource_fields, "status", "return_time"])
 
 
+class EspionageMission(BaseMission):
+    def handle_arrival(self, fleet, *, at):
+        target_planet = prepare_planet_for_fleet_event(fleet.target_planet_id, at)
+
+        create_espionage_report(
+            owner=fleet.owner,
+            source_planet=fleet.source_planet,
+            target_planet=target_planet,
+            fleet=fleet,
+        )
+
+        fleet.status = Fleet.Status.RETURNING
+
+        target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+        fleet.save(update_fields=["status"])
+
+
 MISSION_HANDLERS = {
     Fleet.MissionType.TRANSPORT: TransportMission(),
     Fleet.MissionType.STATION: StationMission(),
+    Fleet.MissionType.ESPIONAGE: EspionageMission(),
 }
 
 
@@ -494,6 +513,34 @@ def send_stationing_fleet(
         speed_profile=speed_profile,
         user=user,
         mission_type=Fleet.MissionType.STATION,
+        at=at,
+    )
+
+
+def send_espionage_fleet(
+    source_planet,
+    target_planet,
+    ship_quantities: dict[str, int] | int,
+    cargo: ResourceAmounts,
+    user,
+    speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
+    at=None
+):
+    """
+    Wysyła flotę z misją Szpiegowania. Misja nie przewozi ładunku i wraca po skanie celu.
+    """
+    normalized_cargo = normalize_resource_amounts(cargo or {})
+    if total_resources(normalized_cargo) > 0:
+        raise FleetError("Misja szpiegowska nie może przewozić ładunku.")
+
+    return _send_fleet_mission(
+        source_planet=source_planet,
+        target_planet=target_planet,
+        ship_quantities=_normalize_ship_quantities(ship_quantities),
+        cargo={},
+        speed_profile=speed_profile,
+        user=user,
+        mission_type=Fleet.MissionType.ESPIONAGE,
         at=at,
     )
 

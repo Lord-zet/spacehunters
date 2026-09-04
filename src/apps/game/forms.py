@@ -153,10 +153,13 @@ class SendFleetForm(forms.Form):
 
         queryset = Planet.objects.none()
         if user is not None:
-            queryset = Planet.objects.filter(owner=user)
+            queryset = Planet.objects.all()
             if source_planet is not None:
                 queryset = queryset.exclude(pk=source_planet.pk)
         self.fields["target_planet"].queryset = queryset
+        self.fields["target_planet"].label_from_instance = (
+            lambda planet: f"{planet.name} [{planet.coordinates}]"
+        )
         self.user = user
         self.source_planet = source_planet
 
@@ -183,6 +186,24 @@ class SendFleetForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        mission_type = cleaned_data.get("mission_type")
+        target_planet = cleaned_data.get("target_planet")
+
+        if (
+            mission_type != Fleet.MissionType.ESPIONAGE
+            and target_planet is not None
+            and self.user is not None
+            and target_planet.owner_id != self.user.id
+        ):
+            raise forms.ValidationError("Ten typ misji można wysłać tylko na własną planetę.")
+
+        if mission_type == Fleet.MissionType.ESPIONAGE:
+            cargo_amount = sum(
+                cleaned_data.get(resource.value) or 0
+                for resource in Resource
+            )
+            if cargo_amount > 0:
+                raise forms.ValidationError("Misja szpiegowska nie może przewozić ładunku.")
 
         # Walidujemy, czy gracz podał przynajmniej 1 statek jakiegokolwiek typu
         ship_quantities = {

@@ -4,7 +4,7 @@ from django.utils import timezone
 from apps.game.domain.exceptions import FleetError
 from apps.game.domain_services.fleet import send_espionage_fleet, process_fleets_for_user
 from apps.game.domain_services.resources import Resource
-from apps.game.forms import SendFleetForm
+from apps.game.forms import SendFleetForm, parse_planet_coordinates
 from apps.game.models import Fleet, PlanetShip, Report
 from apps.game.ships import ESPIONAGE_PROBE_CODE
 from .helpers import PlanetTestMixin
@@ -289,9 +289,9 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.ESPIONAGE,
-                "target_planet": target_planet.pk,
+                "target_coordinates": target_planet.coordinates,
                 "speed_profile": "standard",
-                "ship_transporter": 1,
+                f"ship_{ESPIONAGE_PROBE_CODE}": 1,
                 "metal": 0,
                 "crystal": 0,
                 "helion": 0,
@@ -325,7 +325,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.TRANSPORT,
-                "target_planet": target_planet.pk,
+                "target_coordinates": target_planet.coordinates,
                 "speed_profile": "standard",
                 "ship_transporter": 1,
                 "metal": 0,
@@ -362,10 +362,80 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.ESPIONAGE,
+                "target_coordinates": target_planet.coordinates,
+                "speed_profile": "standard",
+                f"ship_{ESPIONAGE_PROBE_CODE}": 1,
+                "metal": 1,
+                "crystal": 0,
+                "helion": 0,
+            },
+            user=user,
+            source_planet=source_planet,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("__all__", form.errors)
+
+    def test_form_resolves_selected_own_target_planet_to_coordinates(self):
+        user = self.create_user("coordinates_form_sender")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=2,
+            system=7,
+            position=1,
+            transporter_count=1,
+        )
+        target_planet = self.create_planet(
+            owner=user,
+            name="Target",
+            galaxy=2,
+            system=8,
+            position=1,
+            is_homeland=False,
+        )
+
+        form = SendFleetForm(
+            data={
+                "mission_type": Fleet.MissionType.TRANSPORT,
                 "target_planet": target_planet.pk,
+                "target_coordinates": "",
                 "speed_profile": "standard",
                 "ship_transporter": 1,
-                "metal": 1,
+                "metal": 0,
+                "crystal": 0,
+                "helion": 0,
+            },
+            user=user,
+            source_planet=source_planet,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["target_planet"], target_planet)
+        self.assertEqual(form.cleaned_data["target_coordinates"], target_planet.coordinates)
+
+    def test_parse_planet_coordinates_rejects_invalid_format(self):
+        with self.assertRaisesMessage(Exception, "format"):
+            parse_planet_coordinates("2-8-1")
+
+    def test_form_rejects_unknown_target_coordinates(self):
+        user = self.create_user("coordinates_form_unknown")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=2,
+            system=9,
+            position=1,
+            transporter_count=1,
+        )
+
+        form = SendFleetForm(
+            data={
+                "mission_type": Fleet.MissionType.TRANSPORT,
+                "target_coordinates": "99:99:99",
+                "speed_profile": "standard",
+                "ship_transporter": 1,
+                "metal": 0,
                 "crystal": 0,
                 "helion": 0,
             },

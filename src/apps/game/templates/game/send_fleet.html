@@ -64,6 +64,10 @@
                         <label class="block text-[10px] text-white/40 uppercase mb-1">Planeta Docelowa</label>
                         {{ form.target_planet }}
                     </div>
+                    <div>
+                        <label class="block text-[10px] text-white/40 uppercase mb-1">Koordynaty celu</label>
+                        {{ form.target_coordinates }}
+                    </div>
                 </div>
             </div>
 
@@ -134,4 +138,20 @@
     </div>
 
 </div>
+
+<script>
+    const targetPlanetSelect = document.getElementById("id_target_planet");
+    const targetCoordinatesInput = document.getElementById("id_target_coordinates");
+
+    if (targetPlanetSelect && targetCoordinatesInput) {
+        targetPlanetSelect.addEventListener("change", () => {
+            const selectedOption = targetPlanetSelect.options[targetPlanetSelect.selectedIndex];
+            const match = selectedOption.textContent.match(/\[(\d+:\d+:\d+)\]/);
+
+            if (match) {
+                targetCoordinatesInput.value = match[1];
+            }
+        });
+    }
+</script>
 {% endblock %}

@@ -1,13 +1,45 @@
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.game.domain_services.fleet import send_transport_fleet
+from apps.game.domain_services.fleet import (
+    calculate_effective_fleet_speed_multiplier,
+    send_espionage_fleet,
+    send_transport_fleet,
+)
 
 from .helpers import PlanetTestMixin
 from apps.game.domain_services.resources import Resource
+from apps.game.models import PlanetShip
+from apps.game.ships import ESPIONAGE_PROBE_CODE
 
 
 class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
+    def test_effective_fleet_speed_uses_slowest_ship_base_speed(self):
+        self.assertEqual(
+            calculate_effective_fleet_speed_multiplier(
+                {"transporter": 1},
+                "standard",
+            ),
+            1.0,
+        )
+        self.assertEqual(
+            calculate_effective_fleet_speed_multiplier(
+                {ESPIONAGE_PROBE_CODE: 1},
+                "standard",
+            ),
+            4.0,
+        )
+        self.assertEqual(
+            calculate_effective_fleet_speed_multiplier(
+                {
+                    "transporter": 1,
+                    ESPIONAGE_PROBE_CODE: 1,
+                },
+                "standard",
+            ),
+            1.0,
+        )
+
     def test_transport_fleet_stores_selected_speed_profile(self):
         now = timezone.now()
         user = self.create_user("speed_profile_user")
@@ -207,3 +239,58 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
 
         self.assertGreater(economy_fleet.arrival_time, standard_fleet.arrival_time)
         self.assertLess(economy_fleet.helion_cost, standard_fleet.helion_cost)
+
+    def test_espionage_probe_arrives_before_transporter_on_same_route(self):
+        now = timezone.now()
+        user = self.create_user("ship_base_speed_user")
+
+        source = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
+            helion=100_000,
+            transporter_count=1,
+            last_resource_update=now,
+        )
+        PlanetShip.objects.create(
+            planet=source,
+            ship_code=ESPIONAGE_PROBE_CODE,
+            quantity=1,
+        )
+        target = self.create_planet(
+            owner=user,
+            name="Target",
+            galaxy=1,
+            system=5,
+            position=1,
+            transporter_count=0,
+            is_homeland=False,
+            last_resource_update=now,
+        )
+
+        transporter_fleet = send_transport_fleet(
+            user=user,
+            source_planet=source,
+            target_planet=target,
+            ship_quantities={"transporter": 1},
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
+            speed_profile="standard",
+            at=now,
+        )
+        probe_fleet = send_espionage_fleet(
+            user=user,
+            source_planet=source,
+            target_planet=target,
+            ship_quantities={ESPIONAGE_PROBE_CODE: 1},
+            cargo={},
+            speed_profile="standard",
+            at=now,
+        )
+
+        self.assertLess(probe_fleet.arrival_time, transporter_fleet.arrival_time)

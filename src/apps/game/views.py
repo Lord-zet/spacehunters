@@ -10,6 +10,7 @@ from .forms import RenamePlanetForm, SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
 from .domain_services.fleet import (
+    calculate_effective_fleet_speed_multiplier,
     calculate_helion_cost_for_flight,
     get_planet_ships_display,
     send_espionage_fleet,
@@ -26,7 +27,7 @@ from .domain_services.shipyard import (
     get_ship_construction_time_seconds,
 )
 from .domain_services.energy import get_energy_balance
-from .fleet_speed_profiles import get_fleet_fuel_multiplier, get_fleet_speed_multiplier
+from .fleet_speed_profiles import get_fleet_fuel_multiplier
 from apps.game.domain.exceptions import DomainError
 from .selectors import (
     get_active_fleets_for_user,
@@ -249,7 +250,10 @@ def send_fleet_preview(request, pk):
     target_planet = form.cleaned_data["target_planet"]
     speed_profile = form.cleaned_data["speed_profile"]
     ship_quantities = form.get_ship_quantities()
-    speed_multiplier = get_fleet_speed_multiplier(speed_profile)
+    speed_multiplier = calculate_effective_fleet_speed_multiplier(
+        ship_quantities,
+        speed_profile,
+    )
     fuel_multiplier = get_fleet_fuel_multiplier(speed_profile)
     flight_time_seconds = calculate_flight_time_seconds(
         source_planet,

@@ -27,6 +27,13 @@
     <!-- FORMULARZ MISJI -->
     <form action="" method="POST" class="glass-panel hud-border p-8">
         {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="mb-4 border border-red-500/40 bg-red-950/30 text-red-300 px-4 py-3 text-sm">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
@@ -63,6 +70,10 @@
                     <div>
                         <label class="block text-[10px] text-white/40 uppercase mb-1">Planeta Docelowa</label>
                         {{ form.target_planet }}
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-white/40 uppercase mb-1">Koordynaty celu</label>
+                        {{ form.target_coordinates }}
                     </div>
                 </div>
             </div>
@@ -134,4 +145,20 @@
     </div>
 
 </div>
+
+<script>
+    const targetPlanetSelect = document.getElementById("id_target_planet");
+    const targetCoordinatesInput = document.getElementById("id_target_coordinates");
+
+    if (targetPlanetSelect && targetCoordinatesInput) {
+        targetPlanetSelect.addEventListener("change", () => {
+            const selectedOption = targetPlanetSelect.options[targetPlanetSelect.selectedIndex];
+            const match = selectedOption.textContent.match(/\[(\d+:\d+:\d+)\]/);
+
+            if (match) {
+                targetCoordinatesInput.value = match[1];
+            }
+        });
+    }
+</script>
 {% endblock %}

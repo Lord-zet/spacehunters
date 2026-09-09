@@ -20,7 +20,7 @@ from apps.game.domain.exceptions import (
     PlanetOwnershipError,
 )
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
-from apps.game.ships import SHIPS
+from apps.game.ships import ESPIONAGE_PROBE_CODE, SHIPS
 from apps.game.domain_services.resources import (
     synchronize_resources,
     RESOURCE_STATE_FIELDS,
@@ -242,6 +242,17 @@ class BaseMission:
         """Specyficzna walidacja dla danego typu misji przed wylotem."""
         pass
 
+    def validate_fleet_composition(self, ship_quantities: dict[str, int], mission_type: str):
+        """Sprawdza, czy wybrane statki mogą wykonać dany typ misji."""
+        for ship_code, quantity in ship_quantities.items():
+            if quantity <= 0:
+                continue
+
+            allowed_missions = SHIPS[ship_code].get("allowed_missions", ())
+            if mission_type not in allowed_missions:
+                ship_label = SHIPS[ship_code].get("label", ship_code)
+                raise FleetError(f"Statek {ship_label} nie może wykonać tej misji.")
+
     def calculate_return_time(self, arrival_time, flight_duration):
         """Oblicza czas powrotu floty (domyślnie powrót trwa tyle samo co dolot)."""
         return arrival_time + flight_duration
@@ -287,6 +298,17 @@ class StationMission(BaseMission):
 
 
 class EspionageMission(BaseMission):
+    def validate_fleet_composition(self, ship_quantities: dict[str, int], mission_type: str):
+        super().validate_fleet_composition(ship_quantities, mission_type)
+
+        active_ship_codes = [
+            ship_code
+            for ship_code, quantity in ship_quantities.items()
+            if quantity > 0
+        ]
+        if active_ship_codes != [ESPIONAGE_PROBE_CODE]:
+            raise FleetError("Misja szpiegowska wymaga floty zlożonej wyłącznie z sond szpiegowskich.")
+
     def handle_arrival(self, fleet, *, at):
         target_planet = prepare_planet_for_fleet_event(fleet.target_planet_id, at)
 
@@ -409,6 +431,7 @@ def _send_fleet_mission(
 
     # 1. Walidacja i pobranie rekordów PlanetShip
     existing_ships = check_and_get_planet_ships(source_planet, ship_quantities)
+    mission_handler.validate_fleet_composition(ship_quantities, mission_type)
 
     # 2. Walidacja surowców
     if not has_resources(source_planet, cargo):

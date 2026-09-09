@@ -81,9 +81,30 @@ TAILWIND_FLEET_MISSION_TYPE = (
 TAILWIND_FLEET_TARGET_INPUT = (
     "w-full bg-black/60 border border-white/10 rounded px-3 py-2 text-sm focus:border-accent-cyan outline-none appearance-none cursor-pointer"
 )
+TAILWIND_FLEET_COORDINATES_INPUT = (
+    "w-full bg-black/60 border border-white/10 rounded px-3 py-2 text-sm focus:border-accent-cyan outline-none"
+)
 TAILWIND_FLEET_SPEED_PROFILE = (
     "w-full bg-black/60 border border-white/10 rounded px-3 py-2 text-sm focus:border-accent-cyan outline-none appearance-none cursor-pointer"
 )
+
+
+def parse_planet_coordinates(value: str) -> tuple[int, int, int]:
+    parts = value.strip().split(":")
+
+    if len(parts) != 3:
+        raise forms.ValidationError("Koordynaty muszą mieć format galaktyka:system:pozycja.")
+
+    try:
+        galaxy, system, position = (int(part) for part in parts)
+    except ValueError as exc:
+        raise forms.ValidationError("Koordynaty mogą zawierać tylko liczby.") from exc
+
+    if galaxy <= 0 or system <= 0 or position <= 0:
+        raise forms.ValidationError("Koordynaty muszą być większe od zera.")
+
+    return galaxy, system, position
+
 
 class SendFleetForm(forms.Form):
     mission_type = forms.ChoiceField(
@@ -116,6 +137,13 @@ class SendFleetForm(forms.Form):
         queryset=Planet.objects.none(),
         label="Planeta docelowa",
         empty_label="Wybierz planetę",
+        required=False,
+    )
+    target_coordinates = forms.CharField(
+        label="Koordynaty celu",
+        required=False,
+        max_length=30,
+        widget=forms.TextInput(),
     )
     speed_profile = forms.ChoiceField(
         choices=get_fleet_speed_profile_choices(),
@@ -146,6 +174,11 @@ class SendFleetForm(forms.Form):
             "class": TAILWIND_FLEET_TARGET_INPUT,
             "placeholder": "0",
         })
+        self.fields["target_coordinates"].widget.attrs.update({
+            "class": TAILWIND_FLEET_COORDINATES_INPUT,
+            "placeholder": "np. 1:42:7",
+            "autocomplete": "off",
+        })
         self.fields["speed_profile"].widget.attrs.update({
             "class": TAILWIND_FLEET_SPEED_PROFILE,
             "placeholder": "0",
@@ -153,7 +186,7 @@ class SendFleetForm(forms.Form):
 
         queryset = Planet.objects.none()
         if user is not None:
-            queryset = Planet.objects.all()
+            queryset = Planet.objects.filter(owner=user)
             if source_planet is not None:
                 queryset = queryset.exclude(pk=source_planet.pk)
         self.fields["target_planet"].queryset = queryset
@@ -188,6 +221,27 @@ class SendFleetForm(forms.Form):
         cleaned_data = super().clean()
         mission_type = cleaned_data.get("mission_type")
         target_planet = cleaned_data.get("target_planet")
+        target_coordinates = (cleaned_data.get("target_coordinates") or "").strip()
+
+        if not target_coordinates and target_planet is not None:
+            target_coordinates = target_planet.coordinates
+            cleaned_data["target_coordinates"] = target_coordinates
+
+        if not target_coordinates:
+            raise forms.ValidationError("Podaj koordynaty planety docelowej.")
+
+        galaxy, system, position = parse_planet_coordinates(target_coordinates)
+        try:
+            target_planet = Planet.objects.get(
+                galaxy=galaxy,
+                system=system,
+                position=position,
+            )
+        except Planet.DoesNotExist as exc:
+            raise forms.ValidationError("Nie znaleziono planety o podanych koordynatach.") from exc
+
+        cleaned_data["target_planet"] = target_planet
+        cleaned_data["target_coordinates"] = target_planet.coordinates
 
         if (
             mission_type != Fleet.MissionType.ESPIONAGE

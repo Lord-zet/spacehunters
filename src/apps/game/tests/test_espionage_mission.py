@@ -4,12 +4,20 @@ from django.utils import timezone
 from apps.game.domain.exceptions import FleetError
 from apps.game.domain_services.fleet import send_espionage_fleet, process_fleets_for_user
 from apps.game.domain_services.resources import Resource
-from apps.game.forms import SendFleetForm
-from apps.game.models import Fleet, Report
+from apps.game.forms import SendFleetForm, parse_planet_coordinates
+from apps.game.models import Fleet, PlanetShip, Report
+from apps.game.ships import ESPIONAGE_PROBE_CODE
 from .helpers import PlanetTestMixin
 
 
 class EspionageMissionTests(PlanetTestMixin, TestCase):
+    def add_espionage_probes(self, planet, quantity):
+        return PlanetShip.objects.create(
+            planet=planet,
+            ship_code=ESPIONAGE_PROBE_CODE,
+            quantity=quantity,
+        )
+
     def test_send_espionage_fleet_creates_returning_mission_without_cargo(self):
         user = self.create_user("espionage_sender")
         target_owner = self.create_user("espionage_target_owner")
@@ -21,9 +29,9 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
             system=1,
             position=1,
             helion=10_000,
-            transporter_count=5,
             last_resource_update=now,
         )
+        self.add_espionage_probes(source_planet, 5)
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
@@ -37,7 +45,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         fleet = send_espionage_fleet(
             source_planet=source_planet,
             target_planet=target_planet,
-            ship_quantities=2,
+            ship_quantities={ESPIONAGE_PROBE_CODE: 2},
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -55,7 +63,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         self.assertEqual(fleet.metal, 0)
         self.assertEqual(fleet.crystal, 0)
         self.assertEqual(fleet.helion, 0)
-        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 3)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, ESPIONAGE_PROBE_CODE), 3)
 
     def test_process_espionage_arrival_creates_report_and_sets_fleet_returning(self):
         user = self.create_user("espionage_report_sender")
@@ -68,9 +76,9 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
             system=3,
             position=1,
             helion=10_000,
-            transporter_count=3,
             last_resource_update=now,
         )
+        self.add_espionage_probes(source_planet, 3)
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
@@ -87,7 +95,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         fleet = send_espionage_fleet(
             source_planet=source_planet,
             target_planet=target_planet,
-            ship_quantities=1,
+            ship_quantities={ESPIONAGE_PROBE_CODE: 1},
             cargo={},
             user=user,
             at=now,
@@ -125,9 +133,9 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
             system=5,
             position=1,
             helion=10_000,
-            transporter_count=2,
             last_resource_update=now,
         )
+        self.add_espionage_probes(source_planet, 2)
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
@@ -140,7 +148,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         fleet = send_espionage_fleet(
             source_planet=source_planet,
             target_planet=target_planet,
-            ship_quantities=2,
+            ship_quantities={ESPIONAGE_PROBE_CODE: 2},
             cargo={},
             user=user,
             at=now,
@@ -152,8 +160,79 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         source_planet.refresh_from_db()
 
         self.assertEqual(fleet.status, Fleet.Status.COMPLETED)
-        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 2)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, ESPIONAGE_PROBE_CODE), 2)
         self.assertEqual(Report.objects.filter(owner=user).count(), 1)
+
+    def test_send_espionage_fleet_rejects_transporter(self):
+        user = self.create_user("espionage_transporter_sender")
+        target_owner = self.create_user("espionage_transporter_target_owner")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=7,
+            position=1,
+            helion=10_000,
+            transporter_count=1,
+        )
+        target_planet = self.create_planet(
+            owner=target_owner,
+            name="Target",
+            galaxy=1,
+            system=8,
+            position=1,
+            is_homeland=True,
+        )
+
+        with self.assertRaises(FleetError):
+            send_espionage_fleet(
+                source_planet=source_planet,
+                target_planet=target_planet,
+                ship_quantities={"transporter": 1},
+                cargo={},
+                user=user,
+            )
+
+        self.assertEqual(Fleet.objects.count(), 0)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 1)
+
+    def test_send_espionage_fleet_rejects_mixed_fleet(self):
+        user = self.create_user("espionage_mixed_sender")
+        target_owner = self.create_user("espionage_mixed_target_owner")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=9,
+            position=1,
+            helion=10_000,
+            transporter_count=1,
+        )
+        self.add_espionage_probes(source_planet, 1)
+        target_planet = self.create_planet(
+            owner=target_owner,
+            name="Target",
+            galaxy=1,
+            system=10,
+            position=1,
+            is_homeland=True,
+        )
+
+        with self.assertRaises(FleetError):
+            send_espionage_fleet(
+                source_planet=source_planet,
+                target_planet=target_planet,
+                ship_quantities={
+                    ESPIONAGE_PROBE_CODE: 1,
+                    "transporter": 1,
+                },
+                cargo={},
+                user=user,
+            )
+
+        self.assertEqual(Fleet.objects.count(), 0)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, ESPIONAGE_PROBE_CODE), 1)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 1)
 
     def test_send_espionage_fleet_rejects_cargo(self):
         user = self.create_user("espionage_cargo_sender")
@@ -210,9 +289,9 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.ESPIONAGE,
-                "target_planet": target_planet.pk,
+                "target_coordinates": target_planet.coordinates,
                 "speed_profile": "standard",
-                "ship_transporter": 1,
+                f"ship_{ESPIONAGE_PROBE_CODE}": 1,
                 "metal": 0,
                 "crystal": 0,
                 "helion": 0,
@@ -246,7 +325,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.TRANSPORT,
-                "target_planet": target_planet.pk,
+                "target_coordinates": target_planet.coordinates,
                 "speed_profile": "standard",
                 "ship_transporter": 1,
                 "metal": 0,
@@ -283,10 +362,80 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.ESPIONAGE,
+                "target_coordinates": target_planet.coordinates,
+                "speed_profile": "standard",
+                f"ship_{ESPIONAGE_PROBE_CODE}": 1,
+                "metal": 1,
+                "crystal": 0,
+                "helion": 0,
+            },
+            user=user,
+            source_planet=source_planet,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("__all__", form.errors)
+
+    def test_form_resolves_selected_own_target_planet_to_coordinates(self):
+        user = self.create_user("coordinates_form_sender")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=2,
+            system=7,
+            position=1,
+            transporter_count=1,
+        )
+        target_planet = self.create_planet(
+            owner=user,
+            name="Target",
+            galaxy=2,
+            system=8,
+            position=1,
+            is_homeland=False,
+        )
+
+        form = SendFleetForm(
+            data={
+                "mission_type": Fleet.MissionType.TRANSPORT,
                 "target_planet": target_planet.pk,
+                "target_coordinates": "",
                 "speed_profile": "standard",
                 "ship_transporter": 1,
-                "metal": 1,
+                "metal": 0,
+                "crystal": 0,
+                "helion": 0,
+            },
+            user=user,
+            source_planet=source_planet,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["target_planet"], target_planet)
+        self.assertEqual(form.cleaned_data["target_coordinates"], target_planet.coordinates)
+
+    def test_parse_planet_coordinates_rejects_invalid_format(self):
+        with self.assertRaisesMessage(Exception, "format"):
+            parse_planet_coordinates("2-8-1")
+
+    def test_form_rejects_unknown_target_coordinates(self):
+        user = self.create_user("coordinates_form_unknown")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=2,
+            system=9,
+            position=1,
+            transporter_count=1,
+        )
+
+        form = SendFleetForm(
+            data={
+                "mission_type": Fleet.MissionType.TRANSPORT,
+                "target_coordinates": "99:99:99",
+                "speed_profile": "standard",
+                "ship_transporter": 1,
+                "metal": 0,
                 "crystal": 0,
                 "helion": 0,
             },

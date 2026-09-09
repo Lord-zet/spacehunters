@@ -8,6 +8,7 @@ urlpatterns = [
     path("planet/<int:pk>/switch/", views.switch_planet, name="switch_planet"),
     path("planet/<int:pk>/rename/", views.rename_planet, name="rename_planet"),
     path("planet/<int:pk>/send-fleet/", views.send_fleet, name="send_fleet"),
+    path("planet/<int:pk>/send-fleet/preview/", views.send_fleet_preview, name="send_fleet_preview"),
     path("planet/<int:pk>/fleets/", views.fleet_list, name="fleet_list"),
     path("planet/<int:pk>/reports/", views.reports, name="reports"),
     path("planet/<int:pk>/reports/<int:report_id>/", views.report_detail, name="report_detail"),

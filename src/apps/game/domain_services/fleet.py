@@ -84,6 +84,28 @@ def calculate_fleet_base_fuel_burn(ship_quantities: dict[str, int]) -> int:
     return total
 
 
+def calculate_fleet_base_speed(ship_quantities: dict[str, int]) -> float:
+    active_ship_speeds = [
+        float(SHIPS[ship_code]["base_speed"])
+        for ship_code, quantity in ship_quantities.items()
+        if quantity > 0
+    ]
+
+    if not active_ship_speeds:
+        return 1.0
+    return min(active_ship_speeds)
+
+
+def calculate_effective_fleet_speed_multiplier(
+    ship_quantities: dict[str, int],
+    speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
+) -> float:
+    return (
+        calculate_fleet_base_speed(ship_quantities)
+        * get_fleet_speed_multiplier(speed_profile)
+    )
+
+
 def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantities: dict[str, int],
                                      fuel_multiplier=1.0) -> int:
     base_burn = calculate_fleet_base_fuel_burn(ship_quantities)
@@ -461,7 +483,7 @@ def _send_fleet_mission(
     subtract_resources(source_planet, required_resources)
     source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
-    speed_multiplier = get_fleet_speed_multiplier(speed_profile)
+    speed_multiplier = calculate_effective_fleet_speed_multiplier(ship_quantities, speed_profile)
     flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet, speed_multiplier)
     flight_duration = timedelta(seconds=flight_time_seconds)
 

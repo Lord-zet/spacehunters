@@ -283,9 +283,9 @@ class SendFleetForm(forms.Form):
             raise ValueError("Nie można pobrać statków z niepoprawnego formularza.")
 
         return {
-            ship_code: self.cleaned_data[f"ship_{ship_code}"]
+            ship_code: self.cleaned_data.get(f"ship_{ship_code}") or 0
             for ship_code in SHIPS.keys()
-            if self.cleaned_data.get(f"ship_{ship_code}", 0) > 0
+            if (self.cleaned_data.get(f"ship_{ship_code}") or 0) > 0
         }
 
 

@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -228,6 +228,34 @@ def send_fleet(request, pk):
         "planet_ships": get_planet_ships_display(source_planet, form),
     }
     return render(request, "game/send_fleet.html", context)
+
+
+@login_required
+@require_POST
+def send_fleet_preview(request, pk):
+    source_planet = get_user_planet_or_404(request.user, pk)
+    form = SendFleetForm(request.POST, user=request.user, source_planet=source_planet)
+
+    if not form.is_valid():
+        return JsonResponse({
+            "ok": False,
+            "errors": form.errors.get_json_data(),
+            "non_field_errors": list(form.non_field_errors()),
+        }, status=400)
+
+    target_planet = form.cleaned_data["target_planet"]
+
+    return JsonResponse({
+        "ok": True,
+        "preview": {
+            "source_planet_id": source_planet.pk,
+            "mission_type": form.cleaned_data["mission_type"],
+            "target_planet_id": target_planet.pk,
+            "target_coordinates": form.cleaned_data["target_coordinates"],
+            "speed_profile": form.cleaned_data["speed_profile"],
+            "ship_quantities": form.get_ship_quantities(),
+        },
+    })
 
 
 @login_required

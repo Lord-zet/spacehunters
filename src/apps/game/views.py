@@ -10,11 +10,13 @@ from .forms import RenamePlanetForm, SendFleetForm, ShipConstructionForm
 from .buildings import BUILDINGS
 from .ships import SHIPS
 from .domain_services.fleet import (
+    calculate_helion_cost_for_flight,
     get_planet_ships_display,
     send_espionage_fleet,
     send_stationing_fleet,
     send_transport_fleet,
 )
+from .domain_services.travel import calculate_flight_time_seconds
 from .domain_services.buildings import start_building_upgrade, cancel_building_upgrade
 from .domain_services.planets import rename_planet as update_planet_name
 from .domain_services.sync import advance_user_state
@@ -24,6 +26,7 @@ from .domain_services.shipyard import (
     get_ship_construction_time_seconds,
 )
 from .domain_services.energy import get_energy_balance
+from .fleet_speed_profiles import get_fleet_fuel_multiplier, get_fleet_speed_multiplier
 from apps.game.domain.exceptions import DomainError
 from .selectors import (
     get_active_fleets_for_user,
@@ -244,6 +247,21 @@ def send_fleet_preview(request, pk):
         }, status=400)
 
     target_planet = form.cleaned_data["target_planet"]
+    speed_profile = form.cleaned_data["speed_profile"]
+    ship_quantities = form.get_ship_quantities()
+    speed_multiplier = get_fleet_speed_multiplier(speed_profile)
+    fuel_multiplier = get_fleet_fuel_multiplier(speed_profile)
+    flight_time_seconds = calculate_flight_time_seconds(
+        source_planet,
+        target_planet,
+        speed_multiplier,
+    )
+    helion_cost = calculate_helion_cost_for_flight(
+        source_planet,
+        target_planet,
+        ship_quantities,
+        fuel_multiplier,
+    )
 
     return JsonResponse({
         "ok": True,
@@ -252,8 +270,10 @@ def send_fleet_preview(request, pk):
             "mission_type": form.cleaned_data["mission_type"],
             "target_planet_id": target_planet.pk,
             "target_coordinates": form.cleaned_data["target_coordinates"],
-            "speed_profile": form.cleaned_data["speed_profile"],
-            "ship_quantities": form.get_ship_quantities(),
+            "speed_profile": speed_profile,
+            "ship_quantities": ship_quantities,
+            "flight_time_seconds": flight_time_seconds,
+            "helion_cost": helion_cost,
         },
     })
 

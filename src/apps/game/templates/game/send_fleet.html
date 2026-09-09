@@ -25,7 +25,7 @@
     </div>
 
     <!-- FORMULARZ MISJI -->
-    <form action="" method="POST" class="glass-panel hud-border p-8">
+    <form action="" method="POST" class="glass-panel hud-border p-8" data-preview-url="{% url 'game:send_fleet_preview' pk=planet.pk %}" id="sendFleetForm">
         {% csrf_token %}
         {% if form.non_field_errors %}
             <div class="mb-4 border border-red-500/40 bg-red-950/30 text-red-300 px-4 py-3 text-sm">
@@ -91,9 +91,30 @@
                     {{ form.speed_profile.errors }}
             </div>
 
-            <!-- SEKCJA 4: ŁADUNEK -->
+            <!-- SEKCJA 4: PODGLĄD LOTU -->
             <div class="lg:col-span-2 mt-4">
-                <h3 class="text-accent-orange text-xs uppercase border-b border-white/10 pb-2 mb-4">4. Załadunek Surowców</h3>
+                <h3 class="text-accent-orange text-xs uppercase border-b border-white/10 pb-2 mb-4">4. Podgląd Lotu</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-accent-cyan/5 border border-accent-cyan/20 rounded p-4">
+                        <p class="text-[10px] text-white/40 uppercase mb-1">Czas lotu</p>
+                        <p class="text-xl font-scifi text-accent-cyan" data-flight-preview-time>--:--:--</p>
+                    </div>
+                    <div class="bg-accent-orange/5 border border-accent-orange/20 rounded p-4">
+                        <p class="text-[10px] text-white/40 uppercase mb-1">Koszt lotu</p>
+                        <p class="text-xl font-scifi text-accent-orange">
+                            <span data-flight-preview-cost>--</span>
+                            <span class="text-xs text-white/50">helionu</span>
+                        </p>
+                    </div>
+                </div>
+                <p class="mt-3 text-xs text-white/50" data-flight-preview-status>
+                    Wybierz cel, profil prędkości i skład floty.
+                </p>
+            </div>
+
+            <!-- SEKCJA 5: ŁADUNEK -->
+            <div class="lg:col-span-2 mt-4">
+                <h3 class="text-accent-orange text-xs uppercase border-b border-white/10 pb-2 mb-4">5. Załadunek Surowców</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <div class="flex justify-between text-[10px]">
@@ -147,8 +168,92 @@
 </div>
 
 <script>
+    const sendFleetForm = document.getElementById("sendFleetForm");
     const targetPlanetSelect = document.getElementById("id_target_planet");
     const targetCoordinatesInput = document.getElementById("id_target_coordinates");
+    const flightPreviewTime = document.querySelector("[data-flight-preview-time]");
+    const flightPreviewCost = document.querySelector("[data-flight-preview-cost]");
+    const flightPreviewStatus = document.querySelector("[data-flight-preview-status]");
+    let flightPreviewTimeout = null;
+
+    function formatDuration(totalSeconds) {
+        const safeSeconds = Math.max(0, Number(totalSeconds) || 0);
+        const hours = Math.floor(safeSeconds / 3600);
+        const minutes = Math.floor((safeSeconds % 3600) / 60);
+        const seconds = safeSeconds % 60;
+
+        return [hours, minutes, seconds]
+            .map((value) => String(value).padStart(2, "0"))
+            .join(":");
+    }
+
+    function setFlightPreviewLoading() {
+        if (flightPreviewStatus) {
+            flightPreviewStatus.textContent = "Wyznaczanie trajektorii...";
+        }
+    }
+
+    function setFlightPreviewUnavailable(message) {
+        if (flightPreviewTime) {
+            flightPreviewTime.textContent = "--:--:--";
+        }
+        if (flightPreviewCost) {
+            flightPreviewCost.textContent = "--";
+        }
+        if (flightPreviewStatus) {
+            flightPreviewStatus.textContent = message;
+        }
+    }
+
+    function getPreviewErrorMessage(payload) {
+        if (payload.non_field_errors && payload.non_field_errors.length) {
+            return payload.non_field_errors[0];
+        }
+
+        const errors = payload.errors || {};
+        const firstErrorGroup = Object.values(errors)[0];
+
+        if (firstErrorGroup && firstErrorGroup.length && firstErrorGroup[0].message) {
+            return firstErrorGroup[0].message;
+        }
+
+        return "Uzupełnij poprawnie parametry misji.";
+    }
+
+    async function updateFlightPreview() {
+        if (!sendFleetForm) {
+            return;
+        }
+
+        setFlightPreviewLoading();
+
+        try {
+            const response = await fetch(sendFleetForm.dataset.previewUrl, {
+                method: "POST",
+                body: new FormData(sendFleetForm),
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            });
+            const payload = await response.json();
+
+            if (!response.ok || !payload.ok) {
+                setFlightPreviewUnavailable(getPreviewErrorMessage(payload));
+                return;
+            }
+
+            flightPreviewTime.textContent = formatDuration(payload.preview.flight_time_seconds);
+            flightPreviewCost.textContent = payload.preview.helion_cost;
+            flightPreviewStatus.textContent = "Podgląd aktualny dla wybranych parametrów.";
+        } catch (error) {
+            setFlightPreviewUnavailable("Nie udało się obliczyć parametrów lotu.");
+        }
+    }
+
+    function scheduleFlightPreviewUpdate() {
+        clearTimeout(flightPreviewTimeout);
+        flightPreviewTimeout = setTimeout(updateFlightPreview, 250);
+    }
 
     if (targetPlanetSelect && targetCoordinatesInput) {
         targetPlanetSelect.addEventListener("change", () => {
@@ -158,7 +263,13 @@
             if (match) {
                 targetCoordinatesInput.value = match[1];
             }
+
         });
+    }
+
+    if (sendFleetForm) {
+        sendFleetForm.addEventListener("input", scheduleFlightPreviewUpdate);
+        sendFleetForm.addEventListener("change", scheduleFlightPreviewUpdate);
     }
 </script>
 {% endblock %}

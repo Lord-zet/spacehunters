@@ -49,7 +49,7 @@ SHIPS = {
         "description": ""
                        "Lekka jednostka zwiadowcza przeznaczona do szybkiego skanowania "
                        "obcych planet.",
-        "thumb": "game/ships/transporter_thumb.png",
+        "thumb": "game/ships/spy_probe_thumb.png",
         "base_cost": {
             "metal": 0,
             "crystal": 1000,

@@ -173,7 +173,6 @@
     const targetCoordinatesInput = document.getElementById("id_target_coordinates");
     const flightPreviewTime = document.querySelector("[data-flight-preview-time]");
     const flightPreviewCost = document.querySelector("[data-flight-preview-cost]");
-    const flightPreviewStatus = document.querySelector("[data-flight-preview-status]");
     let flightPreviewTimeout = null;
 
     function formatDuration(totalSeconds) {
@@ -187,45 +186,19 @@
             .join(":");
     }
 
-    function setFlightPreviewLoading() {
-        if (flightPreviewStatus) {
-            flightPreviewStatus.textContent = "Wyznaczanie trajektorii...";
-        }
-    }
-
-    function setFlightPreviewUnavailable(message) {
+    function clearFlightPreview() {
         if (flightPreviewTime) {
             flightPreviewTime.textContent = "--:--:--";
         }
         if (flightPreviewCost) {
             flightPreviewCost.textContent = "--";
         }
-        if (flightPreviewStatus) {
-            flightPreviewStatus.textContent = message;
-        }
-    }
-
-    function getPreviewErrorMessage(payload) {
-        if (payload.non_field_errors && payload.non_field_errors.length) {
-            return payload.non_field_errors[0];
-        }
-
-        const errors = payload.errors || {};
-        const firstErrorGroup = Object.values(errors)[0];
-
-        if (firstErrorGroup && firstErrorGroup.length && firstErrorGroup[0].message) {
-            return firstErrorGroup[0].message;
-        }
-
-        return "Uzupełnij poprawnie parametry misji.";
     }
 
     async function updateFlightPreview() {
         if (!sendFleetForm) {
             return;
         }
-
-        setFlightPreviewLoading();
 
         try {
             const response = await fetch(sendFleetForm.dataset.previewUrl, {
@@ -238,15 +211,14 @@
             const payload = await response.json();
 
             if (!response.ok || !payload.ok) {
-                setFlightPreviewUnavailable(getPreviewErrorMessage(payload));
+                clearFlightPreview();
                 return;
             }
 
             flightPreviewTime.textContent = formatDuration(payload.preview.flight_time_seconds);
             flightPreviewCost.textContent = payload.preview.helion_cost;
-            flightPreviewStatus.textContent = "Podgląd aktualny dla wybranych parametrów.";
         } catch (error) {
-            setFlightPreviewUnavailable("Nie udało się obliczyć parametrów lotu.");
+            clearFlightPreview();
         }
     }
 

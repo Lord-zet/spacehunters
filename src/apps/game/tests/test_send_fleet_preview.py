@@ -127,7 +127,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             "transporter": 1,
         })
 
-    def test_send_fleet_preview_returns_validation_errors(self):
+    def test_send_fleet_preview_returns_quiet_invalid_preview_response(self):
         user = self.create_user("preview_validation_user")
         source = self.create_planet(
             owner=user,
@@ -149,7 +149,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()["ok"])
         self.assertIn(
             "Koordynaty",

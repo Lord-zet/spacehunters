@@ -245,7 +245,7 @@ def send_fleet_preview(request, pk):
             "ok": False,
             "errors": form.errors.get_json_data(),
             "non_field_errors": list(form.non_field_errors()),
-        }, status=400)
+        })
 
     target_planet = form.cleaned_data["target_planet"]
     speed_profile = form.cleaned_data["speed_profile"]
@@ -485,7 +485,6 @@ def building_detail(request, pk, building_code):
         "building_in_progress": planet.is_building_in_progress(),
         "next_level": next_level,
         "level_rows": level_rows,
-        "building_in_progress": planet.is_building_in_progress(),
         "storage_capacities": get_storage_capacities(buildings),
         "energy_balance": get_energy_balance(buildings),
         "column_names": column_names,

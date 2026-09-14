@@ -1,12 +1,20 @@
+from dataclasses import dataclass
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.http import Http404, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .models import Planet, Fleet
-from .forms import RenamePlanetForm, SendFleetForm, ShipConstructionForm
+from .forms import (
+    RenamePlanetForm,
+    SendFleetForm,
+    ShipConstructionForm,
+    parse_planet_coordinates,
+)
 from .buildings import BUILDINGS
 from .ships import SHIPS
 from .domain_services.fleet import (
@@ -56,6 +64,19 @@ from .presenters.reports import (
     get_report_planet_intel_rows,
     get_valid_report_category,
 )
+
+
+@dataclass(frozen=True)
+class FleetPreviewTarget:
+    galaxy: int
+    system: int
+    position: int
+
+    pk = None
+
+    @property
+    def coordinates(self):
+        return f"{self.galaxy}:{self.system}:{self.position}"
 
 
 @login_required
@@ -238,18 +259,77 @@ def send_fleet(request, pk):
 @require_POST
 def send_fleet_preview(request, pk):
     source_planet = get_user_planet_or_404(request.user, pk)
-    form = SendFleetForm(request.POST, user=request.user, source_planet=source_planet)
+    target_coordinates = (request.POST.get("target_coordinates") or "").strip()
+    target_planet_id = request.POST.get("target_planet")
 
-    if not form.is_valid():
-        return JsonResponse({
-            "ok": False,
-            "errors": form.errors.get_json_data(),
-            "non_field_errors": list(form.non_field_errors()),
-        })
+    if not target_coordinates and target_planet_id:
+        try:
+            selected_target = Planet.objects.get(pk=target_planet_id)
+        except (Planet.DoesNotExist, ValueError):
+            selected_target = None
 
-    target_planet = form.cleaned_data["target_planet"]
-    speed_profile = form.cleaned_data["speed_profile"]
-    ship_quantities = form.get_ship_quantities()
+        if selected_target is not None:
+            target_coordinates = selected_target.coordinates
+
+    if not target_coordinates:
+        return JsonResponse({"ok": False})
+
+    try:
+        galaxy, system, position = parse_planet_coordinates(target_coordinates)
+    except ValidationError:
+        return JsonResponse({"ok": False})
+
+    target_planet = Planet.objects.filter(galaxy=galaxy, system=system, position=position).first()
+    if target_planet is None:
+        target_planet = FleetPreviewTarget(
+            galaxy=galaxy,
+            system=system,
+            position=position,
+        )
+
+    speed_profile = request.POST.get("speed_profile")
+    ship_quantities = _get_preview_ship_quantities(request.POST)
+    if not speed_profile or not ship_quantities:
+        return JsonResponse({"ok": False})
+
+    try:
+        return _send_fleet_preview_response(
+            source_planet=source_planet,
+            target_planet=target_planet,
+            mission_type=request.POST.get("mission_type", ""),
+            speed_profile=speed_profile,
+            ship_quantities=ship_quantities,
+        )
+    except (DomainError, ValueError):
+        return JsonResponse({"ok": False})
+
+
+def _get_preview_ship_quantities(post_data):
+    ship_quantities = {}
+
+    for ship_code in SHIPS.keys():
+        raw_quantity = post_data.get(f"ship_{ship_code}") or 0
+        try:
+            quantity = int(raw_quantity)
+        except (TypeError, ValueError):
+            return {}
+
+        if quantity < 0:
+            return {}
+        if quantity > 0:
+            ship_quantities[ship_code] = quantity
+
+    return ship_quantities
+
+
+def _send_fleet_preview_response(
+    *,
+    source_planet,
+    target_planet,
+    mission_type,
+    speed_profile,
+    ship_quantities,
+):
     speed_multiplier = calculate_effective_fleet_speed_multiplier(
         ship_quantities,
         speed_profile,
@@ -271,9 +351,9 @@ def send_fleet_preview(request, pk):
         "ok": True,
         "preview": {
             "source_planet_id": source_planet.pk,
-            "mission_type": form.cleaned_data["mission_type"],
+            "mission_type": mission_type,
             "target_planet_id": target_planet.pk,
-            "target_coordinates": form.cleaned_data["target_coordinates"],
+            "target_coordinates": target_planet.coordinates,
             "speed_profile": speed_profile,
             "ship_quantities": ship_quantities,
             "flight_time_seconds": flight_time_seconds,

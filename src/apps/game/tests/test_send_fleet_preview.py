@@ -9,6 +9,7 @@ from apps.game.domain_services.travel import calculate_flight_time_seconds
 from apps.game.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
 )
+from apps.game.models import Fleet
 from apps.game.ships import ESPIONAGE_PROBE_CODE
 
 from .helpers import PlanetTestMixin
@@ -127,6 +128,47 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             "transporter": 1,
         })
 
+    def test_send_fleet_preview_resolves_selected_target_without_coordinates(self):
+        user = self.create_user("preview_selected_target_user")
+        source = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
+        )
+        target = self.create_planet(
+            owner=user,
+            name="Target",
+            galaxy=1,
+            system=3,
+            position=1,
+            is_homeland=False,
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("game:send_fleet_preview", kwargs={"pk": source.pk}),
+            data={
+                "mission_type": "transport",
+                "target_planet": str(target.pk),
+                "target_coordinates": "",
+                "speed_profile": "standard",
+                "ship_transporter": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["preview"]["target_planet_id"], target.pk)
+        self.assertEqual(payload["preview"]["target_coordinates"], target.coordinates)
+        self.assertGreater(payload["preview"]["flight_time_seconds"], 0)
+        self.assertGreater(payload["preview"]["helion_cost"], 0)
+
     def test_send_fleet_preview_returns_quiet_invalid_preview_response(self):
         user = self.create_user("preview_validation_user")
         source = self.create_planet(
@@ -150,11 +192,70 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(response.json()["ok"])
-        self.assertIn(
-            "Koordynaty",
-            response.json()["non_field_errors"][0],
+        self.assertEqual(response.json(), {"ok": False})
+
+    def test_send_fleet_preview_calculates_for_unoccupied_coordinates(self):
+        user = self.create_user("preview_unoccupied_coordinates_user")
+        source = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
         )
+
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("game:send_fleet_preview", kwargs={"pk": source.pk}),
+            data={
+                "mission_type": "transport",
+                "target_coordinates": "1:99:9",
+                "speed_profile": "standard",
+                "ship_transporter": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+
+        self.assertTrue(payload["ok"])
+        self.assertIsNone(payload["preview"]["target_planet_id"])
+        self.assertEqual(payload["preview"]["target_coordinates"], "1:99:9")
+        self.assertGreater(payload["preview"]["flight_time_seconds"], 0)
+        self.assertGreater(payload["preview"]["helion_cost"], 0)
+
+    def test_send_fleet_still_rejects_unoccupied_coordinates(self):
+        user = self.create_user("send_unoccupied_coordinates_user")
+        source = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
+            helion=10_000,
+            transporter_count=1,
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("game:send_fleet", kwargs={"pk": source.pk}),
+            data={
+                "mission_type": "transport",
+                "target_coordinates": "1:99:9",
+                "speed_profile": "standard",
+                "ship_transporter": "1",
+                "metal": "0",
+                "crystal": "0",
+                "helion": "0",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Fleet.objects.count(), 0)
+        self.assertEqual(self.get_planet_ship_quantity(source, "transporter"), 1)
 
     def test_send_fleet_preview_uses_speed_profile_multipliers(self):
         user = self.create_user("preview_speed_profile_user")

@@ -47,6 +47,10 @@ DEFAULT_TRANSPORTER_CODE = "transporter"
 HELION_DISTANCE_DIVISOR = 1000
 MIN_HELION_COST = 1
 
+MISSION_TARGET_EXISTING_PLANET = "existing_planet"
+MISSION_TARGET_OWN_PLANET = "own_planet"
+MISSION_TARGET_EMPTY_COORDINATES = "empty_coordinates"
+
 
 def get_planet_ships_display(planet, form=None):
     """
@@ -260,6 +264,8 @@ def prepare_planet_for_fleet_event(planet_id, at):
 class BaseMission:
     """Klasa bazowa dla wszystkich misji flot."""
 
+    target_requirement = MISSION_TARGET_EXISTING_PLANET
+
     def validate_dispatch(self, source_planet, target_planet, user):
         """Specyficzna walidacja dla danego typu misji przed wylotem."""
         pass
@@ -297,9 +303,7 @@ class TransportMission(BaseMission):
 
 
 class StationMission(BaseMission):
-    def validate_dispatch(self, source_planet, target_planet, user):
-        if source_planet.owner_id != target_planet.owner_id:
-            raise InvalidStationingTargetError("Misja stacjonowania jest możliwa tylko na własną planetę.")
+    target_requirement = MISSION_TARGET_OWN_PLANET
 
     def calculate_return_time(self, arrival_time, flight_duration):
         # Misja stacjonuj nie wraca
@@ -359,6 +363,33 @@ def get_mission_handler(mission_type: str) -> BaseMission:
     if not handler:
         raise UnsupportedFleetMissionError("Nieobsługiwany typ misji floty.")
     return handler
+
+
+def validate_mission_target(mission_handler, source_planet, target_planet, user) -> None:
+    requirement = mission_handler.target_requirement
+
+    if requirement == MISSION_TARGET_EXISTING_PLANET:
+        if target_planet is None:
+            raise FleetError("Ten typ misji wymaga istniejącej planety docelowej.")
+
+    elif requirement == MISSION_TARGET_OWN_PLANET:
+        if target_planet is None:
+            raise InvalidStationingTargetError(
+                "Misja stacjonowania jest możliwa tylko na własną planetę."
+            )
+        if target_planet.owner_id != user.id:
+            raise InvalidStationingTargetError(
+                "Misja stacjonowania jest możliwa tylko na własną planetę."
+            )
+
+    elif requirement == MISSION_TARGET_EMPTY_COORDINATES:
+        if target_planet is not None:
+            raise FleetError("Ten typ misji wymaga pustych koordynatów celu.")
+
+    else:
+        raise UnsupportedFleetMissionError("Nieobsługiwane wymaganie celu misji floty.")
+
+    mission_handler.validate_dispatch(source_planet, target_planet, user)
 
 
 def handle_fleet_return(fleet, *, at) -> None:
@@ -446,8 +477,7 @@ def _send_fleet_mission(
     if source_planet.id == target_planet.id:
         raise SamePlanetTransportError("Nie można wysłać floty na tę samą planetę.")
 
-    # Wywołanie specyficznej walidacji dla danego typu misji (np. czy cel należy do nas przy stacjonowaniu)
-    mission_handler.validate_dispatch(source_planet, target_planet, user)
+    validate_mission_target(mission_handler, source_planet, target_planet, user)
 
     synchronize_resources(source_planet, at=now, save=False)
 

@@ -61,6 +61,49 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
 
         self.assertEqual(Fleet.objects.count(), 0)
 
+    def test_transport_fleet_allows_target_owned_by_other_user(self):
+        user = self.create_user("fleet_transport_target_owner_1")
+        target_owner = self.create_user("fleet_transport_target_owner_2")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
+            metal=5000,
+            crystal=3000,
+            helion=500,
+            transporter_count=3,
+            last_resource_update=now,
+        )
+
+        target_planet = self.create_planet(
+            owner=target_owner,
+            name="Foreign Target",
+            galaxy=1,
+            system=2,
+            position=2,
+            is_homeland=True,
+            last_resource_update=now,
+        )
+
+        fleet = send_transport_fleet(
+            source_planet=source_planet,
+            target_planet=target_planet,
+            ship_quantities=1,
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
+            user=user,
+        )
+
+        self.assertEqual(fleet.target_planet, target_planet)
+        self.assertEqual(fleet.mission_type, Fleet.MissionType.TRANSPORT)
+
     def test_send_fleet_rejects_unsupported_mission_type(self):
         user = self.create_user("fleet_mission_1")
         now = timezone.now()

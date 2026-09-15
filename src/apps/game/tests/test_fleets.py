@@ -65,6 +65,10 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         self.assertEqual(fleet.owner, user)
         self.assertEqual(fleet.source_planet, source_planet)
         self.assertEqual(fleet.target_planet, target_planet)
+        self.assertEqual(fleet.target_galaxy, target_planet.galaxy)
+        self.assertEqual(fleet.target_system, target_planet.system)
+        self.assertEqual(fleet.target_position, target_planet.position)
+        self.assertEqual(fleet.target_coordinates, target_planet.coordinates)
         self.assertEqual(
             self.get_fleet_ship_quantity(fleet, "transporter"),
             3,

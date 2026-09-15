@@ -52,6 +52,18 @@ MISSION_TARGET_OWN_PLANET = "own_planet"
 MISSION_TARGET_EMPTY_COORDINATES = "empty_coordinates"
 
 
+@dataclass(frozen=True, slots=True)
+class FleetTarget:
+    galaxy: int
+    system: int
+    position: int
+    planet: Planet | None = None
+
+    @property
+    def coordinates(self):
+        return f"{self.galaxy}:{self.system}:{self.position}"
+
+
 def get_planet_ships_display(planet, form=None):
     """
     Pobiera ilości statków dla planety z bazy i łączy je ze słownikiem SHIPS
@@ -365,8 +377,63 @@ def get_mission_handler(mission_type: str) -> BaseMission:
     return handler
 
 
-def validate_mission_target(mission_handler, source_planet, target_planet, user) -> None:
+def validate_target_coordinates(coordinates) -> tuple[int, int, int]:
+    try:
+        galaxy, system, position = (
+            int(value)
+            for value in coordinates
+        )
+    except (TypeError, ValueError) as exc:
+        raise FleetError("Koordynaty celu muszą zawierać galaktykę, system i pozycję.") from exc
+
+    if galaxy <= 0 or system <= 0 or position <= 0:
+        raise FleetError("Koordynaty celu muszą być większe od zera.")
+
+    return galaxy, system, position
+
+
+def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> FleetTarget:
+    if target_planet is None and target_coordinates is None:
+        raise FleetError("Podaj koordynaty celu floty.")
+
+    if target_planet is not None:
+        target_planet = Planet.objects.get(pk=target_planet.pk)
+        planet_coordinates = (
+            target_planet.galaxy,
+            target_planet.system,
+            target_planet.position,
+        )
+
+        if target_coordinates is not None:
+            requested_coordinates = validate_target_coordinates(target_coordinates)
+            if requested_coordinates != planet_coordinates:
+                raise FleetError("Planeta docelowa nie pasuje do podanych koordynatów.")
+
+        return FleetTarget(
+            galaxy=target_planet.galaxy,
+            system=target_planet.system,
+            position=target_planet.position,
+            planet=target_planet,
+        )
+
+    galaxy, system, position = validate_target_coordinates(target_coordinates)
+    target_planet = (
+        Planet.objects
+        .filter(galaxy=galaxy, system=system, position=position)
+        .first()
+    )
+
+    return FleetTarget(
+        galaxy=galaxy,
+        system=system,
+        position=position,
+        planet=target_planet,
+    )
+
+
+def validate_mission_target(mission_handler, source_planet, target, user) -> None:
     requirement = mission_handler.target_requirement
+    target_planet = target.planet
 
     if requirement == MISSION_TARGET_EXISTING_PLANET:
         if target_planet is None:
@@ -461,6 +528,7 @@ def _send_fleet_mission(
     mission_type: str,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
     at=None,
+    target_coordinates=None,
 ):
     now = at or timezone.now()
 
@@ -470,14 +538,21 @@ def _send_fleet_mission(
     mission_handler = get_mission_handler(mission_type)
 
     source_planet = Planet.objects.select_for_update().get(pk=source_planet.pk)
-    target_planet = Planet.objects.get(pk=target_planet.pk)
+    target = resolve_fleet_target(
+        target_planet=target_planet,
+        target_coordinates=target_coordinates,
+    )
 
     ensure_source_planet_belongs_to_user(source_planet, user)
 
-    if source_planet.id == target_planet.id:
+    if (
+        source_planet.galaxy == target.galaxy
+        and source_planet.system == target.system
+        and source_planet.position == target.position
+    ):
         raise SamePlanetTransportError("Nie można wysłać floty na tę samą planetę.")
 
-    validate_mission_target(mission_handler, source_planet, target_planet, user)
+    validate_mission_target(mission_handler, source_planet, target, user)
 
     synchronize_resources(source_planet, at=now, save=False)
 
@@ -497,7 +572,7 @@ def _send_fleet_mission(
     fuel_multiplier = get_fleet_fuel_multiplier(speed_profile)
     helion_cost = calculate_helion_cost_for_flight(
         source_planet,
-        target_planet,
+        target,
         ship_quantities,
         fuel_multiplier,
     )
@@ -514,7 +589,7 @@ def _send_fleet_mission(
     source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
     speed_multiplier = calculate_effective_fleet_speed_multiplier(ship_quantities, speed_profile)
-    flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet, speed_multiplier)
+    flight_time_seconds = calculate_flight_time_seconds(source_planet, target, speed_multiplier)
     flight_duration = timedelta(seconds=flight_time_seconds)
 
     arrival_time = now + flight_duration
@@ -527,10 +602,10 @@ def _send_fleet_mission(
     fleet = Fleet.objects.create(
         owner=user,
         source_planet=source_planet,
-        target_planet=target_planet,
-        target_galaxy=target_planet.galaxy,
-        target_system=target_planet.system,
-        target_position=target_planet.position,
+        target_planet=target.planet,
+        target_galaxy=target.galaxy,
+        target_system=target.system,
+        target_position=target.position,
         helion_cost=helion_cost,
         mission_type=mission_type,
         status=Fleet.Status.OUTBOUND,
@@ -553,7 +628,8 @@ def send_transport_fleet(
     cargo: ResourceAmounts,
     user,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
-    at=None
+    at=None,
+    target_coordinates=None,
 ):
     """
     Wysyła flotę z misją Transportu.'ship_quantities' przyjmuje słownik {'small_transporter': 5, 'recycler': 2}
@@ -568,6 +644,7 @@ def send_transport_fleet(
         user=user,
         mission_type=Fleet.MissionType.TRANSPORT,
         at=at,
+        target_coordinates=target_coordinates,
     )
 
 
@@ -578,7 +655,8 @@ def send_stationing_fleet(
     cargo: ResourceAmounts,
     user,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
-    at=None
+    at=None,
+    target_coordinates=None,
 ):
     """
     Wysyła flotę z misją Stacjonowania. 'ship_quantities' przyjmuje słownik lub int.
@@ -592,6 +670,7 @@ def send_stationing_fleet(
         user=user,
         mission_type=Fleet.MissionType.STATION,
         at=at,
+        target_coordinates=target_coordinates,
     )
 
 
@@ -602,7 +681,8 @@ def send_espionage_fleet(
     cargo: ResourceAmounts,
     user,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
-    at=None
+    at=None,
+    target_coordinates=None,
 ):
     """
     Wysyła flotę z misją Szpiegowania. Misja nie przewozi ładunku i wraca po skanie celu.
@@ -620,6 +700,7 @@ def send_espionage_fleet(
         user=user,
         mission_type=Fleet.MissionType.ESPIONAGE,
         at=at,
+        target_coordinates=target_coordinates,
     )
 
 

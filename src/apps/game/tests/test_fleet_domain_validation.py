@@ -104,6 +104,87 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         self.assertEqual(fleet.target_planet, target_planet)
         self.assertEqual(fleet.mission_type, Fleet.MissionType.TRANSPORT)
 
+    def test_send_fleet_resolves_existing_target_from_coordinates(self):
+        user = self.create_user("fleet_coordinates_target_user")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
+            metal=5000,
+            crystal=3000,
+            helion=500,
+            transporter_count=3,
+            last_resource_update=now,
+        )
+
+        target_planet = self.create_planet(
+            owner=user,
+            name="Target",
+            galaxy=1,
+            system=2,
+            position=2,
+            is_homeland=False,
+            last_resource_update=now,
+        )
+
+        fleet = send_transport_fleet(
+            source_planet=source_planet,
+            target_planet=None,
+            target_coordinates=(
+                target_planet.galaxy,
+                target_planet.system,
+                target_planet.position,
+            ),
+            ship_quantities={"transporter": 1},
+            cargo={
+                Resource.METAL: 0,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
+            user=user,
+        )
+
+        self.assertEqual(fleet.target_planet, target_planet)
+        self.assertEqual(fleet.target_coordinates, target_planet.coordinates)
+
+    def test_transport_fleet_rejects_empty_target_coordinates(self):
+        user = self.create_user("fleet_empty_coordinates_user")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
+            metal=5000,
+            crystal=3000,
+            helion=500,
+            transporter_count=3,
+            last_resource_update=now,
+        )
+
+        with self.assertRaises(FleetError):
+            send_transport_fleet(
+                source_planet=source_planet,
+                target_planet=None,
+                target_coordinates=(1, 99, 9),
+                ship_quantities={"transporter": 1},
+                cargo={
+                    Resource.METAL: 0,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
+                user=user,
+            )
+
+        self.assertEqual(Fleet.objects.count(), 0)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 3)
+
     def test_send_fleet_rejects_unsupported_mission_type(self):
         user = self.create_user("fleet_mission_1")
         now = timezone.now()

@@ -302,7 +302,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
 
         self.assertTrue(form.is_valid(), form.errors)
 
-    def test_form_rejects_transport_target_owned_by_other_user(self):
+    def test_form_allows_transport_target_owned_by_other_user(self):
         user = self.create_user("transport_form_sender")
         target_owner = self.create_user("transport_form_target_owner")
         source_planet = self.create_planet(
@@ -325,6 +325,43 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.TRANSPORT,
+                "target_coordinates": target_planet.coordinates,
+                "speed_profile": "standard",
+                "ship_transporter": 1,
+                "metal": 0,
+                "crystal": 0,
+                "helion": 0,
+            },
+            user=user,
+            source_planet=source_planet,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["target_planet"], target_planet)
+
+    def test_form_rejects_station_target_owned_by_other_user(self):
+        user = self.create_user("station_form_sender")
+        target_owner = self.create_user("station_form_target_owner")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=2,
+            system=3,
+            position=1,
+            transporter_count=1,
+        )
+        target_planet = self.create_planet(
+            owner=target_owner,
+            name="Target",
+            galaxy=2,
+            system=4,
+            position=1,
+            is_homeland=True,
+        )
+
+        form = SendFleetForm(
+            data={
+                "mission_type": Fleet.MissionType.STATION,
                 "target_coordinates": target_planet.coordinates,
                 "speed_profile": "standard",
                 "ship_transporter": 1,
@@ -433,6 +470,71 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             data={
                 "mission_type": Fleet.MissionType.TRANSPORT,
                 "target_coordinates": "99:99:99",
+                "speed_profile": "standard",
+                "ship_transporter": 1,
+                "metal": 0,
+                "crystal": 0,
+                "helion": 0,
+            },
+            user=user,
+            source_planet=source_planet,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("__all__", form.errors)
+
+    def test_form_allows_colonization_empty_target_coordinates(self):
+        user = self.create_user("colonization_form_sender")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=2,
+            system=10,
+            position=1,
+            transporter_count=1,
+        )
+
+        form = SendFleetForm(
+            data={
+                "mission_type": Fleet.MissionType.COLONIZE,
+                "target_coordinates": "2:99:9",
+                "speed_profile": "standard",
+                "ship_transporter": 1,
+                "metal": 0,
+                "crystal": 0,
+                "helion": 0,
+            },
+            user=user,
+            source_planet=source_planet,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertIsNone(form.cleaned_data["target_planet"])
+        self.assertEqual(form.cleaned_data["target_coordinates"], "2:99:9")
+
+    def test_form_rejects_colonization_existing_target_coordinates(self):
+        user = self.create_user("colonization_form_occupied_sender")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=2,
+            system=10,
+            position=1,
+            transporter_count=1,
+        )
+        target_planet = self.create_planet(
+            owner=user,
+            name="Occupied",
+            galaxy=2,
+            system=99,
+            position=9,
+            is_homeland=False,
+        )
+
+        form = SendFleetForm(
+            data={
+                "mission_type": Fleet.MissionType.COLONIZE,
+                "target_coordinates": target_planet.coordinates,
                 "speed_profile": "standard",
                 "ship_transporter": 1,
                 "metal": 0,

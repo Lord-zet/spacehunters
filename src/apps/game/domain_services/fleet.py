@@ -363,10 +363,21 @@ class EspionageMission(BaseMission):
         fleet.save(update_fields=["status"])
 
 
+class ColonizationMission(BaseMission):
+    target_requirement = MISSION_TARGET_EMPTY_COORDINATES
+
+    def calculate_return_time(self, arrival_time, flight_duration):
+        return None
+
+    def handle_arrival(self, fleet, *, at):
+        raise FleetError("Obsługa przylotu misji kolonizacji nie jest jeszcze zaimplementowana.")
+
+
 MISSION_HANDLERS = {
     Fleet.MissionType.TRANSPORT: TransportMission(),
     Fleet.MissionType.STATION: StationMission(),
     Fleet.MissionType.ESPIONAGE: EspionageMission(),
+    Fleet.MissionType.COLONIZE: ColonizationMission(),
 }
 
 
@@ -699,6 +710,29 @@ def send_espionage_fleet(
         speed_profile=speed_profile,
         user=user,
         mission_type=Fleet.MissionType.ESPIONAGE,
+        at=at,
+        target_coordinates=target_coordinates,
+    )
+
+
+def send_colonization_fleet(
+    source_planet,
+    target_planet=None,
+    ship_quantities: dict[str, int] | int = None,
+    cargo: ResourceAmounts = None,
+    user=None,
+    speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
+    at=None,
+    target_coordinates=None,
+):
+    return _send_fleet_mission(
+        source_planet=source_planet,
+        target_planet=None,
+        ship_quantities=_normalize_ship_quantities(ship_quantities),
+        cargo=cargo,
+        speed_profile=speed_profile,
+        user=user,
+        mission_type=Fleet.MissionType.COLONIZE,
         at=at,
         target_coordinates=target_coordinates,
     )

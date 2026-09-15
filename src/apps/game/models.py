@@ -204,6 +204,7 @@ class Fleet(models.Model):
         TRANSPORT = "transport", "Transport"
         STATION = "station", "Station"
         ESPIONAGE = "espionage", "Espionage"
+        COLONIZE = "colonize", "Kolonizacja"
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

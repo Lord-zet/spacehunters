@@ -14,3 +14,7 @@ class ShipsConfigTests(SimpleTestCase):
     def test_transporters_are_not_configured_for_espionage_mission(self):
         self.assertNotIn("espionage", SHIPS["transporter"]["allowed_missions"])
         self.assertNotIn("espionage", SHIPS["large_transporter"]["allowed_missions"])
+
+    def test_transporters_are_configured_for_colonization_mission(self):
+        self.assertIn("colonize", SHIPS["transporter"]["allowed_missions"])
+        self.assertIn("colonize", SHIPS["large_transporter"]["allowed_missions"])

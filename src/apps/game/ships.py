@@ -9,7 +9,7 @@ SHIPS = {
         "fuel_burn": 10,
         "build_time": 120,
         "required_shipyard_level": 1,
-        "allowed_missions": ("transport", "station"),
+        "allowed_missions": ("transport", "station", "colonize"),
         "description": ""
                        "Szybki, lekko opancerzony statek transportowy. Optymalny do transportu "
                        "ładunku między skolonizowanymi światami.",
@@ -27,7 +27,7 @@ SHIPS = {
         "fuel_burn": 30,
         "build_time": 480,
         "required_shipyard_level": 3,
-        "allowed_missions": ("transport", "station"),
+        "allowed_missions": ("transport", "station", "colonize"),
         "description": ""
                        "Potężny statek handlowy o wzmocnionym pancerzu. Wolniejszy niż jego mniejszy odpowiednik, "
                        "ale potrafi przetransportować znacznie większe ilości surowców.",

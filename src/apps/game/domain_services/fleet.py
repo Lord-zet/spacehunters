@@ -3,7 +3,7 @@ from datetime import timedelta
 from dataclasses import dataclass
 
 from django.utils import timezone
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 
 from apps.game.models import Fleet, Planet, PlanetShip, FleetShip
@@ -41,6 +41,7 @@ from apps.game.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
     get_fleet_speed_multiplier,
 )
+from .planets import create_planet
 
 
 DEFAULT_TRANSPORTER_CODE = "transporter"
@@ -249,6 +250,18 @@ def add_fleet_ships_to_planet(fleet, planet) -> None:
         PlanetShip.objects.bulk_create(ships_to_create)
 
 
+def get_fleet_flight_duration(fleet):
+    return fleet.arrival_time - fleet.departure_time
+
+
+def send_fleet_back_from_target(fleet, *, at) -> None:
+    flight_duration = get_fleet_flight_duration(fleet)
+
+    fleet.status = Fleet.Status.RETURNING
+    fleet.return_time = at + flight_duration
+    fleet.save(update_fields=["status", "return_time"])
+
+
 def get_safe_fleet_event_time(event_time, *planets):
     safe_time = event_time
 
@@ -370,7 +383,26 @@ class ColonizationMission(BaseMission):
         return None
 
     def handle_arrival(self, fleet, *, at):
-        raise FleetError("Obsługa przylotu misji kolonizacji nie jest jeszcze zaimplementowana.")
+        target_planet = create_colony_from_fleet(fleet, at=at)
+
+        if target_planet is None:
+            send_fleet_back_from_target(fleet, at=at)
+            return
+
+        fleet_resource_fields, _ = transfer_resources(source=fleet, target=target_planet)
+        add_fleet_ships_to_planet(fleet, target_planet)
+
+        fleet.target_planet = target_planet
+        fleet.status = Fleet.Status.COMPLETED
+        fleet.return_time = None
+
+        target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+        fleet.save(update_fields=[
+            *fleet_resource_fields,
+            "target_planet",
+            "status",
+            "return_time",
+        ])
 
 
 MISSION_HANDLERS = {
@@ -470,6 +502,35 @@ def validate_mission_target(mission_handler, source_planet, target, user) -> Non
     mission_handler.validate_dispatch(source_planet, target_planet, user)
 
 
+def create_colony_from_fleet(fleet, *, at):
+    coordinates = {
+        "galaxy": fleet.target_galaxy,
+        "system": fleet.target_system,
+        "position": fleet.target_position,
+    }
+
+    if Planet.objects.filter(**coordinates).exists():
+        return None
+
+    try:
+        planet = create_planet(
+            owner=fleet.owner,
+            name=f"Kolonia {fleet.target_coordinates}",
+            is_homeland=False,
+            resources={
+                "metal": 0,
+                "crystal": 0,
+                "helion": 0,
+            },
+            **coordinates,
+        )
+    except IntegrityError:
+        return None
+
+    planet.last_resource_update = at
+    return planet
+
+
 def handle_fleet_return(fleet, *, at) -> None:
     source_planet = (
         Planet.objects
@@ -482,11 +543,12 @@ def handle_fleet_return(fleet, *, at) -> None:
     source_planet = advance_result.planet
 
     add_fleet_ships_to_planet(fleet, source_planet)
+    fleet_resource_fields, _ = transfer_resources(source=fleet, target=source_planet)
 
     fleet.status = Fleet.Status.COMPLETED
 
     source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
-    fleet.save(update_fields=["status"])
+    fleet.save(update_fields=[*fleet_resource_fields, "status"])
 
 
 def handle_outbound_fleet_arrival(fleet, *, at) -> None:

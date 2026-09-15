@@ -756,12 +756,13 @@ FLEET_EVENT_PRIORITY = {
 
 def get_due_fleet_events(owner, *, at):
     events = []
+    owner_planet_ids = Planet.objects.filter(owner=owner).values("pk")
 
     fleets = list(
         Fleet.objects
         .select_for_update()
         .prefetch_related("ships")
-        .filter(Q(owner=owner) | Q(target_planet__owner=owner))
+        .filter(Q(owner=owner) | Q(target_planet_id__in=owner_planet_ids))
         .exclude(status=Fleet.Status.COMPLETED)
         .order_by("pk")
     )

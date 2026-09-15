@@ -8,6 +8,12 @@ from apps.game.fleet_speed_profiles import (
     get_fleet_speed_profile_choices,
 )
 from .domain_services.resources import Resource
+from .domain_services.fleet import (
+    MISSION_TARGET_EMPTY_COORDINATES,
+    MISSION_TARGET_EXISTING_PLANET,
+    MISSION_TARGET_OWN_PLANET,
+    get_mission_handler,
+)
 
 
 TAILWIND_INPUT = (
@@ -231,25 +237,47 @@ class SendFleetForm(forms.Form):
             raise forms.ValidationError("Podaj koordynaty planety docelowej.")
 
         galaxy, system, position = parse_planet_coordinates(target_coordinates)
-        try:
-            target_planet = Planet.objects.get(
-                galaxy=galaxy,
-                system=system,
-                position=position,
-            )
-        except Planet.DoesNotExist as exc:
-            raise forms.ValidationError("Nie znaleziono planety o podanych koordynatach.") from exc
+        target_planet = (
+            Planet.objects
+            .filter(galaxy=galaxy, system=system, position=position)
+            .first()
+        )
 
         cleaned_data["target_planet"] = target_planet
-        cleaned_data["target_coordinates"] = target_planet.coordinates
+        cleaned_data["target_coordinates"] = f"{galaxy}:{system}:{position}"
+
+        if mission_type:
+            mission_handler = get_mission_handler(mission_type)
+            target_requirement = mission_handler.target_requirement
+        else:
+            target_requirement = MISSION_TARGET_EXISTING_PLANET
 
         if (
-            mission_type != Fleet.MissionType.ESPIONAGE
-            and target_planet is not None
-            and self.user is not None
-            and target_planet.owner_id != self.user.id
+            target_requirement == MISSION_TARGET_EXISTING_PLANET
+            and target_planet is None
+        ):
+            raise forms.ValidationError("Nie znaleziono planety o podanych koordynatach.")
+
+        if (
+            target_requirement == MISSION_TARGET_OWN_PLANET
+            and target_planet is None
         ):
             raise forms.ValidationError("Ten typ misji można wysłać tylko na własną planetę.")
+
+        if (
+            target_requirement == MISSION_TARGET_OWN_PLANET
+            and (
+                self.user is None
+                or target_planet.owner_id != self.user.id
+            )
+        ):
+            raise forms.ValidationError("Ten typ misji można wysłać tylko na własną planetę.")
+
+        if (
+            target_requirement == MISSION_TARGET_EMPTY_COORDINATES
+            and target_planet is not None
+        ):
+            raise forms.ValidationError("Ten typ misji wymaga pustych koordynatów celu.")
 
         if mission_type == Fleet.MissionType.ESPIONAGE:
             cargo_amount = sum(

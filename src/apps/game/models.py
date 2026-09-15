@@ -204,6 +204,7 @@ class Fleet(models.Model):
         TRANSPORT = "transport", "Transport"
         STATION = "station", "Station"
         ESPIONAGE = "espionage", "Espionage"
+        COLONIZE = "colonize", "Kolonizacja"
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -217,9 +218,14 @@ class Fleet(models.Model):
     )
     target_planet = models.ForeignKey(
         Planet,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="incoming_fleets"
     )
+    target_galaxy = models.PositiveIntegerField()
+    target_system = models.PositiveIntegerField()
+    target_position = models.PositiveIntegerField()
     metal = models.BigIntegerField(default=0)
     crystal = models.BigIntegerField(default=0)
     helion = models.BigIntegerField(default=0)
@@ -237,6 +243,16 @@ class Fleet(models.Model):
     departure_time = models.DateTimeField(auto_now_add=True)
     arrival_time = models.DateTimeField()
     return_time = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def target_coordinates(self):
+        return f"{self.target_galaxy}:{self.target_system}:{self.target_position}"
+
+    @property
+    def target_display_name(self):
+        if self.target_planet_id and self.target_planet is not None:
+            return self.target_planet.name
+        return self.target_coordinates
 
     @property
     def next_event_at(self):
@@ -272,7 +288,28 @@ class Fleet(models.Model):
         return sum(ship.quantity for ship in self.ships.all())
 
     def __str__(self):
-        return f"{self.source_planet} -> {self.target_planet}"
+        return f"{self.source_planet} -> {self.target_display_name}"
+
+    def save(self, *args, **kwargs):
+        if self.target_planet_id and not all((
+            self.target_galaxy,
+            self.target_system,
+            self.target_position,
+        )):
+            target_planet = self.target_planet
+            self.target_galaxy = target_planet.galaxy
+            self.target_system = target_planet.system
+            self.target_position = target_planet.position
+
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {
+                    "target_galaxy",
+                    "target_system",
+                    "target_position",
+                }
+
+        super().save(*args, **kwargs)
 
 
 class FleetShip(models.Model):

@@ -21,6 +21,7 @@ from .domain_services.fleet import (
     calculate_effective_fleet_speed_multiplier,
     calculate_helion_cost_for_flight,
     get_planet_ships_display,
+    send_colonization_fleet,
     send_espionage_fleet,
     send_stationing_fleet,
     send_transport_fleet,
@@ -200,10 +201,12 @@ def send_fleet(request, pk):
             mission_type = form.cleaned_data.get("mission_type")
             ship_quantities = form.get_ship_quantities()
             target_planet = form.cleaned_data.get("target_planet")
+            target_coordinates = parse_planet_coordinates(form.cleaned_data["target_coordinates"])
             cargo = form.get_cargo()
             speed_profile = form.cleaned_data["speed_profile"]
 
             MISSION_DISPATCHERS = {
+                Fleet.MissionType.COLONIZE: send_colonization_fleet,
                 Fleet.MissionType.ESPIONAGE: send_espionage_fleet,
                 Fleet.MissionType.STATION: send_stationing_fleet,
                 Fleet.MissionType.TRANSPORT: send_transport_fleet,
@@ -218,6 +221,7 @@ def send_fleet(request, pk):
                 fleet = dispatcher(
                     source_planet=source_planet,
                     target_planet=target_planet,
+                    target_coordinates=target_coordinates,
                     ship_quantities=ship_quantities,
                     cargo=cargo,
                     user=request.user,
@@ -228,7 +232,7 @@ def send_fleet(request, pk):
                 messages.success(
                     request,
                     f"Wysłano flotę ({total_ships} szt. statków) "
-                    f"z planety {fleet.source_planet.name} na {fleet.target_planet.name}. "
+                    f"z planety {fleet.source_planet.name} na {fleet.target_display_name}. "
                     f"Koszt lotu: {fleet.helion_cost} helionu."
                 )
             except Planet.DoesNotExist:

@@ -3,7 +3,7 @@ from datetime import timedelta
 from dataclasses import dataclass
 
 from django.utils import timezone
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 
 from apps.game.models import Fleet, Planet, PlanetShip, FleetShip
@@ -41,11 +41,28 @@ from apps.game.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
     get_fleet_speed_multiplier,
 )
+from .planets import create_planet
 
 
 DEFAULT_TRANSPORTER_CODE = "transporter"
 HELION_DISTANCE_DIVISOR = 1000
 MIN_HELION_COST = 1
+
+MISSION_TARGET_EXISTING_PLANET = "existing_planet"
+MISSION_TARGET_OWN_PLANET = "own_planet"
+MISSION_TARGET_EMPTY_COORDINATES = "empty_coordinates"
+
+
+@dataclass(frozen=True, slots=True)
+class FleetTarget:
+    galaxy: int
+    system: int
+    position: int
+    planet: Planet | None = None
+
+    @property
+    def coordinates(self):
+        return f"{self.galaxy}:{self.system}:{self.position}"
 
 
 def get_planet_ships_display(planet, form=None):
@@ -233,6 +250,18 @@ def add_fleet_ships_to_planet(fleet, planet) -> None:
         PlanetShip.objects.bulk_create(ships_to_create)
 
 
+def get_fleet_flight_duration(fleet):
+    return fleet.arrival_time - fleet.departure_time
+
+
+def send_fleet_back_from_target(fleet, *, at) -> None:
+    flight_duration = get_fleet_flight_duration(fleet)
+
+    fleet.status = Fleet.Status.RETURNING
+    fleet.return_time = at + flight_duration
+    fleet.save(update_fields=["status", "return_time"])
+
+
 def get_safe_fleet_event_time(event_time, *planets):
     safe_time = event_time
 
@@ -259,6 +288,8 @@ def prepare_planet_for_fleet_event(planet_id, at):
 
 class BaseMission:
     """Klasa bazowa dla wszystkich misji flot."""
+
+    target_requirement = MISSION_TARGET_EXISTING_PLANET
 
     def validate_dispatch(self, source_planet, target_planet, user):
         """Specyficzna walidacja dla danego typu misji przed wylotem."""
@@ -297,9 +328,7 @@ class TransportMission(BaseMission):
 
 
 class StationMission(BaseMission):
-    def validate_dispatch(self, source_planet, target_planet, user):
-        if source_planet.owner_id != target_planet.owner_id:
-            raise InvalidStationingTargetError("Misja stacjonowania jest możliwa tylko na własną planetę.")
+    target_requirement = MISSION_TARGET_OWN_PLANET
 
     def calculate_return_time(self, arrival_time, flight_duration):
         # Misja stacjonuj nie wraca
@@ -347,10 +376,40 @@ class EspionageMission(BaseMission):
         fleet.save(update_fields=["status"])
 
 
+class ColonizationMission(BaseMission):
+    target_requirement = MISSION_TARGET_EMPTY_COORDINATES
+
+    def calculate_return_time(self, arrival_time, flight_duration):
+        return None
+
+    def handle_arrival(self, fleet, *, at):
+        target_planet = create_colony_from_fleet(fleet, at=at)
+
+        if target_planet is None:
+            send_fleet_back_from_target(fleet, at=at)
+            return
+
+        fleet_resource_fields, _ = transfer_resources(source=fleet, target=target_planet)
+        add_fleet_ships_to_planet(fleet, target_planet)
+
+        fleet.target_planet = target_planet
+        fleet.status = Fleet.Status.COMPLETED
+        fleet.return_time = None
+
+        target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+        fleet.save(update_fields=[
+            *fleet_resource_fields,
+            "target_planet",
+            "status",
+            "return_time",
+        ])
+
+
 MISSION_HANDLERS = {
     Fleet.MissionType.TRANSPORT: TransportMission(),
     Fleet.MissionType.STATION: StationMission(),
     Fleet.MissionType.ESPIONAGE: EspionageMission(),
+    Fleet.MissionType.COLONIZE: ColonizationMission(),
 }
 
 
@@ -359,6 +418,117 @@ def get_mission_handler(mission_type: str) -> BaseMission:
     if not handler:
         raise UnsupportedFleetMissionError("Nieobsługiwany typ misji floty.")
     return handler
+
+
+def validate_target_coordinates(coordinates) -> tuple[int, int, int]:
+    try:
+        galaxy, system, position = (
+            int(value)
+            for value in coordinates
+        )
+    except (TypeError, ValueError) as exc:
+        raise FleetError("Koordynaty celu muszą zawierać galaktykę, system i pozycję.") from exc
+
+    if galaxy <= 0 or system <= 0 or position <= 0:
+        raise FleetError("Koordynaty celu muszą być większe od zera.")
+
+    return galaxy, system, position
+
+
+def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> FleetTarget:
+    if target_planet is None and target_coordinates is None:
+        raise FleetError("Podaj koordynaty celu floty.")
+
+    if target_planet is not None:
+        target_planet = Planet.objects.get(pk=target_planet.pk)
+        planet_coordinates = (
+            target_planet.galaxy,
+            target_planet.system,
+            target_planet.position,
+        )
+
+        if target_coordinates is not None:
+            requested_coordinates = validate_target_coordinates(target_coordinates)
+            if requested_coordinates != planet_coordinates:
+                raise FleetError("Planeta docelowa nie pasuje do podanych koordynatów.")
+
+        return FleetTarget(
+            galaxy=target_planet.galaxy,
+            system=target_planet.system,
+            position=target_planet.position,
+            planet=target_planet,
+        )
+
+    galaxy, system, position = validate_target_coordinates(target_coordinates)
+    target_planet = (
+        Planet.objects
+        .filter(galaxy=galaxy, system=system, position=position)
+        .first()
+    )
+
+    return FleetTarget(
+        galaxy=galaxy,
+        system=system,
+        position=position,
+        planet=target_planet,
+    )
+
+
+def validate_mission_target(mission_handler, source_planet, target, user) -> None:
+    requirement = mission_handler.target_requirement
+    target_planet = target.planet
+
+    if requirement == MISSION_TARGET_EXISTING_PLANET:
+        if target_planet is None:
+            raise FleetError("Ten typ misji wymaga istniejącej planety docelowej.")
+
+    elif requirement == MISSION_TARGET_OWN_PLANET:
+        if target_planet is None:
+            raise InvalidStationingTargetError(
+                "Misja stacjonowania jest możliwa tylko na własną planetę."
+            )
+        if target_planet.owner_id != user.id:
+            raise InvalidStationingTargetError(
+                "Misja stacjonowania jest możliwa tylko na własną planetę."
+            )
+
+    elif requirement == MISSION_TARGET_EMPTY_COORDINATES:
+        if target_planet is not None:
+            raise FleetError("Ten typ misji wymaga pustych koordynatów celu.")
+
+    else:
+        raise UnsupportedFleetMissionError("Nieobsługiwane wymaganie celu misji floty.")
+
+    mission_handler.validate_dispatch(source_planet, target_planet, user)
+
+
+def create_colony_from_fleet(fleet, *, at):
+    coordinates = {
+        "galaxy": fleet.target_galaxy,
+        "system": fleet.target_system,
+        "position": fleet.target_position,
+    }
+
+    if Planet.objects.filter(**coordinates).exists():
+        return None
+
+    try:
+        planet = create_planet(
+            owner=fleet.owner,
+            name=f"Kolonia {fleet.target_coordinates}",
+            is_homeland=False,
+            resources={
+                "metal": 0,
+                "crystal": 0,
+                "helion": 0,
+            },
+            **coordinates,
+        )
+    except IntegrityError:
+        return None
+
+    planet.last_resource_update = at
+    return planet
 
 
 def handle_fleet_return(fleet, *, at) -> None:
@@ -373,11 +543,12 @@ def handle_fleet_return(fleet, *, at) -> None:
     source_planet = advance_result.planet
 
     add_fleet_ships_to_planet(fleet, source_planet)
+    fleet_resource_fields, _ = transfer_resources(source=fleet, target=source_planet)
 
     fleet.status = Fleet.Status.COMPLETED
 
     source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
-    fleet.save(update_fields=["status"])
+    fleet.save(update_fields=[*fleet_resource_fields, "status"])
 
 
 def handle_outbound_fleet_arrival(fleet, *, at) -> None:
@@ -430,6 +601,7 @@ def _send_fleet_mission(
     mission_type: str,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
     at=None,
+    target_coordinates=None,
 ):
     now = at or timezone.now()
 
@@ -439,15 +611,21 @@ def _send_fleet_mission(
     mission_handler = get_mission_handler(mission_type)
 
     source_planet = Planet.objects.select_for_update().get(pk=source_planet.pk)
-    target_planet = Planet.objects.get(pk=target_planet.pk)
+    target = resolve_fleet_target(
+        target_planet=target_planet,
+        target_coordinates=target_coordinates,
+    )
 
     ensure_source_planet_belongs_to_user(source_planet, user)
 
-    if source_planet.id == target_planet.id:
+    if (
+        source_planet.galaxy == target.galaxy
+        and source_planet.system == target.system
+        and source_planet.position == target.position
+    ):
         raise SamePlanetTransportError("Nie można wysłać floty na tę samą planetę.")
 
-    # Wywołanie specyficznej walidacji dla danego typu misji (np. czy cel należy do nas przy stacjonowaniu)
-    mission_handler.validate_dispatch(source_planet, target_planet, user)
+    validate_mission_target(mission_handler, source_planet, target, user)
 
     synchronize_resources(source_planet, at=now, save=False)
 
@@ -467,7 +645,7 @@ def _send_fleet_mission(
     fuel_multiplier = get_fleet_fuel_multiplier(speed_profile)
     helion_cost = calculate_helion_cost_for_flight(
         source_planet,
-        target_planet,
+        target,
         ship_quantities,
         fuel_multiplier,
     )
@@ -484,7 +662,7 @@ def _send_fleet_mission(
     source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
     speed_multiplier = calculate_effective_fleet_speed_multiplier(ship_quantities, speed_profile)
-    flight_time_seconds = calculate_flight_time_seconds(source_planet, target_planet, speed_multiplier)
+    flight_time_seconds = calculate_flight_time_seconds(source_planet, target, speed_multiplier)
     flight_duration = timedelta(seconds=flight_time_seconds)
 
     arrival_time = now + flight_duration
@@ -497,7 +675,10 @@ def _send_fleet_mission(
     fleet = Fleet.objects.create(
         owner=user,
         source_planet=source_planet,
-        target_planet=target_planet,
+        target_planet=target.planet,
+        target_galaxy=target.galaxy,
+        target_system=target.system,
+        target_position=target.position,
         helion_cost=helion_cost,
         mission_type=mission_type,
         status=Fleet.Status.OUTBOUND,
@@ -520,7 +701,8 @@ def send_transport_fleet(
     cargo: ResourceAmounts,
     user,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
-    at=None
+    at=None,
+    target_coordinates=None,
 ):
     """
     Wysyła flotę z misją Transportu.'ship_quantities' przyjmuje słownik {'small_transporter': 5, 'recycler': 2}
@@ -535,6 +717,7 @@ def send_transport_fleet(
         user=user,
         mission_type=Fleet.MissionType.TRANSPORT,
         at=at,
+        target_coordinates=target_coordinates,
     )
 
 
@@ -545,7 +728,8 @@ def send_stationing_fleet(
     cargo: ResourceAmounts,
     user,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
-    at=None
+    at=None,
+    target_coordinates=None,
 ):
     """
     Wysyła flotę z misją Stacjonowania. 'ship_quantities' przyjmuje słownik lub int.
@@ -559,6 +743,7 @@ def send_stationing_fleet(
         user=user,
         mission_type=Fleet.MissionType.STATION,
         at=at,
+        target_coordinates=target_coordinates,
     )
 
 
@@ -569,7 +754,8 @@ def send_espionage_fleet(
     cargo: ResourceAmounts,
     user,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
-    at=None
+    at=None,
+    target_coordinates=None,
 ):
     """
     Wysyła flotę z misją Szpiegowania. Misja nie przewozi ładunku i wraca po skanie celu.
@@ -587,6 +773,30 @@ def send_espionage_fleet(
         user=user,
         mission_type=Fleet.MissionType.ESPIONAGE,
         at=at,
+        target_coordinates=target_coordinates,
+    )
+
+
+def send_colonization_fleet(
+    source_planet,
+    target_planet=None,
+    ship_quantities: dict[str, int] | int = None,
+    cargo: ResourceAmounts = None,
+    user=None,
+    speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
+    at=None,
+    target_coordinates=None,
+):
+    return _send_fleet_mission(
+        source_planet=source_planet,
+        target_planet=None,
+        ship_quantities=_normalize_ship_quantities(ship_quantities),
+        cargo=cargo,
+        speed_profile=speed_profile,
+        user=user,
+        mission_type=Fleet.MissionType.COLONIZE,
+        at=at,
+        target_coordinates=target_coordinates,
     )
 
 
@@ -608,12 +818,13 @@ FLEET_EVENT_PRIORITY = {
 
 def get_due_fleet_events(owner, *, at):
     events = []
+    owner_planet_ids = Planet.objects.filter(owner=owner).values("pk")
 
     fleets = list(
         Fleet.objects
         .select_for_update()
         .prefetch_related("ships")
-        .filter(Q(owner=owner) | Q(target_planet__owner=owner))
+        .filter(Q(owner=owner) | Q(target_planet_id__in=owner_planet_ids))
         .exclude(status=Fleet.Status.COMPLETED)
         .order_by("pk")
     )

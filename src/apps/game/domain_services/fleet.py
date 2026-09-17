@@ -44,7 +44,7 @@ from apps.game.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
     get_fleet_speed_multiplier,
 )
-from .planets import create_planet
+from .planets import create_planet, get_planet_limit_status
 
 
 DEFAULT_TRANSPORTER_CODE = "transporter"
@@ -383,8 +383,7 @@ class ColonizationMission(BaseMission):
     target_requirement = MISSION_TARGET_EMPTY_COORDINATES
 
     def validate_dispatch(self, source_planet, target_planet, user):
-        planet_count = Planet.objects.filter(owner=user).count()
-        if planet_count >= DEFAULT_UNIVERSE_RULES.max_planets_per_player:
+        if get_planet_limit_status(user).is_reached:
             raise FleetError("Osiągnięto maksymalną liczbę planet gracza.")
 
     def calculate_return_time(self, arrival_time, flight_duration):

@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from django.db import transaction
 from apps.game.domain_services.planet_generation import generate_planet_traits
 
@@ -38,6 +40,31 @@ DEFAULT_BUILDING_LEVELS = {
 }
 
 
+@dataclass(frozen=True, slots=True)
+class PlanetLimitStatus:
+    current: int
+    maximum: int
+
+    @property
+    def remaining(self) -> int:
+        return max(self.maximum - self.current, 0)
+
+    @property
+    def is_reached(self) -> bool:
+        return self.current >= self.maximum
+
+
+def get_planet_limit_status(owner, *, lock: bool = False) -> PlanetLimitStatus:
+    planets = Planet.objects.filter(owner=owner)
+    if lock:
+        planets = planets.select_for_update()
+
+    return PlanetLimitStatus(
+        current=planets.count(),
+        maximum=DEFAULT_UNIVERSE_RULES.max_planets_per_player,
+    )
+
+
 @transaction.atomic
 def rename_planet(planet: Planet, new_name: str) -> Planet:
     normalized_name = new_name.strip()
@@ -76,13 +103,8 @@ def create_planet(*, owner, name: str, galaxy: int, system: int, position: int, 
     coordinates = Coordinates(galaxy=galaxy, system=system, position=position)
     DEFAULT_UNIVERSE_RULES.validate_coordinates(coordinates)
 
-    owned_planets_count = (
-        Planet.objects
-        .select_for_update()
-        .filter(owner=owner)
-        .count()
-    )
-    if owned_planets_count >= DEFAULT_UNIVERSE_RULES.max_planets_per_player:
+    planet_limit = get_planet_limit_status(owner, lock=True)
+    if planet_limit.is_reached:
         raise PlanetLimitReachedError("Osiągnięto maksymalną liczbę planet gracza.")
 
     resource_data = {**DEFAULT_PLANET_RESOURCES,**(resources or {})}

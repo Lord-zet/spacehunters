@@ -18,7 +18,9 @@ from apps.game.domain.exceptions import (
     UnsupportedFleetMissionError,
     UnknownShipError,
     PlanetOwnershipError,
+    InvalidCoordinatesError,
 )
+from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.ships import ESPIONAGE_PROBE_CODE, SHIPS
 from apps.game.domain_services.resources import (
@@ -429,10 +431,17 @@ def validate_target_coordinates(coordinates) -> tuple[int, int, int]:
     except (TypeError, ValueError) as exc:
         raise FleetError("Koordynaty celu muszą zawierać galaktykę, system i pozycję.") from exc
 
-    if galaxy <= 0 or system <= 0 or position <= 0:
-        raise FleetError("Koordynaty celu muszą być większe od zera.")
+    target_coordinates = Coordinates(
+        galaxy=galaxy,
+        system=system,
+        position=position,
+    )
+    try:
+        DEFAULT_UNIVERSE_RULES.validate_coordinates(target_coordinates)
+    except InvalidCoordinatesError as exc:
+        raise FleetError(str(exc)) from exc
 
-    return galaxy, system, position
+    return target_coordinates.as_tuple()
 
 
 def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> FleetTarget:

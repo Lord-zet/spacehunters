@@ -14,6 +14,8 @@ from .domain_services.fleet import (
     MISSION_TARGET_OWN_PLANET,
     get_mission_handler,
 )
+from apps.game.domain.exceptions import InvalidCoordinatesError
+from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 
 
 TAILWIND_INPUT = (
@@ -96,20 +98,13 @@ TAILWIND_FLEET_SPEED_PROFILE = (
 
 
 def parse_planet_coordinates(value: str) -> tuple[int, int, int]:
-    parts = value.strip().split(":")
-
-    if len(parts) != 3:
-        raise forms.ValidationError("Koordynaty muszą mieć format galaktyka:system:pozycja.")
-
     try:
-        galaxy, system, position = (int(part) for part in parts)
-    except ValueError as exc:
-        raise forms.ValidationError("Koordynaty mogą zawierać tylko liczby.") from exc
+        coordinates = Coordinates.parse(value)
+        DEFAULT_UNIVERSE_RULES.validate_coordinates(coordinates)
+    except InvalidCoordinatesError as exc:
+        raise forms.ValidationError(str(exc)) from exc
 
-    if galaxy <= 0 or system <= 0 or position <= 0:
-        raise forms.ValidationError("Koordynaty muszą być większe od zera.")
-
-    return galaxy, system, position
+    return coordinates.as_tuple()
 
 
 class SendFleetForm(forms.Form):

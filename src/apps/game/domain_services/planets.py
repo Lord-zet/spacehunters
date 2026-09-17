@@ -12,7 +12,9 @@ from apps.game.ships import SHIPS
 from apps.game.domain.exceptions import (
     InvalidPlanetNameError,
     PlanetNameAlreadyExistsError,
+    PlanetLimitReachedError,
 )
+from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 
 
 DEFAULT_PLANET_RESOURCES = {
@@ -70,6 +72,18 @@ def create_planet(*, owner, name: str, galaxy: int, system: int, position: int, 
                   planet_fields_total: int = 90, resources: dict | None = None, buildings: dict | None = None,
                   ships: dict | None = None, planet_type=None, radius_km=None, temperature_min=None,
                   temperature_max=None, rng=None,) -> Planet:
+
+    coordinates = Coordinates(galaxy=galaxy, system=system, position=position)
+    DEFAULT_UNIVERSE_RULES.validate_coordinates(coordinates)
+
+    owned_planets_count = (
+        Planet.objects
+        .select_for_update()
+        .filter(owner=owner)
+        .count()
+    )
+    if owned_planets_count >= DEFAULT_UNIVERSE_RULES.max_planets_per_player:
+        raise PlanetLimitReachedError("Osiągnięto maksymalną liczbę planet gracza.")
 
     resource_data = {**DEFAULT_PLANET_RESOURCES,**(resources or {})}
     building_data = {**DEFAULT_BUILDING_LEVELS, **(buildings or {})}

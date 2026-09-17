@@ -19,6 +19,7 @@ from apps.game.domain.exceptions import (
     UnknownShipError,
     PlanetOwnershipError,
     InvalidCoordinatesError,
+    PlanetLimitReachedError,
 )
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
@@ -381,6 +382,11 @@ class EspionageMission(BaseMission):
 class ColonizationMission(BaseMission):
     target_requirement = MISSION_TARGET_EMPTY_COORDINATES
 
+    def validate_dispatch(self, source_planet, target_planet, user):
+        planet_count = Planet.objects.filter(owner=user).count()
+        if planet_count >= DEFAULT_UNIVERSE_RULES.max_planets_per_player:
+            raise FleetError("Osiągnięto maksymalną liczbę planet gracza.")
+
     def calculate_return_time(self, arrival_time, flight_duration):
         return None
 
@@ -533,7 +539,7 @@ def create_colony_from_fleet(fleet, *, at):
             },
             **coordinates,
         )
-    except IntegrityError:
+    except (IntegrityError, PlanetLimitReachedError):
         return None
 
     planet.last_resource_update = at

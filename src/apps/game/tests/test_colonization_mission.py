@@ -5,6 +5,7 @@ from apps.game.domain_services.fleet import (
     process_fleets_for_user,
     send_colonization_fleet,
 )
+from apps.game.domain.world import DEFAULT_UNIVERSE_RULES
 from apps.game.domain_services.resources import Resource
 from apps.game.models import Fleet, Planet
 
@@ -122,4 +123,62 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
 
         self.assertEqual(fleet.status, Fleet.Status.COMPLETED)
         self.assertEqual(fleet.metal, 0)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 3)
+
+    def test_process_colonization_arrival_returns_fleet_when_player_reaches_planet_limit(self):
+        user = self.create_user("colonization_planet_limit_user")
+        start_time = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
+            metal=5000,
+            crystal=3000,
+            helion=500,
+            transporter_count=3,
+            last_resource_update=start_time,
+        )
+
+        fleet = send_colonization_fleet(
+            source_planet=source_planet,
+            target_coordinates=(1, 99, 9),
+            ship_quantities={"transporter": 1},
+            cargo={
+                Resource.METAL: 300,
+                Resource.CRYSTAL: 0,
+                Resource.HELION: 0,
+            },
+            user=user,
+            at=start_time,
+        )
+
+        for index in range(2, DEFAULT_UNIVERSE_RULES.max_planets_per_player + 1):
+            self.create_planet(
+                owner=user,
+                name=f"Colony {index}",
+                galaxy=1,
+                system=index,
+                position=1,
+                is_homeland=False,
+                last_resource_update=start_time,
+            )
+
+        process_fleets_for_user(user, at=fleet.arrival_time)
+
+        fleet.refresh_from_db()
+        source_planet.refresh_from_db()
+
+        self.assertEqual(fleet.status, Fleet.Status.RETURNING)
+        self.assertIsNone(fleet.target_planet)
+        self.assertFalse(Planet.objects.filter(galaxy=1, system=99, position=9).exists())
+
+        process_fleets_for_user(user, at=fleet.return_time)
+
+        fleet.refresh_from_db()
+        source_planet.refresh_from_db()
+
+        self.assertEqual(fleet.status, Fleet.Status.COMPLETED)
         self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 3)

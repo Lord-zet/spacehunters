@@ -28,7 +28,10 @@ from .domain_services.fleet import (
 )
 from .domain_services.travel import calculate_flight_time_seconds
 from .domain_services.buildings import start_building_upgrade, cancel_building_upgrade
-from .domain_services.planets import rename_planet as update_planet_name
+from .domain_services.planets import (
+    get_planet_limit_status,
+    rename_planet as update_planet_name,
+)
 from .domain_services.sync import advance_user_state
 from .domain_services.shipyard import (
     start_ship_construction,
@@ -115,6 +118,7 @@ def planet_detail(request, pk):
         "planet_trait_rows": get_planet_trait_rows(planet),
         "planet_type_summary": get_planet_type_summary(planet),
         "rename_planet_form": RenamePlanetForm(initial={"name": planet.name}),
+        "planet_limit": get_planet_limit_status(request.user),
     }
     return render(request, "game/planet_detail.html", context)
 
@@ -255,6 +259,7 @@ def send_fleet(request, pk):
         "storage_capacities": get_storage_capacities(buildings),
         "energy_balance": get_energy_balance(buildings),
         "planet_ships": get_planet_ships_display(source_planet, form),
+        "planet_limit": get_planet_limit_status(request.user),
     }
     return render(request, "game/send_fleet.html", context)
 

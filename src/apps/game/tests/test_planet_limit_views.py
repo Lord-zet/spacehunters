@@ -52,3 +52,7 @@ class PlanetLimitViewTests(PlanetTestMixin, TestCase):
         )
         self.assertContains(response, "Planety")
         self.assertContains(response, f"1/{DEFAULT_UNIVERSE_RULES.max_planets_per_player}")
+        self.assertContains(
+            response,
+            f"galaktyka 1-{DEFAULT_UNIVERSE_RULES.galaxy_count}",
+        )

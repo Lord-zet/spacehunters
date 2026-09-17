@@ -68,6 +68,7 @@ from .presenters.reports import (
     get_report_planet_intel_rows,
     get_valid_report_category,
 )
+from .presenters.world import get_universe_coordinate_hint
 
 
 @dataclass(frozen=True)
@@ -260,6 +261,7 @@ def send_fleet(request, pk):
         "energy_balance": get_energy_balance(buildings),
         "planet_ships": get_planet_ships_display(source_planet, form),
         "planet_limit": get_planet_limit_status(request.user),
+        "universe_coordinate_hint": get_universe_coordinate_hint(),
     }
     return render(request, "game/send_fleet.html", context)
 

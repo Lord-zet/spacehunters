@@ -13,6 +13,7 @@ from apps.game.domain_services.resources import (
     get_storage_capacity,
     get_storage_capacity_for_level,
 )
+from apps.game.domain.world import Coordinates
 from apps.game.models import Planet, PlanetBuildings
 from apps.game.buildings import calculate_resource_production
 
@@ -27,9 +28,7 @@ class PlanetBuildingsIntegrationTests(TestCase):
         self.planet = Planet.objects.create(
             owner=self.user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            **Planet.coordinate_fields(Coordinates(galaxy=1, system=1, position=1)),
             metal=10000,
             crystal=10000,
             is_homeland=True,

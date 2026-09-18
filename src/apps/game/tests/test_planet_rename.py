@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
 
+from apps.game.domain.world import Coordinates
+
 from .helpers import PlanetTestMixin
 
 
@@ -10,9 +12,7 @@ class PlanetRenameViewTests(PlanetTestMixin, TestCase):
         planet = self.create_planet(
             owner=user,
             name="Old Terra",
-            galaxy=1,
-            system=10,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=10, position=1),
         )
         self.client.login(username="rename_owner", password="secret")
 
@@ -31,9 +31,7 @@ class PlanetRenameViewTests(PlanetTestMixin, TestCase):
         planet = self.create_planet(
             owner=owner,
             name="Private World",
-            galaxy=1,
-            system=10,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=10, position=2),
         )
         self.client.force_login(intruder)
 

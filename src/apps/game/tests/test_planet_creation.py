@@ -98,9 +98,7 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
 
     def test_get_planet_at_coordinates_returns_planet_matching_coordinates(self):
         planet = self.create_planet(
-            galaxy=2,
-            system=20,
-            position=7,
+            coordinates=Coordinates(galaxy=2, system=20, position=7),
         )
 
         found_planet = get_planet_at_coordinates(Coordinates(galaxy=2, system=20, position=7))

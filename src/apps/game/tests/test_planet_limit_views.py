@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from apps.game.domain.world import DEFAULT_UNIVERSE_RULES
+from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 
 from .helpers import PlanetTestMixin
 
@@ -12,9 +12,7 @@ class PlanetLimitViewTests(PlanetTestMixin, TestCase):
         planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
         )
 
         self.client.force_login(user)
@@ -35,9 +33,7 @@ class PlanetLimitViewTests(PlanetTestMixin, TestCase):
         planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
         )
 
         self.client.force_login(user)

@@ -78,6 +78,14 @@ class PlanetNameAlreadyExistsError(DomainError):
     pass
 
 
+class PlanetLimitReachedError(DomainError):
+    pass
+
+
+class InvalidCoordinatesError(DomainError):
+    pass
+
+
 class UnsupportedFleetMissionError(DomainError):
     pass
 

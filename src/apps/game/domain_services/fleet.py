@@ -18,7 +18,10 @@ from apps.game.domain.exceptions import (
     UnsupportedFleetMissionError,
     UnknownShipError,
     PlanetOwnershipError,
+    InvalidCoordinatesError,
+    PlanetLimitReachedError,
 )
+from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.ships import ESPIONAGE_PROBE_CODE, SHIPS
 from apps.game.domain_services.resources import (
@@ -41,7 +44,7 @@ from apps.game.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
     get_fleet_speed_multiplier,
 )
-from .planets import create_planet
+from .planets import create_planet, get_planet_limit_status
 
 
 DEFAULT_TRANSPORTER_CODE = "transporter"
@@ -379,6 +382,10 @@ class EspionageMission(BaseMission):
 class ColonizationMission(BaseMission):
     target_requirement = MISSION_TARGET_EMPTY_COORDINATES
 
+    def validate_dispatch(self, source_planet, target_planet, user):
+        if get_planet_limit_status(user).is_reached:
+            raise FleetError("Osiągnięto maksymalną liczbę planet gracza.")
+
     def calculate_return_time(self, arrival_time, flight_duration):
         return None
 
@@ -429,10 +436,17 @@ def validate_target_coordinates(coordinates) -> tuple[int, int, int]:
     except (TypeError, ValueError) as exc:
         raise FleetError("Koordynaty celu muszą zawierać galaktykę, system i pozycję.") from exc
 
-    if galaxy <= 0 or system <= 0 or position <= 0:
-        raise FleetError("Koordynaty celu muszą być większe od zera.")
+    target_coordinates = Coordinates(
+        galaxy=galaxy,
+        system=system,
+        position=position,
+    )
+    try:
+        DEFAULT_UNIVERSE_RULES.validate_coordinates(target_coordinates)
+    except InvalidCoordinatesError as exc:
+        raise FleetError(str(exc)) from exc
 
-    return galaxy, system, position
+    return target_coordinates.as_tuple()
 
 
 def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> FleetTarget:
@@ -524,7 +538,7 @@ def create_colony_from_fleet(fleet, *, at):
             },
             **coordinates,
         )
-    except IntegrityError:
+    except (IntegrityError, PlanetLimitReachedError):
         return None
 
     planet.last_resource_update = at

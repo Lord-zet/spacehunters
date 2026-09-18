@@ -12,6 +12,7 @@ from apps.game.domain_services.fleet import (
     send_colonization_fleet,
     send_transport_fleet,
 )
+from apps.game.domain.world import DEFAULT_UNIVERSE_RULES
 from apps.game.models import Fleet
 
 from .helpers import PlanetTestMixin
@@ -219,6 +220,83 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         self.assertEqual(fleet.target_coordinates, "1:99:9")
         self.assertEqual(fleet.mission_type, Fleet.MissionType.COLONIZE)
         self.assertIsNone(fleet.return_time)
+
+    def test_colonization_fleet_rejects_target_coordinates_outside_universe(self):
+        user = self.create_user("fleet_colonization_outside_universe_user")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
+            metal=5000,
+            crystal=3000,
+            helion=500,
+            transporter_count=3,
+            last_resource_update=now,
+        )
+
+        with self.assertRaisesMessage(FleetError, "poza granicami"):
+            send_colonization_fleet(
+                source_planet=source_planet,
+                target_coordinates=(10, 1, 1),
+                ship_quantities={"transporter": 1},
+                cargo={
+                    Resource.METAL: 0,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
+                user=user,
+            )
+
+        self.assertEqual(Fleet.objects.count(), 0)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 3)
+
+    def test_colonization_fleet_rejects_dispatch_when_player_reached_planet_limit(self):
+        user = self.create_user("fleet_colonization_limit_user")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            galaxy=1,
+            system=1,
+            position=1,
+            metal=5000,
+            crystal=3000,
+            helion=500,
+            transporter_count=3,
+            last_resource_update=now,
+        )
+
+        for index in range(2, DEFAULT_UNIVERSE_RULES.max_planets_per_player + 1):
+            self.create_planet(
+                owner=user,
+                name=f"Colony {index}",
+                galaxy=1,
+                system=index,
+                position=1,
+                is_homeland=False,
+                last_resource_update=now,
+            )
+
+        with self.assertRaisesMessage(FleetError, "maksymalną liczbę planet"):
+            send_colonization_fleet(
+                source_planet=source_planet,
+                target_coordinates=(1, 99, 9),
+                ship_quantities={"transporter": 1},
+                cargo={
+                    Resource.METAL: 0,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
+                user=user,
+            )
+
+        self.assertEqual(Fleet.objects.count(), 0)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 3)
 
     def test_colonization_fleet_rejects_existing_target_planet(self):
         user = self.create_user("fleet_colonization_existing_target_user")

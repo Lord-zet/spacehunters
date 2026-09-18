@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from django.db import transaction
 from apps.game.domain_services.planet_generation import generate_planet_traits
 
@@ -12,7 +14,9 @@ from apps.game.ships import SHIPS
 from apps.game.domain.exceptions import (
     InvalidPlanetNameError,
     PlanetNameAlreadyExistsError,
+    PlanetLimitReachedError,
 )
+from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 
 
 DEFAULT_PLANET_RESOURCES = {
@@ -34,6 +38,31 @@ DEFAULT_BUILDING_LEVELS = {
     "building_type": "",
     "building_ends_at": None,
 }
+
+
+@dataclass(frozen=True, slots=True)
+class PlanetLimitStatus:
+    current: int
+    maximum: int
+
+    @property
+    def remaining(self) -> int:
+        return max(self.maximum - self.current, 0)
+
+    @property
+    def is_reached(self) -> bool:
+        return self.current >= self.maximum
+
+
+def get_planet_limit_status(owner, *, lock: bool = False) -> PlanetLimitStatus:
+    planets = Planet.objects.filter(owner=owner)
+    if lock:
+        planets = planets.select_for_update()
+
+    return PlanetLimitStatus(
+        current=planets.count(),
+        maximum=DEFAULT_UNIVERSE_RULES.max_planets_per_player,
+    )
 
 
 @transaction.atomic
@@ -70,6 +99,13 @@ def create_planet(*, owner, name: str, galaxy: int, system: int, position: int, 
                   planet_fields_total: int = 90, resources: dict | None = None, buildings: dict | None = None,
                   ships: dict | None = None, planet_type=None, radius_km=None, temperature_min=None,
                   temperature_max=None, rng=None,) -> Planet:
+
+    coordinates = Coordinates(galaxy=galaxy, system=system, position=position)
+    DEFAULT_UNIVERSE_RULES.validate_coordinates(coordinates)
+
+    planet_limit = get_planet_limit_status(owner, lock=True)
+    if planet_limit.is_reached:
+        raise PlanetLimitReachedError("Osiągnięto maksymalną liczbę planet gracza.")
 
     resource_data = {**DEFAULT_PLANET_RESOURCES,**(resources or {})}
     building_data = {**DEFAULT_BUILDING_LEVELS, **(buildings or {})}

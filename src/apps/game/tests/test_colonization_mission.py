@@ -5,7 +5,7 @@ from apps.game.domain_services.fleet import (
     process_fleets_for_user,
     send_colonization_fleet,
 )
-from apps.game.domain.world import DEFAULT_UNIVERSE_RULES
+from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 from apps.game.domain_services.resources import Resource
 from apps.game.models import Fleet, Planet
 
@@ -32,7 +32,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
 
         fleet = send_colonization_fleet(
             source_planet=source_planet,
-            target_coordinates=(1, 99, 9),
+            target_coordinates=Coordinates(galaxy=1, system=99, position=9),
             ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 700,
@@ -84,7 +84,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
 
         fleet = send_colonization_fleet(
             source_planet=source_planet,
-            target_coordinates=(1, 99, 9),
+            target_coordinates=Coordinates(galaxy=1, system=99, position=9),
             ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 300,
@@ -144,7 +144,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
 
         fleet = send_colonization_fleet(
             source_planet=source_planet,
-            target_coordinates=(1, 99, 9),
+            target_coordinates=Coordinates(galaxy=1, system=99, position=9),
             ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 300,

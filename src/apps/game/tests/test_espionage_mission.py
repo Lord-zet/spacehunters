@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.game.domain.exceptions import FleetError
+from apps.game.domain.world import Coordinates
 from apps.game.domain_services.fleet import send_espionage_fleet, process_fleets_for_user
 from apps.game.domain_services.resources import Resource
 from apps.game.forms import SendFleetForm, parse_planet_coordinates
@@ -449,7 +450,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
 
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data["target_planet"], target_planet)
-        self.assertEqual(form.cleaned_data["target_coordinates"], str(target_planet.coordinates))
+        self.assertEqual(form.cleaned_data["target_coordinates"], target_planet.coordinates)
 
     def test_parse_planet_coordinates_rejects_invalid_format(self):
         with self.assertRaisesMessage(Exception, "format"):
@@ -542,7 +543,10 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
 
         self.assertTrue(form.is_valid(), form.errors)
         self.assertIsNone(form.cleaned_data["target_planet"])
-        self.assertEqual(form.cleaned_data["target_coordinates"], "2:99:9")
+        self.assertEqual(
+            form.cleaned_data["target_coordinates"],
+            Coordinates(galaxy=2, system=99, position=9),
+        )
 
     def test_form_rejects_colonization_existing_target_coordinates(self):
         user = self.create_user("colonization_form_occupied_sender")

@@ -211,7 +211,7 @@ def send_fleet(request, pk):
             mission_type = form.cleaned_data.get("mission_type")
             ship_quantities = form.get_ship_quantities()
             target_planet = form.cleaned_data.get("target_planet")
-            target_coordinates = parse_planet_coordinates(form.cleaned_data["target_coordinates"])
+            target_coordinates = form.cleaned_data["target_coordinates"]
             cargo = form.get_cargo()
             speed_profile = form.cleaned_data["speed_profile"]
 
@@ -291,16 +291,22 @@ def send_fleet_preview(request, pk):
         return JsonResponse({"ok": False})
 
     try:
-        galaxy, system, position = parse_planet_coordinates(target_coordinates)
+        coordinates = parse_planet_coordinates(target_coordinates)
     except ValidationError:
         return JsonResponse({"ok": False})
 
-    target_planet = Planet.objects.filter(galaxy=galaxy, system=system, position=position).first()
+    target_planet = (
+        Planet.objects.filter(
+            galaxy=coordinates.galaxy,
+            system=coordinates.system,
+            position=coordinates.position,
+        ).first()
+    )
     if target_planet is None:
         target_planet = FleetPreviewTarget(
-            galaxy=galaxy,
-            system=system,
-            position=position,
+            galaxy=coordinates.galaxy,
+            system=coordinates.system,
+            position=coordinates.position,
         )
 
     speed_profile = request.POST.get("speed_profile")

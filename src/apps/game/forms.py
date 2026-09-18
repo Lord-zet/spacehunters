@@ -97,14 +97,14 @@ TAILWIND_FLEET_SPEED_PROFILE = (
 )
 
 
-def parse_planet_coordinates(value: str) -> tuple[int, int, int]:
+def parse_planet_coordinates(value: str) -> Coordinates:
     try:
         coordinates = Coordinates.parse(value)
         DEFAULT_UNIVERSE_RULES.validate_coordinates(coordinates)
     except InvalidCoordinatesError as exc:
         raise forms.ValidationError(str(exc)) from exc
 
-    return coordinates.as_tuple()
+    return coordinates
 
 
 class SendFleetForm(forms.Form):
@@ -231,15 +231,19 @@ class SendFleetForm(forms.Form):
         if not target_coordinates:
             raise forms.ValidationError("Podaj koordynaty planety docelowej.")
 
-        galaxy, system, position = parse_planet_coordinates(target_coordinates)
+        coordinates = parse_planet_coordinates(target_coordinates)
         target_planet = (
             Planet.objects
-            .filter(galaxy=galaxy, system=system, position=position)
+            .filter(
+                galaxy=coordinates.galaxy,
+                system=coordinates.system,
+                position=coordinates.position,
+            )
             .first()
         )
 
         cleaned_data["target_planet"] = target_planet
-        cleaned_data["target_coordinates"] = f"{galaxy}:{system}:{position}"
+        cleaned_data["target_coordinates"] = coordinates
 
         if mission_type:
             mission_handler = get_mission_handler(mission_type)

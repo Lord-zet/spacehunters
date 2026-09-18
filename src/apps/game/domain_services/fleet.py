@@ -136,7 +136,7 @@ def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantiti
     if base_burn <= 0:
         return 0
 
-    distance = calculate_distance(source_planet, target_planet)
+    distance = calculate_distance(source_planet.coordinates, target_planet.coordinates)
     raw_cost = base_burn * distance * fuel_multiplier / HELION_DISTANCE_DIVISOR
 
     return max(MIN_HELION_COST, math.ceil(raw_cost))
@@ -680,7 +680,11 @@ def _send_fleet_mission(
     source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
     speed_multiplier = calculate_effective_fleet_speed_multiplier(ship_quantities, speed_profile)
-    flight_time_seconds = calculate_flight_time_seconds(source_planet, target, speed_multiplier)
+    flight_time_seconds = calculate_flight_time_seconds(
+        source_planet.coordinates,
+        target.coordinates,
+        speed_multiplier,
+    )
     flight_duration = timedelta(seconds=flight_time_seconds)
 
     arrival_time = now + flight_duration

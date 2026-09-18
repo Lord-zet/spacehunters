@@ -63,8 +63,8 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         ship_quantities = {"transporter": 1}
         speed_profile = "standard"
         expected_flight_time_seconds = calculate_flight_time_seconds(
-            source,
-            target,
+            source.coordinates,
+            target.coordinates,
             calculate_effective_fleet_speed_multiplier(
                 ship_quantities,
                 speed_profile,

@@ -352,8 +352,8 @@ def _send_fleet_preview_response(
     )
     fuel_multiplier = get_fleet_fuel_multiplier(speed_profile)
     flight_time_seconds = calculate_flight_time_seconds(
-        source_planet,
-        target_planet,
+        source_planet.coordinates,
+        target_planet.coordinates,
         speed_multiplier,
     )
     helion_cost = calculate_helion_cost_for_flight(

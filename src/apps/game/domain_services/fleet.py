@@ -44,7 +44,7 @@ from apps.game.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
     get_fleet_speed_multiplier,
 )
-from .planets import create_planet, get_planet_limit_status
+from .planets import create_planet, get_planet_at_coordinates, get_planet_limit_status
 
 
 DEFAULT_TRANSPORTER_CODE = "transporter"
@@ -452,15 +452,7 @@ def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> Flee
         )
 
     coordinates = validate_target_coordinates(target_coordinates)
-    target_planet = (
-        Planet.objects
-        .filter(
-            galaxy=coordinates.galaxy,
-            system=coordinates.system,
-            position=coordinates.position,
-        )
-        .first()
-    )
+    target_planet = get_planet_at_coordinates(coordinates)
 
     return FleetTarget(
         coordinates=coordinates,
@@ -499,11 +491,7 @@ def validate_mission_target(mission_handler, source_planet, target, user) -> Non
 def create_colony_from_fleet(fleet, *, at):
     coordinates = fleet.target_coordinates
 
-    if Planet.objects.filter(
-        galaxy=coordinates.galaxy,
-        system=coordinates.system,
-        position=coordinates.position,
-    ).exists():
+    if get_planet_at_coordinates(coordinates) is not None:
         return None
 
     try:

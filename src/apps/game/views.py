@@ -29,6 +29,7 @@ from .domain_services.fleet import (
 from .domain_services.travel import calculate_flight_time_seconds
 from .domain_services.buildings import start_building_upgrade, cancel_building_upgrade
 from .domain_services.planets import (
+    get_planet_at_coordinates,
     get_planet_limit_status,
     rename_planet as update_planet_name,
 )
@@ -295,13 +296,7 @@ def send_fleet_preview(request, pk):
     except ValidationError:
         return JsonResponse({"ok": False})
 
-    target_planet = (
-        Planet.objects.filter(
-            galaxy=coordinates.galaxy,
-            system=coordinates.system,
-            position=coordinates.position,
-        ).first()
-    )
+    target_planet = get_planet_at_coordinates(coordinates)
     if target_planet is None:
         target_planet = FleetPreviewTarget(
             galaxy=coordinates.galaxy,

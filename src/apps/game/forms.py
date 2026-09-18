@@ -14,6 +14,7 @@ from .domain_services.fleet import (
     MISSION_TARGET_OWN_PLANET,
     get_mission_handler,
 )
+from .domain_services.planets import get_planet_at_coordinates
 from apps.game.domain.exceptions import InvalidCoordinatesError
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 
@@ -232,15 +233,7 @@ class SendFleetForm(forms.Form):
             raise forms.ValidationError("Podaj koordynaty planety docelowej.")
 
         coordinates = parse_planet_coordinates(target_coordinates)
-        target_planet = (
-            Planet.objects
-            .filter(
-                galaxy=coordinates.galaxy,
-                system=coordinates.system,
-                position=coordinates.position,
-            )
-            .first()
-        )
+        target_planet = get_planet_at_coordinates(coordinates)
 
         cleaned_data["target_planet"] = target_planet
         cleaned_data["target_coordinates"] = coordinates

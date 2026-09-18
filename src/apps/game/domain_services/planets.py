@@ -65,6 +65,16 @@ def get_planet_limit_status(owner, *, lock: bool = False) -> PlanetLimitStatus:
     )
 
 
+def get_planet_at_coordinates(coordinates: Coordinates) -> Planet | None:
+    return (
+        Planet.objects.filter(
+            galaxy=coordinates.galaxy,
+            system=coordinates.system,
+            position=coordinates.position,
+        ).first()
+    )
+
+
 @transaction.atomic
 def rename_planet(planet: Planet, new_name: str) -> Planet:
     normalized_name = new_name.strip()

@@ -2,7 +2,11 @@ from django.test import TestCase
 
 from apps.game.domain.exceptions import InvalidCoordinatesError, PlanetLimitReachedError
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
-from apps.game.domain_services.planets import create_planet, get_planet_limit_status
+from apps.game.domain_services.planets import (
+    create_planet,
+    get_planet_at_coordinates,
+    get_planet_limit_status,
+)
 from .helpers import PlanetTestMixin
 
 
@@ -91,3 +95,19 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
         self.assertEqual(status.maximum, DEFAULT_UNIVERSE_RULES.max_planets_per_player)
         self.assertEqual(status.remaining, DEFAULT_UNIVERSE_RULES.max_planets_per_player - 1)
         self.assertFalse(status.is_reached)
+
+    def test_get_planet_at_coordinates_returns_planet_matching_coordinates(self):
+        planet = self.create_planet(
+            galaxy=2,
+            system=20,
+            position=7,
+        )
+
+        found_planet = get_planet_at_coordinates(Coordinates(galaxy=2, system=20, position=7))
+
+        self.assertEqual(found_planet, planet)
+
+    def test_get_planet_at_coordinates_returns_none_for_empty_position(self):
+        self.assertIsNone(
+            get_planet_at_coordinates(Coordinates(galaxy=2, system=20, position=7))
+        )

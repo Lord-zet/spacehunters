@@ -28,9 +28,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=other_user,
             name="Other",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -41,9 +39,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mine",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=True,
             last_resource_update=now,
         )
@@ -71,9 +67,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -84,9 +78,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=target_owner,
             name="Foreign Target",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=True,
             last_resource_update=now,
         )
@@ -113,9 +105,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -126,9 +116,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
             last_resource_update=now,
         )
@@ -156,9 +144,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -190,9 +176,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -227,9 +211,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -260,9 +242,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -274,9 +254,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             self.create_planet(
                 owner=user,
                 name=f"Colony {index}",
-                galaxy=1,
-                system=index,
-                position=1,
+                coordinates=Coordinates(galaxy=1, system=index, position=1),
                 is_homeland=False,
                 last_resource_update=now,
             )
@@ -304,9 +282,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -316,9 +292,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Occupied",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
             last_resource_update=now,
         )
@@ -346,9 +320,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -359,9 +331,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
             last_resource_update=now,
         )
@@ -389,9 +359,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -402,9 +370,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
             last_resource_update=now,
         )
@@ -432,9 +398,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -445,9 +409,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
             last_resource_update=now,
         )
@@ -475,9 +437,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -488,9 +448,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
             last_resource_update=now,
         )
@@ -518,9 +476,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -531,9 +487,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
             last_resource_update=now,
         )

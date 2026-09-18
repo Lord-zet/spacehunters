@@ -69,6 +69,7 @@ from .presenters.reports import (
     get_valid_report_category,
 )
 from .presenters.world import get_universe_coordinate_hint
+from apps.game.domain.world import Coordinates
 
 
 @dataclass(frozen=True)
@@ -81,7 +82,11 @@ class FleetPreviewTarget:
 
     @property
     def coordinates(self):
-        return f"{self.galaxy}:{self.system}:{self.position}"
+        return Coordinates(
+            galaxy=self.galaxy,
+            system=self.system,
+            position=self.position,
+        )
 
 
 @login_required
@@ -280,7 +285,7 @@ def send_fleet_preview(request, pk):
             selected_target = None
 
         if selected_target is not None:
-            target_coordinates = selected_target.coordinates
+            target_coordinates = str(selected_target.coordinates)
 
     if not target_coordinates:
         return JsonResponse({"ok": False})
@@ -364,7 +369,7 @@ def _send_fleet_preview_response(
             "source_planet_id": source_planet.pk,
             "mission_type": mission_type,
             "target_planet_id": target_planet.pk,
-            "target_coordinates": target_planet.coordinates,
+            "target_coordinates": str(target_planet.coordinates),
             "speed_profile": speed_profile,
             "ship_quantities": ship_quantities,
             "flight_time_seconds": flight_time_seconds,

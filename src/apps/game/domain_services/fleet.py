@@ -65,7 +65,11 @@ class FleetTarget:
 
     @property
     def coordinates(self):
-        return f"{self.galaxy}:{self.system}:{self.position}"
+        return Coordinates(
+            galaxy=self.galaxy,
+            system=self.system,
+            position=self.position,
+        )
 
 
 def get_planet_ships_display(planet, form=None):

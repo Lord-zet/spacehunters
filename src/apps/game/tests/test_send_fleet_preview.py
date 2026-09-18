@@ -52,7 +52,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             data={
                 "mission_type": "transport",
                 "target_planet": str(target.pk),
-                "target_coordinates": target.coordinates,
+                "target_coordinates": str(target.coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": "1",
             },
@@ -82,7 +82,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
                 "source_planet_id": source.pk,
                 "mission_type": "transport",
                 "target_planet_id": target.pk,
-                "target_coordinates": target.coordinates,
+                "target_coordinates": str(target.coordinates),
                 "speed_profile": speed_profile,
                 "ship_quantities": ship_quantities,
                 "flight_time_seconds": expected_flight_time_seconds,
@@ -115,7 +115,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             data={
                 "mission_type": "transport",
                 "target_planet": str(target.pk),
-                "target_coordinates": target.coordinates,
+                "target_coordinates": str(target.coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": "1",
                 "ship_large_transporter": "",
@@ -165,7 +165,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
 
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["preview"]["target_planet_id"], target.pk)
-        self.assertEqual(payload["preview"]["target_coordinates"], target.coordinates)
+        self.assertEqual(payload["preview"]["target_coordinates"], str(target.coordinates))
         self.assertGreater(payload["preview"]["flight_time_seconds"], 0)
         self.assertGreater(payload["preview"]["helion_cost"], 0)
 
@@ -283,7 +283,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
                 data={
                     "mission_type": "transport",
                     "target_planet": str(target.pk),
-                    "target_coordinates": target.coordinates,
+                    "target_coordinates": str(target.coordinates),
                     "speed_profile": speed_profile,
                     "ship_transporter": "1",
                 },
@@ -329,7 +329,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             data={
                 "mission_type": "transport",
                 "target_planet": str(target.pk),
-                "target_coordinates": target.coordinates,
+                "target_coordinates": str(target.coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": "1",
             },
@@ -339,7 +339,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             data={
                 "mission_type": "espionage",
                 "target_planet": str(target.pk),
-                "target_coordinates": target.coordinates,
+                "target_coordinates": str(target.coordinates),
                 "speed_profile": "standard",
                 f"ship_{ESPIONAGE_PROBE_CODE}": "1",
             },

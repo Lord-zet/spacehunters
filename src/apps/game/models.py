@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .buildings import BUILDINGS
 from .ships import SHIPS
+from .domain.world import Coordinates
 
 
 PLANET_NAME_MAX_LENGTH = 50
@@ -67,7 +68,11 @@ class Planet(models.Model):
 
     @property
     def coordinates(self):
-        return f"{self.galaxy}:{self.system}:{self.position}"
+        return Coordinates(
+            galaxy=self.galaxy,
+            system=self.system,
+            position=self.position,
+        )
 
     @property
     def transporter_count(self):
@@ -246,13 +251,17 @@ class Fleet(models.Model):
 
     @property
     def target_coordinates(self):
-        return f"{self.target_galaxy}:{self.target_system}:{self.target_position}"
+        return Coordinates(
+            galaxy=self.target_galaxy,
+            system=self.target_system,
+            position=self.target_position,
+        )
 
     @property
     def target_display_name(self):
         if self.target_planet_id and self.target_planet is not None:
             return self.target_planet.name
-        return self.target_coordinates
+        return str(self.target_coordinates)
 
     @property
     def next_event_at(self):

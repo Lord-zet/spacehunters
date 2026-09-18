@@ -225,7 +225,7 @@ class SendFleetForm(forms.Form):
         target_coordinates = (cleaned_data.get("target_coordinates") or "").strip()
 
         if not target_coordinates and target_planet is not None:
-            target_coordinates = target_planet.coordinates
+            target_coordinates = str(target_planet.coordinates)
             cleaned_data["target_coordinates"] = target_coordinates
 
         if not target_coordinates:

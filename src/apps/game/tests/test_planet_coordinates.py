@@ -1,6 +1,8 @@
 from django.db import IntegrityError
 from django.test import TestCase
 
+from apps.game.domain.world import Coordinates
+
 from .helpers import PlanetTestMixin
 
 
@@ -12,7 +14,7 @@ class PlanetCoordinatesTests(PlanetTestMixin, TestCase):
             position=9,
         )
 
-        self.assertEqual(planet.coordinates, "2:145:9")
+        self.assertEqual(planet.coordinates, Coordinates(galaxy=2, system=145, position=9))
 
     def test_planet_coordinates_must_be_unique(self):
         self.create_planet(

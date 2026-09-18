@@ -217,7 +217,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         )
 
         self.assertIsNone(fleet.target_planet)
-        self.assertEqual(fleet.target_coordinates, "1:99:9")
+        self.assertEqual(fleet.target_coordinates.as_tuple(), (1, 99, 9))
         self.assertEqual(fleet.mission_type, Fleet.MissionType.COLONIZE)
         self.assertIsNone(fleet.return_time)
 

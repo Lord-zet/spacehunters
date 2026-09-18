@@ -289,7 +289,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.ESPIONAGE,
-                "target_coordinates": target_planet.coordinates,
+                "target_coordinates": str(target_planet.coordinates),
                 "speed_profile": "standard",
                 f"ship_{ESPIONAGE_PROBE_CODE}": 1,
                 "metal": 0,
@@ -325,7 +325,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.TRANSPORT,
-                "target_coordinates": target_planet.coordinates,
+                "target_coordinates": str(target_planet.coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": 1,
                 "metal": 0,
@@ -362,7 +362,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.STATION,
-                "target_coordinates": target_planet.coordinates,
+                "target_coordinates": str(target_planet.coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": 1,
                 "metal": 0,
@@ -399,7 +399,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.ESPIONAGE,
-                "target_coordinates": target_planet.coordinates,
+                "target_coordinates": str(target_planet.coordinates),
                 "speed_profile": "standard",
                 f"ship_{ESPIONAGE_PROBE_CODE}": 1,
                 "metal": 1,
@@ -449,7 +449,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
 
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data["target_planet"], target_planet)
-        self.assertEqual(form.cleaned_data["target_coordinates"], target_planet.coordinates)
+        self.assertEqual(form.cleaned_data["target_coordinates"], str(target_planet.coordinates))
 
     def test_parse_planet_coordinates_rejects_invalid_format(self):
         with self.assertRaisesMessage(Exception, "format"):
@@ -566,7 +566,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         form = SendFleetForm(
             data={
                 "mission_type": Fleet.MissionType.COLONIZE,
-                "target_coordinates": target_planet.coordinates,
+                "target_coordinates": str(target_planet.coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": 1,
                 "metal": 0,

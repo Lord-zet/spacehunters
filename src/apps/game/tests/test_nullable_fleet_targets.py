@@ -32,7 +32,7 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, fleet.target_coordinates)
+        self.assertContains(response, str(fleet.target_coordinates))
 
     def test_fleet_list_renders_fleet_without_target_planet(self):
         user = self.create_user("nullable_target_fleet_list_user")
@@ -58,7 +58,7 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, fleet.target_coordinates)
+        self.assertContains(response, str(fleet.target_coordinates))
 
     def create_fleet_without_target_planet(self, *, owner, source_planet, now):
         fleet = Fleet.objects.create(

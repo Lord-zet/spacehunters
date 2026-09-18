@@ -73,21 +73,11 @@ from .presenters.world import get_universe_coordinate_hint
 from apps.game.domain.world import Coordinates
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class FleetPreviewTarget:
-    galaxy: int
-    system: int
-    position: int
+    coordinates: Coordinates
 
     pk = None
-
-    @property
-    def coordinates(self):
-        return Coordinates(
-            galaxy=self.galaxy,
-            system=self.system,
-            position=self.position,
-        )
 
 
 @login_required
@@ -298,11 +288,7 @@ def send_fleet_preview(request, pk):
 
     target_planet = get_planet_at_coordinates(coordinates)
     if target_planet is None:
-        target_planet = FleetPreviewTarget(
-            galaxy=coordinates.galaxy,
-            system=coordinates.system,
-            position=coordinates.position,
-        )
+        target_planet = FleetPreviewTarget(coordinates=coordinates)
 
     speed_profile = request.POST.get("speed_profile")
     ship_quantities = _get_preview_ship_quantities(request.POST)

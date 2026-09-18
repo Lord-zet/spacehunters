@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 
+from apps.game.domain.world import Coordinates
 from apps.game.domain_services.sync import advance_user_state
 from apps.game.models import Fleet, FleetShip
 
@@ -18,9 +19,7 @@ class UserStateAdvanceTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -34,9 +33,7 @@ class UserStateAdvanceTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=4990,
             crystal=0,
             transporter_count=0,
@@ -94,9 +91,7 @@ class UserStateAdvanceTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             transporter_count=7,
             last_resource_update=start_time,
             metal_mine_level=0,
@@ -107,9 +102,7 @@ class UserStateAdvanceTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
             last_resource_update=start_time,
         )

@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 
+from apps.game.domain.world import Coordinates
 from apps.game.models import Fleet, FleetShip
 from apps.game.domain_services.fleet import send_transport_fleet, process_fleets_for_user
 from apps.game.domain.exceptions import (
@@ -22,9 +23,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -34,9 +33,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
             transporter_count=0,
@@ -125,9 +122,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
         )
 
@@ -166,9 +161,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
         )
 
@@ -207,9 +200,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
         )
 
@@ -241,9 +232,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=10000,
             crystal=10000,
             helion=500,
@@ -254,9 +243,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
             last_resource_update=now,
         )
@@ -288,9 +275,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -301,9 +286,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
             transporter_count=0,
@@ -366,9 +349,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -384,9 +365,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
             transporter_count=0,
@@ -432,9 +411,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -444,9 +421,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
             transporter_count=0,
@@ -493,9 +468,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -505,9 +478,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
             transporter_count=0,
@@ -555,9 +526,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             helion=50,
             transporter_count=0,
             is_homeland=False,
@@ -591,9 +560,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=10_000,
             transporter_count=1,
             last_resource_update=base_time,
@@ -601,9 +568,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=2,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=2, position=1),
             metal=100,
             transporter_count=0,
             is_homeland=False,
@@ -642,9 +607,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -654,9 +617,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
             transporter_count=0,

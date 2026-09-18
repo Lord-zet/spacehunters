@@ -7,7 +7,8 @@ from apps.game.domain_services.fleet import (
 )
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 from apps.game.domain_services.resources import Resource
-from apps.game.models import Fleet, Planet
+from apps.game.domain_services.planets import get_planet_at_coordinates
+from apps.game.models import Fleet
 
 from .helpers import PlanetTestMixin
 
@@ -16,13 +17,12 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
     def test_process_colonization_arrival_creates_planet_and_leaves_ships_on_target(self):
         user = self.create_user("colonization_success_user")
         start_time = timezone.now()
+        target_coordinates = Coordinates(galaxy=1, system=99, position=9)
 
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -32,7 +32,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
 
         fleet = send_colonization_fleet(
             source_planet=source_planet,
-            target_coordinates=Coordinates(galaxy=1, system=99, position=9),
+            target_coordinates=target_coordinates,
             ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 700,
@@ -46,7 +46,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
         process_fleets_for_user(user, at=fleet.arrival_time)
 
         fleet.refresh_from_db()
-        colony = Planet.objects.get(galaxy=1, system=99, position=9)
+        colony = get_planet_at_coordinates(target_coordinates)
 
         self.assertEqual(colony.owner, user)
         self.assertEqual(colony.name, "Kolonia 1:99:9")
@@ -65,13 +65,12 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
         user = self.create_user("colonization_return_user")
         other_user = self.create_user("colonization_occupier_user")
         start_time = timezone.now()
+        target_coordinates = Coordinates(galaxy=1, system=99, position=9)
 
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -84,7 +83,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
 
         fleet = send_colonization_fleet(
             source_planet=source_planet,
-            target_coordinates=Coordinates(galaxy=1, system=99, position=9),
+            target_coordinates=target_coordinates,
             ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 300,
@@ -97,9 +96,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
         occupied_planet = self.create_planet(
             owner=other_user,
             name="Occupied",
-            galaxy=1,
-            system=99,
-            position=9,
+            coordinates=target_coordinates,
             is_homeland=True,
             last_resource_update=start_time,
         )
@@ -114,7 +111,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
         self.assertIsNone(fleet.target_planet)
         self.assertEqual(fleet.metal, 300)
         self.assertEqual(self.get_planet_ship_quantity(occupied_planet, "transporter"), 0)
-        self.assertEqual(Planet.objects.filter(galaxy=1, system=99, position=9).count(), 1)
+        self.assertEqual(get_planet_at_coordinates(target_coordinates), occupied_planet)
 
         process_fleets_for_user(user, at=fleet.return_time)
 
@@ -128,13 +125,12 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
     def test_process_colonization_arrival_returns_fleet_when_player_reaches_planet_limit(self):
         user = self.create_user("colonization_planet_limit_user")
         start_time = timezone.now()
+        target_coordinates = Coordinates(galaxy=1, system=99, position=9)
 
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -144,7 +140,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
 
         fleet = send_colonization_fleet(
             source_planet=source_planet,
-            target_coordinates=Coordinates(galaxy=1, system=99, position=9),
+            target_coordinates=target_coordinates,
             ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 300,
@@ -159,9 +155,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
             self.create_planet(
                 owner=user,
                 name=f"Colony {index}",
-                galaxy=1,
-                system=index,
-                position=1,
+                coordinates=Coordinates(galaxy=1, system=index, position=1),
                 is_homeland=False,
                 last_resource_update=start_time,
             )
@@ -173,7 +167,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
 
         self.assertEqual(fleet.status, Fleet.Status.RETURNING)
         self.assertIsNone(fleet.target_planet)
-        self.assertFalse(Planet.objects.filter(galaxy=1, system=99, position=9).exists())
+        self.assertIsNone(get_planet_at_coordinates(target_coordinates))
 
         process_fleets_for_user(user, at=fleet.return_time)
 

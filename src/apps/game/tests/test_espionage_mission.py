@@ -26,9 +26,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=10_000,
             last_resource_update=now,
         )
@@ -36,9 +34,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=1,
-            system=2,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=2, position=1),
             is_homeland=True,
             last_resource_update=now,
         )
@@ -73,9 +69,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=3,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=3, position=1),
             helion=10_000,
             last_resource_update=now,
         )
@@ -83,9 +77,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=1,
-            system=4,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=4, position=1),
             is_homeland=True,
             planet_type="ice",
             radius_km=7_100,
@@ -130,9 +122,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=5,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=5, position=1),
             helion=10_000,
             last_resource_update=now,
         )
@@ -140,9 +130,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=1,
-            system=6,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=6, position=1),
             is_homeland=True,
             last_resource_update=now,
         )
@@ -170,18 +158,14 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=7,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=7, position=1),
             helion=10_000,
             transporter_count=1,
         )
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=1,
-            system=8,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=8, position=1),
             is_homeland=True,
         )
 
@@ -203,9 +187,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=9,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=9, position=1),
             helion=10_000,
             transporter_count=1,
         )
@@ -213,9 +195,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=1,
-            system=10,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=10, position=1),
             is_homeland=True,
         )
 
@@ -241,18 +221,14 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=7,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=7, position=1),
             helion=10_000,
             transporter_count=1,
         )
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=1,
-            system=8,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=8, position=1),
             is_homeland=True,
         )
 
@@ -273,17 +249,13 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=2,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=1, position=1),
             transporter_count=1,
         )
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=2,
-            system=2,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=2, position=1),
             is_homeland=True,
         )
 
@@ -309,17 +281,13 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=2,
-            system=3,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=3, position=1),
             transporter_count=1,
         )
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=2,
-            system=4,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=4, position=1),
             is_homeland=True,
         )
 
@@ -346,17 +314,13 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=2,
-            system=3,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=3, position=1),
             transporter_count=1,
         )
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=2,
-            system=4,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=4, position=1),
             is_homeland=True,
         )
 
@@ -383,17 +347,13 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=2,
-            system=5,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=5, position=1),
             transporter_count=1,
         )
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=2,
-            system=6,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=6, position=1),
             is_homeland=True,
         )
 
@@ -419,17 +379,13 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=2,
-            system=7,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=7, position=1),
             transporter_count=1,
         )
         target_planet = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=2,
-            system=8,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=8, position=1),
             is_homeland=False,
         )
 
@@ -465,9 +421,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=2,
-            system=9,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=9, position=1),
             transporter_count=1,
         )
 
@@ -493,9 +447,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=2,
-            system=9,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=9, position=1),
             transporter_count=1,
         )
 
@@ -521,9 +473,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=2,
-            system=10,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=10, position=1),
             transporter_count=1,
         )
 
@@ -553,17 +503,13 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=2,
-            system=10,
-            position=1,
+            coordinates=Coordinates(galaxy=2, system=10, position=1),
             transporter_count=1,
         )
         target_planet = self.create_planet(
             owner=user,
             name="Occupied",
-            galaxy=2,
-            system=99,
-            position=9,
+            coordinates=Coordinates(galaxy=2, system=99, position=9),
             is_homeland=False,
         )
 

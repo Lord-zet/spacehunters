@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 
+from apps.game.domain.world import Coordinates
 from apps.game.domain_services.fleet import process_fleets_for_user
 from apps.game.models import Fleet, FleetShip
 
@@ -18,9 +19,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -31,9 +30,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=4990,
             crystal=0,
             metal_mine_level=5,
@@ -107,9 +104,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -120,9 +115,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=4990,
             crystal=0,
             metal_mine_level=5,
@@ -184,9 +177,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=500,
             crystal=0,
             metal_mine_level=5,
@@ -200,9 +191,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             is_homeland=False,
             last_resource_update=start_time,
         )
@@ -261,9 +250,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
         planet_a = self.create_planet(
             owner=user,
             name="A",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             transporter_count=5,
             last_resource_update=start_time,
         )
@@ -271,9 +258,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
         planet_b = self.create_planet(
             owner=user,
             name="B",
-            galaxy=1,
-            system=1,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=1, position=2),
             is_homeland=False,
             transporter_count=0,
             last_resource_update=start_time,

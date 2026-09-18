@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.http import Http404
 from django.urls import reverse
 
+from apps.game.domain.world import Coordinates
 from apps.game.domain_services.reports import (
     ESPIONAGE_PLANET_SECTION,
     REPORT_PAYLOAD_SCHEMA_VERSION,
@@ -79,16 +80,12 @@ class ReportServiceTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=owner,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
         )
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=1,
-            system=2,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=2, position=1),
             is_homeland=True,
             planet_type="ocean",
             radius_km=6_800,
@@ -128,24 +125,18 @@ class ReportSelectorTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=owner,
             name="Source",
-            galaxy=1,
-            system=10,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=10, position=1),
         )
         target_planet = self.create_planet(
             owner=other_user,
             name="Target",
-            galaxy=1,
-            system=11,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=11, position=1),
             is_homeland=True,
         )
         other_source = self.create_planet(
             owner=other_user,
             name="Other Source",
-            galaxy=1,
-            system=12,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=12, position=1),
             is_homeland=False,
         )
 
@@ -171,16 +162,12 @@ class ReportSelectorTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=owner,
             name="Source",
-            galaxy=1,
-            system=20,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=20, position=1),
         )
         target_planet = self.create_planet(
             owner=other_user,
             name="Target",
-            galaxy=1,
-            system=21,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=21, position=1),
             is_homeland=True,
         )
         report = create_espionage_report(
@@ -201,32 +188,24 @@ class ReportViewTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=owner,
             name="Source",
-            galaxy=1,
-            system=30,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=30, position=1),
         )
         own_target = self.create_planet(
             owner=other_user,
             name="Visible Target",
-            galaxy=1,
-            system=31,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=31, position=1),
             is_homeland=True,
         )
         other_source = self.create_planet(
             owner=other_user,
             name="Other Source",
-            galaxy=1,
-            system=32,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=32, position=1),
             is_homeland=False,
         )
         hidden_target = self.create_planet(
             owner=third_user,
             name="Hidden Target",
-            galaxy=1,
-            system=33,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=33, position=1),
             is_homeland=True,
         )
 
@@ -254,16 +233,12 @@ class ReportViewTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=owner,
             name="Source",
-            galaxy=1,
-            system=40,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=40, position=1),
         )
         target_planet = self.create_planet(
             owner=target_owner,
             name="Target",
-            galaxy=1,
-            system=41,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=41, position=1),
             is_homeland=True,
         )
         report = create_espionage_report(

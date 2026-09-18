@@ -15,9 +15,7 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             last_resource_update=now,
         )
         fleet = self.create_fleet_without_target_planet(
@@ -41,9 +39,7 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             last_resource_update=now,
         )
         fleet = self.create_fleet_without_target_planet(

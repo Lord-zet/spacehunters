@@ -74,6 +74,19 @@ class Planet(models.Model):
             position=self.position,
         )
 
+    @staticmethod
+    def coordinate_fields(coordinates: Coordinates) -> dict[str, int]:
+        return {
+            "galaxy": coordinates.galaxy,
+            "system": coordinates.system,
+            "position": coordinates.position,
+        }
+
+    def set_coordinates(self, coordinates: Coordinates) -> None:
+        self.galaxy = coordinates.galaxy
+        self.system = coordinates.system
+        self.position = coordinates.position
+
     @property
     def transporter_count(self):
         ship = self.ships.filter(ship_code="transporter").first()

@@ -67,11 +67,9 @@ def get_planet_limit_status(owner, *, lock: bool = False) -> PlanetLimitStatus:
 
 def get_planet_at_coordinates(coordinates: Coordinates) -> Planet | None:
     return (
-        Planet.objects.filter(
-            galaxy=coordinates.galaxy,
-            system=coordinates.system,
-            position=coordinates.position,
-        ).first()
+        Planet.objects
+        .filter(**Planet.coordinate_fields(coordinates))
+        .first()
     )
 
 
@@ -124,9 +122,7 @@ def create_planet(*, owner, name: str, coordinates: Coordinates, is_homeland: bo
     planet = Planet.objects.create(
         owner=owner,
         name=name,
-        galaxy=coordinates.galaxy,
-        system=coordinates.system,
-        position=coordinates.position,
+        **Planet.coordinate_fields(coordinates),
         is_homeland=is_homeland,
         planet_fields_total=planet_fields_total,
         planet_type=(

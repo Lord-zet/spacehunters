@@ -11,13 +11,11 @@ User = get_user_model()
 class Command(BaseCommand):
     help = "Creates test user and its planets"
 
-    def ensure_planet(self, *, owner, galaxy, system, position, name, is_homeland,
+    def ensure_planet(self, *, owner, coordinates, name, is_homeland,
                       planet_type, radius_km, temperature_min, temperature_max):
         planet = Planet.objects.filter(
             owner=owner,
-            galaxy=galaxy,
-            system=system,
-            position=position,
+            **Planet.coordinate_fields(coordinates),
         ).first()
 
         if planet is not None:
@@ -25,11 +23,7 @@ class Command(BaseCommand):
 
         return create_planet(
             owner=owner,
-            coordinates=Coordinates(
-                galaxy=galaxy,
-                system=system,
-                position=position,
-            ),
+            coordinates=coordinates,
             name=name,
             is_homeland=is_homeland,
             resources={
@@ -68,9 +62,7 @@ class Command(BaseCommand):
 
         self.ensure_planet(
             owner=user,
-            galaxy=1,
-            system=2,
-            position=5,
+            coordinates=Coordinates(galaxy=1, system=2, position=5),
             name="Planet1",
             is_homeland=True,
             planet_type="terrestrial",
@@ -81,9 +73,7 @@ class Command(BaseCommand):
 
         self.ensure_planet(
             owner=user,
-            galaxy=1,
-            system=2,
-            position=12,
+            coordinates=Coordinates(galaxy=1, system=2, position=12),
             name="Planet2",
             is_homeland=False,
             planet_type="desert",

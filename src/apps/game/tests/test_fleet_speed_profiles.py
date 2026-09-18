@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 
+from apps.game.domain.world import Coordinates
 from apps.game.domain_services.fleet import (
     calculate_effective_fleet_speed_multiplier,
     send_espionage_fleet,
@@ -47,9 +48,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=10_000,
             transporter_count=1,
             last_resource_update=now,
@@ -57,9 +56,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=2,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=2, position=1),
             transporter_count=0,
             is_homeland=False,
             last_resource_update=now,
@@ -87,9 +84,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=100_000,
             transporter_count=2,
             last_resource_update=now,
@@ -97,9 +92,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=5,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=5, position=1),
             transporter_count=0,
             is_homeland=False,
             last_resource_update=now,
@@ -140,9 +133,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=100_000,
             transporter_count=2,
             last_resource_update=now,
@@ -150,9 +141,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=5,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=5, position=1),
             transporter_count=0,
             is_homeland=False,
             last_resource_update=now,
@@ -193,9 +182,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=100_000,
             transporter_count=2,
             last_resource_update=now,
@@ -203,9 +190,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=5,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=5, position=1),
             transporter_count=0,
             is_homeland=False,
             last_resource_update=now,
@@ -247,9 +232,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=100_000,
             transporter_count=1,
             last_resource_update=now,
@@ -262,9 +245,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=5,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=5, position=1),
             transporter_count=0,
             is_homeland=False,
             last_resource_update=now,

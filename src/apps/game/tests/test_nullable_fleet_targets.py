@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.game.domain.world import Coordinates
 from apps.game.models import Fleet, FleetShip
 
 from .helpers import PlanetTestMixin
@@ -65,9 +66,9 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
             owner=owner,
             source_planet=source_planet,
             target_planet=None,
-            target_galaxy=1,
-            target_system=99,
-            target_position=9,
+            **Fleet.target_coordinate_fields(
+                Coordinates(galaxy=1, system=99, position=9)
+            ),
             mission_type=Fleet.MissionType.COLONIZE,
             status=Fleet.Status.OUTBOUND,
             departure_time=now,

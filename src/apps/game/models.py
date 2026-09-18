@@ -257,6 +257,19 @@ class Fleet(models.Model):
             position=self.target_position,
         )
 
+    @staticmethod
+    def target_coordinate_fields(coordinates: Coordinates) -> dict[str, int]:
+        return {
+            "target_galaxy": coordinates.galaxy,
+            "target_system": coordinates.system,
+            "target_position": coordinates.position,
+        }
+
+    def set_target_coordinates(self, coordinates: Coordinates) -> None:
+        self.target_galaxy = coordinates.galaxy
+        self.target_system = coordinates.system
+        self.target_position = coordinates.position
+
     @property
     def target_display_name(self):
         if self.target_planet_id and self.target_planet is not None:
@@ -306,17 +319,14 @@ class Fleet(models.Model):
             self.target_position,
         )):
             target_planet = self.target_planet
-            self.target_galaxy = target_planet.galaxy
-            self.target_system = target_planet.system
-            self.target_position = target_planet.position
+            self.set_target_coordinates(target_planet.coordinates)
 
             update_fields = kwargs.get("update_fields")
             if update_fields is not None:
-                kwargs["update_fields"] = set(update_fields) | {
-                    "target_galaxy",
-                    "target_system",
-                    "target_position",
-                }
+                kwargs["update_fields"] = (
+                    set(update_fields)
+                    | set(self.target_coordinate_fields(target_planet.coordinates))
+                )
 
         super().save(*args, **kwargs)
 

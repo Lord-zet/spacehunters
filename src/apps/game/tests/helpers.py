@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 
+from apps.game.domain.world import Coordinates
 from apps.game.models import Planet, PlanetShip, FleetShip
 from apps.game.domain_services.planets import create_planet
 
@@ -77,9 +78,11 @@ class PlanetTestMixin:
         planet = create_planet(
             owner=planet_data["owner"],
             name=planet_data["name"],
-            galaxy=planet_data["galaxy"],
-            system=planet_data["system"],
-            position=planet_data["position"],
+            coordinates=Coordinates(
+                galaxy=planet_data["galaxy"],
+                system=planet_data["system"],
+                position=planet_data["position"],
+            ),
             is_homeland=planet_data["is_homeland"],
             planet_fields_total=planet_data["planet_fields_total"],
             resources={

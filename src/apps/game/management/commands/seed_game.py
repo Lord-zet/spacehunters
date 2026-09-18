@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 
 from apps.game.models import Planet
+from apps.game.domain.world import Coordinates
 from apps.game.domain_services.planets import create_planet
 
 User = get_user_model()
@@ -24,9 +25,11 @@ class Command(BaseCommand):
 
         return create_planet(
             owner=owner,
-            galaxy=galaxy,
-            system=system,
-            position=position,
+            coordinates=Coordinates(
+                galaxy=galaxy,
+                system=system,
+                position=position,
+            ),
             name=name,
             is_homeland=is_homeland,
             resources={

@@ -497,13 +497,13 @@ def validate_mission_target(mission_handler, source_planet, target, user) -> Non
 
 
 def create_colony_from_fleet(fleet, *, at):
-    coordinates = {
-        "galaxy": fleet.target_galaxy,
-        "system": fleet.target_system,
-        "position": fleet.target_position,
-    }
+    coordinates = fleet.target_coordinates
 
-    if Planet.objects.filter(**coordinates).exists():
+    if Planet.objects.filter(
+        galaxy=coordinates.galaxy,
+        system=coordinates.system,
+        position=coordinates.position,
+    ).exists():
         return None
 
     try:
@@ -516,7 +516,7 @@ def create_colony_from_fleet(fleet, *, at):
                 "crystal": 0,
                 "helion": 0,
             },
-            **coordinates,
+            coordinates=coordinates,
         )
     except (IntegrityError, PlanetLimitReachedError):
         return None

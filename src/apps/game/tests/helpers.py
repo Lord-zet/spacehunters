@@ -32,15 +32,10 @@ class PlanetTestMixin:
         if owner is None:
             owner = self.create_user()
 
-        coordinates = overrides.pop("coordinates", None)
-        if coordinates is None:
-            coordinates = Coordinates(
-                galaxy=overrides.pop("galaxy", 1),
-                system=overrides.pop("system", 1),
-                position=overrides.pop("position", 1),
-            )
-        elif any(key in overrides for key in ("galaxy", "system", "position")):
-            raise ValueError("Pass either coordinates or galaxy/system/position.")
+        coordinates = overrides.pop(
+            "coordinates",
+            Coordinates(galaxy=1, system=1, position=1),
+        )
 
         planet_data = {
             "owner": owner,

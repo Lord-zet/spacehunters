@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 
+from apps.game.domain.world import Coordinates
 from apps.game.models import Planet, PlanetShip, FleetShip
 from apps.game.domain_services.planets import create_planet
 
@@ -31,12 +32,14 @@ class PlanetTestMixin:
         if owner is None:
             owner = self.create_user()
 
+        coordinates = overrides.pop(
+            "coordinates",
+            Coordinates(galaxy=1, system=1, position=1),
+        )
+
         planet_data = {
             "owner": owner,
             "name": "Test Planet",
-            "galaxy": 1,
-            "system": 1,
-            "position": 1,
             "metal": 500,
             "crystal": 200,
             "helion": 0,
@@ -77,9 +80,7 @@ class PlanetTestMixin:
         planet = create_planet(
             owner=planet_data["owner"],
             name=planet_data["name"],
-            galaxy=planet_data["galaxy"],
-            system=planet_data["system"],
-            position=planet_data["position"],
+            coordinates=coordinates,
             is_homeland=planet_data["is_homeland"],
             planet_fields_total=planet_data["planet_fields_total"],
             resources={

@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.game.domain.world import Coordinates
 from apps.game.models import Fleet, FleetShip
 
 from .helpers import PlanetTestMixin
@@ -14,9 +15,7 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             last_resource_update=now,
         )
         fleet = self.create_fleet_without_target_planet(
@@ -32,7 +31,7 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, fleet.target_coordinates)
+        self.assertContains(response, str(fleet.target_coordinates))
 
     def test_fleet_list_renders_fleet_without_target_planet(self):
         user = self.create_user("nullable_target_fleet_list_user")
@@ -40,9 +39,7 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             last_resource_update=now,
         )
         fleet = self.create_fleet_without_target_planet(
@@ -58,16 +55,16 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, fleet.target_coordinates)
+        self.assertContains(response, str(fleet.target_coordinates))
 
     def create_fleet_without_target_planet(self, *, owner, source_planet, now):
         fleet = Fleet.objects.create(
             owner=owner,
             source_planet=source_planet,
             target_planet=None,
-            target_galaxy=1,
-            target_system=99,
-            target_position=9,
+            **Fleet.target_coordinate_fields(
+                Coordinates(galaxy=1, system=99, position=9)
+            ),
             mission_type=Fleet.MissionType.COLONIZE,
             status=Fleet.Status.OUTBOUND,
             departure_time=now,

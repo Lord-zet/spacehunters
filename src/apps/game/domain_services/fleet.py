@@ -44,7 +44,7 @@ from apps.game.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
     get_fleet_speed_multiplier,
 )
-from .planets import create_planet, get_planet_limit_status
+from .planets import create_planet, get_planet_at_coordinates, get_planet_limit_status
 
 
 DEFAULT_TRANSPORTER_CODE = "transporter"
@@ -58,14 +58,8 @@ MISSION_TARGET_EMPTY_COORDINATES = "empty_coordinates"
 
 @dataclass(frozen=True, slots=True)
 class FleetTarget:
-    galaxy: int
-    system: int
-    position: int
+    coordinates: Coordinates
     planet: Planet | None = None
-
-    @property
-    def coordinates(self):
-        return f"{self.galaxy}:{self.system}:{self.position}"
 
 
 def get_planet_ships_display(planet, form=None):
@@ -132,7 +126,7 @@ def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantiti
     if base_burn <= 0:
         return 0
 
-    distance = calculate_distance(source_planet, target_planet)
+    distance = calculate_distance(source_planet.coordinates, target_planet.coordinates)
     raw_cost = base_burn * distance * fuel_multiplier / HELION_DISTANCE_DIVISOR
 
     return max(MIN_HELION_COST, math.ceil(raw_cost))
@@ -427,26 +421,16 @@ def get_mission_handler(mission_type: str) -> BaseMission:
     return handler
 
 
-def validate_target_coordinates(coordinates) -> tuple[int, int, int]:
-    try:
-        galaxy, system, position = (
-            int(value)
-            for value in coordinates
-        )
-    except (TypeError, ValueError) as exc:
-        raise FleetError("Koordynaty celu muszą zawierać galaktykę, system i pozycję.") from exc
+def validate_target_coordinates(coordinates: Coordinates) -> Coordinates:
+    if not isinstance(coordinates, Coordinates):
+        raise FleetError("Koordynaty celu muszą być obiektem Coordinates.")
 
-    target_coordinates = Coordinates(
-        galaxy=galaxy,
-        system=system,
-        position=position,
-    )
     try:
-        DEFAULT_UNIVERSE_RULES.validate_coordinates(target_coordinates)
+        DEFAULT_UNIVERSE_RULES.validate_coordinates(coordinates)
     except InvalidCoordinatesError as exc:
         raise FleetError(str(exc)) from exc
 
-    return target_coordinates.as_tuple()
+    return coordinates
 
 
 def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> FleetTarget:
@@ -455,11 +439,7 @@ def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> Flee
 
     if target_planet is not None:
         target_planet = Planet.objects.get(pk=target_planet.pk)
-        planet_coordinates = (
-            target_planet.galaxy,
-            target_planet.system,
-            target_planet.position,
-        )
+        planet_coordinates = target_planet.coordinates
 
         if target_coordinates is not None:
             requested_coordinates = validate_target_coordinates(target_coordinates)
@@ -467,23 +447,15 @@ def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> Flee
                 raise FleetError("Planeta docelowa nie pasuje do podanych koordynatów.")
 
         return FleetTarget(
-            galaxy=target_planet.galaxy,
-            system=target_planet.system,
-            position=target_planet.position,
+            coordinates=target_planet.coordinates,
             planet=target_planet,
         )
 
-    galaxy, system, position = validate_target_coordinates(target_coordinates)
-    target_planet = (
-        Planet.objects
-        .filter(galaxy=galaxy, system=system, position=position)
-        .first()
-    )
+    coordinates = validate_target_coordinates(target_coordinates)
+    target_planet = get_planet_at_coordinates(coordinates)
 
     return FleetTarget(
-        galaxy=galaxy,
-        system=system,
-        position=position,
+        coordinates=coordinates,
         planet=target_planet,
     )
 
@@ -517,13 +489,9 @@ def validate_mission_target(mission_handler, source_planet, target, user) -> Non
 
 
 def create_colony_from_fleet(fleet, *, at):
-    coordinates = {
-        "galaxy": fleet.target_galaxy,
-        "system": fleet.target_system,
-        "position": fleet.target_position,
-    }
+    coordinates = fleet.target_coordinates
 
-    if Planet.objects.filter(**coordinates).exists():
+    if get_planet_at_coordinates(coordinates) is not None:
         return None
 
     try:
@@ -536,7 +504,7 @@ def create_colony_from_fleet(fleet, *, at):
                 "crystal": 0,
                 "helion": 0,
             },
-            **coordinates,
+            coordinates=coordinates,
         )
     except (IntegrityError, PlanetLimitReachedError):
         return None
@@ -632,11 +600,7 @@ def _send_fleet_mission(
 
     ensure_source_planet_belongs_to_user(source_planet, user)
 
-    if (
-        source_planet.galaxy == target.galaxy
-        and source_planet.system == target.system
-        and source_planet.position == target.position
-    ):
+    if source_planet.coordinates == target.coordinates:
         raise SamePlanetTransportError("Nie można wysłać floty na tę samą planetę.")
 
     validate_mission_target(mission_handler, source_planet, target, user)
@@ -676,7 +640,11 @@ def _send_fleet_mission(
     source_planet.save(update_fields=RESOURCE_STATE_FIELDS)
 
     speed_multiplier = calculate_effective_fleet_speed_multiplier(ship_quantities, speed_profile)
-    flight_time_seconds = calculate_flight_time_seconds(source_planet, target, speed_multiplier)
+    flight_time_seconds = calculate_flight_time_seconds(
+        source_planet.coordinates,
+        target.coordinates,
+        speed_multiplier,
+    )
     flight_duration = timedelta(seconds=flight_time_seconds)
 
     arrival_time = now + flight_duration
@@ -690,9 +658,7 @@ def _send_fleet_mission(
         owner=user,
         source_planet=source_planet,
         target_planet=target.planet,
-        target_galaxy=target.galaxy,
-        target_system=target.system,
-        target_position=target.position,
+        **Fleet.target_coordinate_fields(target.coordinates),
         helion_cost=helion_cost,
         mission_type=mission_type,
         status=Fleet.Status.OUTBOUND,

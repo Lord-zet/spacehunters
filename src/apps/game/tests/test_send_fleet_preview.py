@@ -9,6 +9,7 @@ from apps.game.domain_services.travel import calculate_flight_time_seconds
 from apps.game.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
 )
+from apps.game.domain.world import Coordinates
 from apps.game.models import Fleet
 from apps.game.ships import ESPIONAGE_PROBE_CODE
 
@@ -32,16 +33,12 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
         )
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=2,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=2, position=1),
             is_homeland=False,
         )
 
@@ -52,7 +49,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             data={
                 "mission_type": "transport",
                 "target_planet": str(target.pk),
-                "target_coordinates": target.coordinates,
+                "target_coordinates": str(target.coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": "1",
             },
@@ -63,8 +60,8 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         ship_quantities = {"transporter": 1}
         speed_profile = "standard"
         expected_flight_time_seconds = calculate_flight_time_seconds(
-            source,
-            target,
+            source.coordinates,
+            target.coordinates,
             calculate_effective_fleet_speed_multiplier(
                 ship_quantities,
                 speed_profile,
@@ -82,7 +79,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
                 "source_planet_id": source.pk,
                 "mission_type": "transport",
                 "target_planet_id": target.pk,
-                "target_coordinates": target.coordinates,
+                "target_coordinates": str(target.coordinates),
                 "speed_profile": speed_profile,
                 "ship_quantities": ship_quantities,
                 "flight_time_seconds": expected_flight_time_seconds,
@@ -95,16 +92,12 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
         )
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=2,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=2, position=1),
             is_homeland=False,
         )
 
@@ -115,7 +108,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             data={
                 "mission_type": "transport",
                 "target_planet": str(target.pk),
-                "target_coordinates": target.coordinates,
+                "target_coordinates": str(target.coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": "1",
                 "ship_large_transporter": "",
@@ -133,16 +126,12 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
         )
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=3,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=3, position=1),
             is_homeland=False,
         )
 
@@ -165,7 +154,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
 
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["preview"]["target_planet_id"], target.pk)
-        self.assertEqual(payload["preview"]["target_coordinates"], target.coordinates)
+        self.assertEqual(payload["preview"]["target_coordinates"], str(target.coordinates))
         self.assertGreater(payload["preview"]["flight_time_seconds"], 0)
         self.assertGreater(payload["preview"]["helion_cost"], 0)
 
@@ -174,9 +163,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
         )
 
         self.client.force_login(user)
@@ -196,12 +183,11 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
 
     def test_send_fleet_preview_calculates_for_unoccupied_coordinates(self):
         user = self.create_user("preview_unoccupied_coordinates_user")
+        target_coordinates = Coordinates(galaxy=1, system=99, position=9)
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
         )
 
         self.client.force_login(user)
@@ -210,7 +196,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             reverse("game:send_fleet_preview", kwargs={"pk": source.pk}),
             data={
                 "mission_type": "transport",
-                "target_coordinates": "1:99:9",
+                "target_coordinates": str(target_coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": "1",
             },
@@ -222,18 +208,17 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
 
         self.assertTrue(payload["ok"])
         self.assertIsNone(payload["preview"]["target_planet_id"])
-        self.assertEqual(payload["preview"]["target_coordinates"], "1:99:9")
+        self.assertEqual(payload["preview"]["target_coordinates"], str(target_coordinates))
         self.assertGreater(payload["preview"]["flight_time_seconds"], 0)
         self.assertGreater(payload["preview"]["helion_cost"], 0)
 
     def test_send_fleet_still_rejects_unoccupied_coordinates(self):
         user = self.create_user("send_unoccupied_coordinates_user")
+        target_coordinates = Coordinates(galaxy=1, system=99, position=9)
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=10_000,
             transporter_count=1,
         )
@@ -244,7 +229,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             reverse("game:send_fleet", kwargs={"pk": source.pk}),
             data={
                 "mission_type": "transport",
-                "target_coordinates": "1:99:9",
+                "target_coordinates": str(target_coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": "1",
                 "metal": "0",
@@ -262,16 +247,12 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
         )
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=5,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=5, position=1),
             is_homeland=False,
         )
 
@@ -283,7 +264,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
                 data={
                     "mission_type": "transport",
                     "target_planet": str(target.pk),
-                    "target_coordinates": target.coordinates,
+                    "target_coordinates": str(target.coordinates),
                     "speed_profile": speed_profile,
                     "ship_transporter": "1",
                 },
@@ -309,16 +290,12 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             name="Source",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
         )
         target = self.create_planet(
             owner=user,
             name="Target",
-            galaxy=1,
-            system=5,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=5, position=1),
             is_homeland=False,
         )
 
@@ -329,7 +306,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             data={
                 "mission_type": "transport",
                 "target_planet": str(target.pk),
-                "target_coordinates": target.coordinates,
+                "target_coordinates": str(target.coordinates),
                 "speed_profile": "standard",
                 "ship_transporter": "1",
             },
@@ -339,7 +316,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             data={
                 "mission_type": "espionage",
                 "target_planet": str(target.pk),
-                "target_coordinates": target.coordinates,
+                "target_coordinates": str(target.coordinates),
                 "speed_profile": "standard",
                 f"ship_{ESPIONAGE_PROBE_CODE}": "1",
             },

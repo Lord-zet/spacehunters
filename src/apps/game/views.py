@@ -29,6 +29,7 @@ from .domain_services.fleet import (
 from .domain_services.travel import calculate_flight_time_seconds
 from .domain_services.buildings import start_building_upgrade, cancel_building_upgrade
 from .domain_services.planets import (
+    get_planet_at_coordinates,
     get_planet_limit_status,
     rename_planet as update_planet_name,
 )
@@ -69,19 +70,14 @@ from .presenters.reports import (
     get_valid_report_category,
 )
 from .presenters.world import get_universe_coordinate_hint
+from apps.game.domain.world import Coordinates
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class FleetPreviewTarget:
-    galaxy: int
-    system: int
-    position: int
+    coordinates: Coordinates
 
     pk = None
-
-    @property
-    def coordinates(self):
-        return f"{self.galaxy}:{self.system}:{self.position}"
 
 
 @login_required
@@ -206,7 +202,7 @@ def send_fleet(request, pk):
             mission_type = form.cleaned_data.get("mission_type")
             ship_quantities = form.get_ship_quantities()
             target_planet = form.cleaned_data.get("target_planet")
-            target_coordinates = parse_planet_coordinates(form.cleaned_data["target_coordinates"])
+            target_coordinates = form.cleaned_data["target_coordinates"]
             cargo = form.get_cargo()
             speed_profile = form.cleaned_data["speed_profile"]
 
@@ -280,23 +276,19 @@ def send_fleet_preview(request, pk):
             selected_target = None
 
         if selected_target is not None:
-            target_coordinates = selected_target.coordinates
+            target_coordinates = str(selected_target.coordinates)
 
     if not target_coordinates:
         return JsonResponse({"ok": False})
 
     try:
-        galaxy, system, position = parse_planet_coordinates(target_coordinates)
+        coordinates = parse_planet_coordinates(target_coordinates)
     except ValidationError:
         return JsonResponse({"ok": False})
 
-    target_planet = Planet.objects.filter(galaxy=galaxy, system=system, position=position).first()
+    target_planet = get_planet_at_coordinates(coordinates)
     if target_planet is None:
-        target_planet = FleetPreviewTarget(
-            galaxy=galaxy,
-            system=system,
-            position=position,
-        )
+        target_planet = FleetPreviewTarget(coordinates=coordinates)
 
     speed_profile = request.POST.get("speed_profile")
     ship_quantities = _get_preview_ship_quantities(request.POST)
@@ -347,8 +339,8 @@ def _send_fleet_preview_response(
     )
     fuel_multiplier = get_fleet_fuel_multiplier(speed_profile)
     flight_time_seconds = calculate_flight_time_seconds(
-        source_planet,
-        target_planet,
+        source_planet.coordinates,
+        target_planet.coordinates,
         speed_multiplier,
     )
     helion_cost = calculate_helion_cost_for_flight(
@@ -364,7 +356,7 @@ def _send_fleet_preview_response(
             "source_planet_id": source_planet.pk,
             "mission_type": mission_type,
             "target_planet_id": target_planet.pk,
-            "target_coordinates": target_planet.coordinates,
+            "target_coordinates": str(target_planet.coordinates),
             "speed_profile": speed_profile,
             "ship_quantities": ship_quantities,
             "flight_time_seconds": flight_time_seconds,

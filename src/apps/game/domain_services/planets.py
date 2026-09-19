@@ -65,6 +65,14 @@ def get_planet_limit_status(owner, *, lock: bool = False) -> PlanetLimitStatus:
     )
 
 
+def get_planet_at_coordinates(coordinates: Coordinates) -> Planet | None:
+    return (
+        Planet.objects
+        .filter(**Planet.coordinate_fields(coordinates))
+        .first()
+    )
+
+
 @transaction.atomic
 def rename_planet(planet: Planet, new_name: str) -> Planet:
     normalized_name = new_name.strip()
@@ -95,12 +103,11 @@ def rename_planet(planet: Planet, new_name: str) -> Planet:
 
 
 @transaction.atomic
-def create_planet(*, owner, name: str, galaxy: int, system: int, position: int, is_homeland: bool = False,
+def create_planet(*, owner, name: str, coordinates: Coordinates, is_homeland: bool = False,
                   planet_fields_total: int = 90, resources: dict | None = None, buildings: dict | None = None,
                   ships: dict | None = None, planet_type=None, radius_km=None, temperature_min=None,
                   temperature_max=None, rng=None,) -> Planet:
 
-    coordinates = Coordinates(galaxy=galaxy, system=system, position=position)
     DEFAULT_UNIVERSE_RULES.validate_coordinates(coordinates)
 
     planet_limit = get_planet_limit_status(owner, lock=True)
@@ -115,9 +122,7 @@ def create_planet(*, owner, name: str, galaxy: int, system: int, position: int, 
     planet = Planet.objects.create(
         owner=owner,
         name=name,
-        galaxy=galaxy,
-        system=system,
-        position=position,
+        **Planet.coordinate_fields(coordinates),
         is_homeland=is_homeland,
         planet_fields_total=planet_fields_total,
         planet_type=(

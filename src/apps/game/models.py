@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .buildings import BUILDINGS
 from .ships import SHIPS
+from .domain.world import Coordinates
 
 
 PLANET_NAME_MAX_LENGTH = 50
@@ -67,7 +68,24 @@ class Planet(models.Model):
 
     @property
     def coordinates(self):
-        return f"{self.galaxy}:{self.system}:{self.position}"
+        return Coordinates(
+            galaxy=self.galaxy,
+            system=self.system,
+            position=self.position,
+        )
+
+    @staticmethod
+    def coordinate_fields(coordinates: Coordinates) -> dict[str, int]:
+        return {
+            "galaxy": coordinates.galaxy,
+            "system": coordinates.system,
+            "position": coordinates.position,
+        }
+
+    def set_coordinates(self, coordinates: Coordinates) -> None:
+        self.galaxy = coordinates.galaxy
+        self.system = coordinates.system
+        self.position = coordinates.position
 
     @property
     def transporter_count(self):
@@ -246,13 +264,30 @@ class Fleet(models.Model):
 
     @property
     def target_coordinates(self):
-        return f"{self.target_galaxy}:{self.target_system}:{self.target_position}"
+        return Coordinates(
+            galaxy=self.target_galaxy,
+            system=self.target_system,
+            position=self.target_position,
+        )
+
+    @staticmethod
+    def target_coordinate_fields(coordinates: Coordinates) -> dict[str, int]:
+        return {
+            "target_galaxy": coordinates.galaxy,
+            "target_system": coordinates.system,
+            "target_position": coordinates.position,
+        }
+
+    def set_target_coordinates(self, coordinates: Coordinates) -> None:
+        self.target_galaxy = coordinates.galaxy
+        self.target_system = coordinates.system
+        self.target_position = coordinates.position
 
     @property
     def target_display_name(self):
         if self.target_planet_id and self.target_planet is not None:
             return self.target_planet.name
-        return self.target_coordinates
+        return str(self.target_coordinates)
 
     @property
     def next_event_at(self):
@@ -297,17 +332,14 @@ class Fleet(models.Model):
             self.target_position,
         )):
             target_planet = self.target_planet
-            self.target_galaxy = target_planet.galaxy
-            self.target_system = target_planet.system
-            self.target_position = target_planet.position
+            self.set_target_coordinates(target_planet.coordinates)
 
             update_fields = kwargs.get("update_fields")
             if update_fields is not None:
-                kwargs["update_fields"] = set(update_fields) | {
-                    "target_galaxy",
-                    "target_system",
-                    "target_position",
-                }
+                kwargs["update_fields"] = (
+                    set(update_fields)
+                    | set(self.target_coordinate_fields(target_planet.coordinates))
+                )
 
         super().save(*args, **kwargs)
 

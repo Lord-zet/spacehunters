@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 
+from apps.game.domain.world import Coordinates
 from apps.game.models import Planet
 from apps.game.domain_services.resources import (
     synchronize_resources,
@@ -48,9 +49,7 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
             owner=user,
             last_resource_update=start_time,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=3,
+            coordinates=Coordinates(galaxy=1, system=2, position=3),
             metal=7400,
             crystal=7300,
             metal_mine_level=10,
@@ -78,9 +77,7 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
             owner=user,
             last_resource_update=start_time,
             name="Venus",
-            galaxy=1,
-            system=4,
-            position=5,
+            coordinates=Coordinates(galaxy=1, system=4, position=5),
             metal=1200,
             crystal=800,
             metal_mine_level=3,
@@ -104,9 +101,7 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
             owner=user,
             last_resource_update=start_time,
             name="Jupiter",
-            galaxy=1,
-            system=6,
-            position=7,
+            coordinates=Coordinates(galaxy=1, system=6, position=7),
             metal=1500,
             crystal=900,
             metal_mine_level=4,
@@ -132,9 +127,7 @@ class SynchronizeResourcesTests(PlanetTestMixin, TestCase):
             owner=user,
             last_resource_update=start_time,
             name="Saturn",
-            galaxy=1,
-            system=8,
-            position=9,
+            coordinates=Coordinates(galaxy=1, system=8, position=9),
             metal=500,
             crystal=200,
             metal_mine_level=2,
@@ -219,8 +212,7 @@ class ResourceProductionProgressionTests(PlanetTestMixin, TestCase):
         planet_lvl_1 = self.create_planet(
             owner=self.create_user("prod_lvl_1"),
             is_homeland=True,
-            system=40,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=40, position=1),
             metal_mine_level=1,
             crystal_mine_level=0,
             helion_synthesizer_level=0,
@@ -228,8 +220,7 @@ class ResourceProductionProgressionTests(PlanetTestMixin, TestCase):
         planet_lvl_5 = self.create_planet(
             owner=self.create_user("prod_lvl_5"),
             is_homeland=True,
-            system=40,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=40, position=2),
             metal_mine_level=5,
             crystal_mine_level=0,
             helion_synthesizer_level=0,

@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 
+from apps.game.domain.world import Coordinates
 from apps.game.domain.exceptions import InvalidStationingTargetError
 from apps.game.domain_services.fleet import send_stationing_fleet, process_fleets_for_user
 from apps.game.domain_services.resources import Resource
@@ -16,9 +17,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -28,9 +27,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
             helion=0,
@@ -65,9 +62,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -81,9 +76,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user,
             name="Mars",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
             helion=0,
@@ -136,9 +129,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
         source_planet = self.create_planet(
             owner=user1,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             metal=5000,
             crystal=3000,
             helion=500,
@@ -148,9 +139,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
         target_planet = self.create_planet(
             owner=user2,
             name="Enemy",
-            galaxy=1,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
             helion=0,

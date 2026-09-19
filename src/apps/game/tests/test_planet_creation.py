@@ -1,8 +1,12 @@
 from django.test import TestCase
 
 from apps.game.domain.exceptions import InvalidCoordinatesError, PlanetLimitReachedError
-from apps.game.domain.world import DEFAULT_UNIVERSE_RULES
-from apps.game.domain_services.planets import create_planet, get_planet_limit_status
+from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
+from apps.game.domain_services.planets import (
+    create_planet,
+    get_planet_at_coordinates,
+    get_planet_limit_status,
+)
 from .helpers import PlanetTestMixin
 
 
@@ -13,9 +17,7 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
         planet = create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             is_homeland=True,
             ships={
                 "transporter": 2,
@@ -32,9 +34,7 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
         planet = create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             is_homeland=True,
         )
 
@@ -48,9 +48,11 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
             create_planet(
                 owner=user,
                 name="Outside",
-                galaxy=DEFAULT_UNIVERSE_RULES.galaxy_count + 1,
-                system=1,
-                position=1,
+                coordinates=Coordinates(
+                    galaxy=DEFAULT_UNIVERSE_RULES.galaxy_count + 1,
+                    system=1,
+                    position=1,
+                ),
                 is_homeland=True,
             )
 
@@ -61,9 +63,7 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
             create_planet(
                 owner=user,
                 name=f"Planet {index + 1}",
-                galaxy=1,
-                system=index + 1,
-                position=1,
+                coordinates=Coordinates(galaxy=1, system=index + 1, position=1),
                 is_homeland=(index == 0),
             )
 
@@ -71,9 +71,11 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
             create_planet(
                 owner=user,
                 name="Too Many",
-                galaxy=1,
-                system=DEFAULT_UNIVERSE_RULES.max_planets_per_player + 1,
-                position=1,
+                coordinates=Coordinates(
+                    galaxy=1,
+                    system=DEFAULT_UNIVERSE_RULES.max_planets_per_player + 1,
+                    position=1,
+                ),
                 is_homeland=False,
             )
 
@@ -83,9 +85,7 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
         create_planet(
             owner=user,
             name="Earth",
-            galaxy=1,
-            system=1,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
             is_homeland=True,
         )
 
@@ -95,3 +95,17 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
         self.assertEqual(status.maximum, DEFAULT_UNIVERSE_RULES.max_planets_per_player)
         self.assertEqual(status.remaining, DEFAULT_UNIVERSE_RULES.max_planets_per_player - 1)
         self.assertFalse(status.is_reached)
+
+    def test_get_planet_at_coordinates_returns_planet_matching_coordinates(self):
+        planet = self.create_planet(
+            coordinates=Coordinates(galaxy=2, system=20, position=7),
+        )
+
+        found_planet = get_planet_at_coordinates(Coordinates(galaxy=2, system=20, position=7))
+
+        self.assertEqual(found_planet, planet)
+
+    def test_get_planet_at_coordinates_returns_none_for_empty_position(self):
+        self.assertIsNone(
+            get_planet_at_coordinates(Coordinates(galaxy=2, system=20, position=7))
+        )

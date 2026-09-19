@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 
+from apps.game.domain.world import Coordinates
 from apps.game.domain.exceptions import ShipyardRequiredError
 from apps.game.domain_services.shipyard import (
     finish_ship_construction_if_ready,
@@ -71,8 +72,7 @@ class ShipyardTests(PlanetTestMixin, TestCase):
         planet_b = self.create_planet(
             owner=self.create_user("other_shipyard_user"),
             is_homeland=True,
-            system=2,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
             shipyard_level=5,
         )
 

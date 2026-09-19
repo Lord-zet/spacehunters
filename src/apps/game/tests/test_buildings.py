@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 
+from apps.game.domain.world import Coordinates
 from apps.game.domain_services.buildings import (
     calculate_build_cost,
     calculate_build_time,
@@ -308,8 +309,7 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
         planet = self.create_planet(
             owner=self.create_user("cost_lvl_1"),
             is_homeland=True,
-            system=20,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=20, position=1),
             metal_mine_level=1,
         )
         buildings = planet.get_buildings()
@@ -319,8 +319,7 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
         planet = self.create_planet(
             owner=self.create_user("cost_lvl_2"),
             is_homeland=True,
-            system=20,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=20, position=2),
             metal_mine_level=2,
         )
         buildings = planet.get_buildings()
@@ -343,15 +342,13 @@ class BuildingUpgradeCostProgressionTests(PlanetTestMixin, TestCase):
         mine_planet = self.create_planet(
             owner=self.create_user("mine_growth"),
             is_homeland=True,
-            system=30,
-            position=1,
+            coordinates=Coordinates(galaxy=1, system=30, position=1),
             metal_mine_level=10,
         )
         storage_planet = self.create_planet(
             owner=self.create_user("storage_growth"),
             is_homeland=True,
-            system=30,
-            position=2,
+            coordinates=Coordinates(galaxy=1, system=30, position=2),
             metal_storage_level=10,
         )
 

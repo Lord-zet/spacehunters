@@ -2,15 +2,17 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.game.domain.world import Coordinates
-from apps.game.domain_services.buildings import (
+from apps.game.domain.buildings import (
     calculate_build_cost,
     calculate_build_time,
-    finish_building_if_ready,
-    start_building_upgrade,
     get_build_cost_for_level,
     get_build_time_for_level,
     get_upgrade_cost_multiplier,
-    get_building_config
+    get_building_config,
+)
+from apps.game.domain_services.buildings import (
+    finish_building_if_ready,
+    start_building_upgrade,
 )
 from apps.game.domain.resources import get_storage_capacity_for_level
 from apps.game.presenters.buildings import (

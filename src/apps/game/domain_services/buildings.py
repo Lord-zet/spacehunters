@@ -1,5 +1,4 @@
 from datetime import timedelta
-from dataclasses import dataclass
 
 from django.db import transaction
 from django.utils import timezone
@@ -12,97 +11,15 @@ from apps.game.domain.exceptions import (
     NoBuildingInProgressError,
 )
 from apps.game.models import Planet, PlanetBuildings
-from apps.game.domain.buildings import BUILDINGS
+from apps.game.domain.buildings import (
+    BuildingCancellationResult,
+    calculate_building_cancel_refund,
+    get_build_cost_for_level,
+    get_build_time_for_level,
+    get_building_config,
+)
 from apps.game.domain.resources import RESOURCE_FIELDS, RESOURCE_STATE_FIELDS
 from .resources import synchronize_resources
-
-
-EARLY_COST_MULTIPLIERS = [
-    1.0,   # lvl 1
-    2.5,   # lvl 2
-    4.5,   # lvl 3
-    7.0,   # lvl 4
-    10.0,  # lvl 5
-]
-
-DEFAULT_COST_GROWTH_FACTOR = 1.33
-
-DEFAULT_BUILD_TIME_MULTIPLIER = 1.3
-
-BUILDING_CANCEL_REFUND_PERCENT = 50
-
-
-def round_building_cost(value: float) -> int:
-    if value < 1000:
-        return int(round(value))
-    if value < 10000:
-        return int(round(value / 50) * 50)
-    if value < 100000:
-        return int(round(value / 100) * 100)
-    return int(round(value / 500) * 500)
-
-
-def get_upgrade_cost_multiplier(
-    next_level: int,
-    growth_factor: float = DEFAULT_COST_GROWTH_FACTOR,
-) -> float:
-    if next_level <= len(EARLY_COST_MULTIPLIERS):
-        return EARLY_COST_MULTIPLIERS[next_level - 1]
-
-    anchor_multiplier = EARLY_COST_MULTIPLIERS[-1]
-    extra_levels = next_level - len(EARLY_COST_MULTIPLIERS)
-    return anchor_multiplier * (growth_factor ** extra_levels)
-
-
-def get_building_config(building_name):
-    return BUILDINGS.get(building_name)
-
-
-def get_building_label(building_name: str) -> str:
-    config = get_building_config(building_name)
-    return config.get("label", building_name)
-
-
-def calculate_build_cost(
-    target_level: int,
-    base_cost: dict[str, int],
-    growth_factor: float = DEFAULT_COST_GROWTH_FACTOR,
-) -> dict[str, int]:
-    """
-    Cost of reaching target_level.
-
-    Example:
-        calculate_build_cost(3, ...)
-        -> cost of upgrade 2 -> 3
-    """
-    if target_level <= 0:
-        raise ValueError("target_level must be greater than 0")
-
-    level_multiplier = get_upgrade_cost_multiplier(
-        target_level,
-        growth_factor=growth_factor,
-    )
-
-    result = {}
-
-    for resource, base in base_cost.items():
-        raw_cost = base * level_multiplier
-
-        if target_level <= len(EARLY_COST_MULTIPLIERS):
-            result[resource] = int(round(raw_cost))
-        else:
-            result[resource] = round_building_cost(raw_cost)
-
-    return result
-
-
-def get_build_cost_for_level(config: dict, target_level: int) -> dict[str, int]:
-    growth_factor = config.get("cost_growth_factor", DEFAULT_COST_GROWTH_FACTOR)
-    return calculate_build_cost(
-        target_level,
-        config["base_cost"],
-        growth_factor=growth_factor,
-    )
 
 
 def has_enough_resources(planet, cost):
@@ -115,29 +32,6 @@ def has_enough_resources(planet, cost):
 def spend_resources(planet, cost):
     for resource, amount in cost.items():
         setattr(planet, resource, getattr(planet, resource) - amount)
-
-
-def calculate_build_time(
-    target_level: int,
-    base_build_time: int,
-    multiplier: float = DEFAULT_BUILD_TIME_MULTIPLIER,
-) -> int:
-    """
-    Time needed to reach target_level.
-
-    Example:
-        calculate_build_time(3, ...)
-        -> duration of upgrade 2 -> 3
-    """
-    if target_level <= 0:
-        raise ValueError("target_level must be greater than 0")
-
-    return int(base_build_time * (multiplier ** target_level))
-
-
-def get_build_time_for_level(config: dict, target_level: int) -> int:
-    multiplier = config.get("build_time_multiplier", DEFAULT_BUILD_TIME_MULTIPLIER)
-    return calculate_build_time(target_level, config["build_time"], multiplier)
 
 
 @transaction.atomic
@@ -243,21 +137,6 @@ def finish_building_if_ready(planet, *, at=None):
         buildings,
         at=at,
     )
-
-
-@dataclass(frozen=True, slots=True)
-class BuildingCancellationResult:
-    building_type: str
-    paid_cost: dict[str, int]
-    refund: dict[str, int]
-
-
-def calculate_building_cancel_refund(paid_cost, *, refund_percent=BUILDING_CANCEL_REFUND_PERCENT):
-    return {
-        resource: amount * refund_percent // 100
-        for resource, amount in paid_cost.items()
-        if amount > 0
-    }
 
 
 def refund_resources(planet, refund):

@@ -1,5 +1,5 @@
-from apps.game.domain.buildings import BUILDINGS
-from apps.game.domain_services.buildings import (
+from apps.game.domain.buildings import (
+    BUILDINGS,
     get_build_cost_for_level,
     get_build_time_for_level,
     get_building_label,

@@ -4,13 +4,15 @@ from django.utils import timezone
 from apps.game.domain.exceptions import (
     NoBuildingInProgressError,
 )
-from apps.game.domain_services.buildings import (
+from apps.game.domain.buildings import (
     BUILDING_CANCEL_REFUND_PERCENT,
     calculate_building_cancel_refund,
-    cancel_building_upgrade,
     get_build_cost_for_level,
+    get_building_config,
+)
+from apps.game.domain_services.buildings import (
+    cancel_building_upgrade,
     start_building_upgrade,
-    get_building_config
 )
 
 from .helpers import PlanetTestMixin

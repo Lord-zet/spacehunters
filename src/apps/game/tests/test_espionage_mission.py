@@ -160,7 +160,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
             name="Source",
             coordinates=Coordinates(galaxy=1, system=7, position=1),
             helion=10_000,
-            transporter_count=1,
+            ships={"transporter": 1},
         )
         target_planet = self.create_planet(
             owner=target_owner,
@@ -189,7 +189,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
             name="Source",
             coordinates=Coordinates(galaxy=1, system=9, position=1),
             helion=10_000,
-            transporter_count=1,
+            ships={"transporter": 1},
         )
         self.add_espionage_probes(source_planet, 1)
         target_planet = self.create_planet(
@@ -223,7 +223,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
             name="Source",
             coordinates=Coordinates(galaxy=1, system=7, position=1),
             helion=10_000,
-            transporter_count=1,
+            ships={"transporter": 1},
         )
         target_planet = self.create_planet(
             owner=target_owner,
@@ -236,7 +236,7 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
             send_espionage_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                ship_quantities=1,
+                ship_quantities={"transporter": 1},
                 cargo={Resource.METAL: 1},
                 user=user,
             )
@@ -250,7 +250,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             owner=user,
             name="Source",
             coordinates=Coordinates(galaxy=2, system=1, position=1),
-            transporter_count=1,
+            ships={"transporter": 1},
         )
         target_planet = self.create_planet(
             owner=target_owner,
@@ -282,7 +282,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             owner=user,
             name="Source",
             coordinates=Coordinates(galaxy=2, system=3, position=1),
-            transporter_count=1,
+            ships={"transporter": 1},
         )
         target_planet = self.create_planet(
             owner=target_owner,
@@ -315,7 +315,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             owner=user,
             name="Source",
             coordinates=Coordinates(galaxy=2, system=3, position=1),
-            transporter_count=1,
+            ships={"transporter": 1},
         )
         target_planet = self.create_planet(
             owner=target_owner,
@@ -348,7 +348,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             owner=user,
             name="Source",
             coordinates=Coordinates(galaxy=2, system=5, position=1),
-            transporter_count=1,
+            ships={"transporter": 1},
         )
         target_planet = self.create_planet(
             owner=target_owner,
@@ -380,7 +380,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             owner=user,
             name="Source",
             coordinates=Coordinates(galaxy=2, system=7, position=1),
-            transporter_count=1,
+            ships={"transporter": 1},
         )
         target_planet = self.create_planet(
             owner=user,
@@ -422,7 +422,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             owner=user,
             name="Source",
             coordinates=Coordinates(galaxy=2, system=9, position=1),
-            transporter_count=1,
+            ships={"transporter": 1},
         )
 
         form = SendFleetForm(
@@ -448,7 +448,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             owner=user,
             name="Source",
             coordinates=Coordinates(galaxy=2, system=9, position=1),
-            transporter_count=1,
+            ships={"transporter": 1},
         )
 
         form = SendFleetForm(
@@ -474,7 +474,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             owner=user,
             name="Source",
             coordinates=Coordinates(galaxy=2, system=10, position=1),
-            transporter_count=1,
+            ships={"transporter": 1},
         )
 
         form = SendFleetForm(
@@ -504,7 +504,7 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             owner=user,
             name="Source",
             coordinates=Coordinates(galaxy=2, system=10, position=1),
-            transporter_count=1,
+            ships={"transporter": 1},
         )
         target_planet = self.create_planet(
             owner=user,

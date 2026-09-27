@@ -52,14 +52,14 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             name="Source",
             coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=10_000,
-            transporter_count=1,
+            ships={"transporter": 1},
             last_resource_update=now,
         )
         target = self.create_planet(
             owner=user,
             name="Target",
             coordinates=Coordinates(galaxy=1, system=2, position=1),
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -68,7 +68,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            ship_quantities=1,
+            ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -88,14 +88,14 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             name="Source",
             coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=100_000,
-            transporter_count=2,
+            ships={"transporter": 2},
             last_resource_update=now,
         )
         target = self.create_planet(
             owner=user,
             name="Target",
             coordinates=Coordinates(galaxy=1, system=5, position=1),
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -104,7 +104,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            ship_quantities=1,
+            ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -117,7 +117,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            ship_quantities=1,
+            ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -137,14 +137,14 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             name="Source",
             coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=100_000,
-            transporter_count=2,
+            ships={"transporter": 2},
             last_resource_update=now,
         )
         target = self.create_planet(
             owner=user,
             name="Target",
             coordinates=Coordinates(galaxy=1, system=5, position=1),
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -153,7 +153,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            ship_quantities=1,
+            ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -166,7 +166,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            ship_quantities=1,
+            ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -186,14 +186,14 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             name="Source",
             coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=100_000,
-            transporter_count=2,
+            ships={"transporter": 2},
             last_resource_update=now,
         )
         target = self.create_planet(
             owner=user,
             name="Target",
             coordinates=Coordinates(galaxy=1, system=5, position=1),
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -202,7 +202,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            ship_quantities=1,
+            ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -215,7 +215,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            ship_quantities=1,
+            ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -236,7 +236,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             name="Source",
             coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=100_000,
-            transporter_count=1,
+            ships={"transporter": 1},
             last_resource_update=now,
         )
         PlanetShip.objects.create(
@@ -248,7 +248,7 @@ class FleetSpeedProfileMissionTests(PlanetTestMixin, TestCase):
             owner=user,
             name="Target",
             coordinates=Coordinates(galaxy=1, system=5, position=1),
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )

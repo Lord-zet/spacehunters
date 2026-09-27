@@ -23,7 +23,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=7,
+            ships={"transporter": 7},
             last_resource_update=start_time,
         )
 
@@ -37,7 +37,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
             crystal_mine_level=0,
             helion_synthesizer_level=0,
             metal_storage_level=0,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=start_time,
         )
@@ -108,7 +108,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=7,
+            ships={"transporter": 7},
             last_resource_update=start_time,
         )
 
@@ -122,7 +122,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
             crystal_mine_level=0,
             helion_synthesizer_level=0,
             metal_storage_level=0,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=start_time,
         )
@@ -184,7 +184,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
             crystal_mine_level=0,
             helion_synthesizer_level=0,
             metal_storage_level=10,
-            transporter_count=7,
+            ships={"transporter": 7},
             last_resource_update=start_time,
         )
 
@@ -251,7 +251,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
             owner=user,
             name="A",
             coordinates=Coordinates(galaxy=1, system=1, position=1),
-            transporter_count=5,
+            ships={"transporter": 5},
             last_resource_update=start_time,
         )
 
@@ -260,7 +260,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
             name="B",
             coordinates=Coordinates(galaxy=1, system=1, position=2),
             is_homeland=False,
-            transporter_count=0,
+            ships={"transporter": 0},
             last_resource_update=start_time,
         )
 

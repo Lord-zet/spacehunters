@@ -39,7 +39,6 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
         )
 
         self.assertEqual(planet.get_ship_quantity("transporter"), 0)
-        self.assertEqual(planet.transporter_count,0)
 
     def test_create_planet_rejects_coordinates_outside_universe(self):
         user = self.create_user("planet_create_outside_universe")

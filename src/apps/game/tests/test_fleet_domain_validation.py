@@ -32,7 +32,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
 
@@ -48,7 +48,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             send_transport_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                ship_quantities=1,
+                ship_quantities={"transporter": 1},
                 cargo={
                     Resource.METAL: 100,
                     Resource.CRYSTAL: 0,
@@ -71,7 +71,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=now,
         )
 
@@ -86,7 +86,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
         fleet = send_transport_fleet(
             source_planet=source_planet,
             target_planet=target_planet,
-            ship_quantities=1,
+            ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -109,7 +109,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=now,
         )
 
@@ -148,7 +148,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=now,
         )
 
@@ -180,7 +180,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=now,
         )
 
@@ -215,7 +215,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=now,
         )
 
@@ -246,7 +246,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=now,
         )
 
@@ -286,7 +286,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=now,
         )
         target_planet = self.create_planet(
@@ -324,7 +324,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
 
@@ -363,7 +363,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
 
@@ -402,7 +402,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
 
@@ -441,7 +441,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
 
@@ -480,7 +480,7 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
 

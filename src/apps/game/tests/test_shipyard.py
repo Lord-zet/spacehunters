@@ -51,7 +51,7 @@ class ShipyardTests(PlanetTestMixin, TestCase):
             crystal=10000,
             helion=1000,
             shipyard_level=1,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=now,
         )
 

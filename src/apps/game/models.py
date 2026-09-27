@@ -85,11 +85,6 @@ class Planet(models.Model):
         self.system = coordinates.system
         self.position = coordinates.position
 
-    @property
-    def transporter_count(self):
-        ship = self.ships.filter(ship_code="transporter").first()
-        return ship.quantity if ship else 0
-
     def get_ship_quantity(self, ship_code: str) -> int:
         ship = self.ships.filter(ship_code=ship_code).first()
         return ship.quantity if ship else 0

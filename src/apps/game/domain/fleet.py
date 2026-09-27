@@ -17,7 +17,6 @@ from apps.game.domain.travel import calculate_distance
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 
 
-DEFAULT_TRANSPORTER_CODE = "transporter"
 HELION_DISTANCE_DIVISOR = 1000
 MIN_HELION_COST = 1
 
@@ -187,12 +186,6 @@ def validate_ship_quantities(ship_quantities: dict[str, int]) -> None:
 
     if not has_any_ship:
         raise FleetError("Flota musi zawierać co najmniej jeden statek.")
-
-
-def normalize_ship_quantities(ship_quantities: dict[str, int] | int) -> dict[str, int]:
-    if isinstance(ship_quantities, int):
-        return {DEFAULT_TRANSPORTER_CODE: ship_quantities}
-    return ship_quantities
 
 
 def validate_target_coordinates(coordinates: Coordinates) -> Coordinates:

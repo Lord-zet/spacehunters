@@ -55,7 +55,7 @@ class AdvancePlanetStateTests(PlanetTestMixin, TestCase):
             metal_mine_level=2,
             crystal_mine_level=1,
             shipyard_level=1,
-            transporter_count=2,
+            ships={"transporter": 2},
             last_resource_update=start_time,
         )
 
@@ -222,7 +222,7 @@ class ChronologicalPlanetStateAdvanceTests(PlanetTestMixin, TestCase):
             metal_mine_level=1,
             crystal_mine_level=0,
             shipyard_level=1,
-            transporter_count=2,
+            ships={"transporter": 2},
             last_resource_update=start_time,
             building_type="metal_mine",
             building_ends_at=event_time,

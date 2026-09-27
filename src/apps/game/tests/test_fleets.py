@@ -27,7 +27,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
         target_planet = self.create_planet(
@@ -36,7 +36,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -44,7 +44,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         fleet = send_transport_fleet(
             source_planet=source_planet,
             target_planet=target_planet,
-            ship_quantities=3,
+            ship_quantities={"transporter": 3},
             cargo={
                 Resource.METAL: 1000,
                 Resource.CRYSTAL: 500,
@@ -84,14 +84,14 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
         )
 
         with self.assertRaises(SamePlanetTransportError) as ctx:
             send_transport_fleet(
                 source_planet=planet,
                 target_planet=planet,
-                ship_quantities=3,
+                ship_quantities={"transporter": 3},
                 cargo={
                     Resource.METAL: 1000,
                     Resource.CRYSTAL: 500,
@@ -117,7 +117,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=2,
+            ships={"transporter": 2},
         )
         target_planet = self.create_planet(
             owner=user,
@@ -130,7 +130,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             send_transport_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                ship_quantities=3,
+                ship_quantities={"transporter": 3},
                 cargo={
                     Resource.METAL: 1000,
                     Resource.CRYSTAL: 500,
@@ -156,7 +156,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             metal=100,
             crystal=50,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
         )
         target_planet = self.create_planet(
             owner=user,
@@ -169,7 +169,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             send_transport_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                ship_quantities=2,
+                ship_quantities={"transporter": 2},
                 cargo={
                     Resource.METAL: 500,
                     Resource.CRYSTAL: 200,
@@ -195,7 +195,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             metal=10000,
             crystal=10000,
             helion=500,
-            transporter_count=1,
+            ships={"transporter": 1},
         )
         target_planet = self.create_planet(
             owner=user,
@@ -208,7 +208,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             send_transport_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                ship_quantities=1,
+                ship_quantities={"transporter": 1},
                 cargo={
                     Resource.METAL: 900,
                     Resource.CRYSTAL: 200,
@@ -236,7 +236,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
             metal=10000,
             crystal=10000,
             helion=500,
-            transporter_count=2,
+            ships={"transporter": 2},
             last_resource_update=now,
         )
 
@@ -251,7 +251,7 @@ class SendTransportFleetTests(PlanetTestMixin, TestCase):
         fleet = send_transport_fleet(
             source_planet=source_planet,
             target_planet=target_planet,
-            ship_quantities=2,
+            ship_quantities={"transporter": 2},
             cargo={
                 Resource.METAL: 1500,
                 Resource.CRYSTAL: 500,
@@ -279,7 +279,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=7,
+            ships={"transporter": 7},
             last_resource_update=start_time,
         )
 
@@ -289,7 +289,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=start_time,
 
@@ -353,7 +353,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=7,
+            ships={"transporter": 7},
             last_resource_update=start_time,
 
             # Test dotyczy powrotu statków, nie produkcji.
@@ -368,7 +368,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=start_time,
         )
@@ -415,7 +415,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=7,
+            ships={"transporter": 7},
             last_resource_update=now,
         )
         target_planet = self.create_planet(
@@ -424,7 +424,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -472,7 +472,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=7,
+            ships={"transporter": 7},
             last_resource_update=now,
         )
         target_planet = self.create_planet(
@@ -481,7 +481,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -520,7 +520,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
         source = self.create_planet(
             owner=user,
             helion=1_000,
-            transporter_count=1,
+            ships={"transporter": 1},
             last_resource_update=now,
         )
         target = self.create_planet(
@@ -528,7 +528,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             name="Target",
             coordinates=Coordinates(galaxy=1, system=2, position=2),
             helion=50,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -537,7 +537,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            ship_quantities=1,
+            ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 0,
                 Resource.CRYSTAL: 0,
@@ -562,7 +562,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             name="Source",
             coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=10_000,
-            transporter_count=1,
+            ships={"transporter": 1},
             last_resource_update=base_time,
         )
         target = self.create_planet(
@@ -570,7 +570,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             name="Target",
             coordinates=Coordinates(galaxy=1, system=2, position=1),
             metal=100,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=base_time,
         )
@@ -579,7 +579,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             user=user,
             source_planet=source,
             target_planet=target,
-            ship_quantities=1,
+            ship_quantities={"transporter": 1},
             cargo={
                 Resource.METAL: 200,
                 Resource.CRYSTAL: 0,
@@ -611,7 +611,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
         target_planet = self.create_planet(
@@ -620,7 +620,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             coordinates=Coordinates(galaxy=1, system=2, position=2),
             metal=100,
             crystal=50,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -629,7 +629,7 @@ class ProcessFleetsForUserTests(PlanetTestMixin, TestCase):
             send_transport_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                ship_quantities=3,
+                ship_quantities={"transporter": 3},
                 cargo={
                     Resource.METAL: -1000,
                     Resource.CRYSTAL: 0,

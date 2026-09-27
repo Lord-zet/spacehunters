@@ -32,7 +32,6 @@ from apps.game.domain.fleet import (
     get_due_fleet_events_for_fleets,
     get_fleet_flight_duration,
     get_safe_fleet_event_time,
-    normalize_ship_quantities,
     validate_espionage_fleet_composition,
     validate_mission_fleet_composition,
     validate_mission_target_requirement,
@@ -521,7 +520,7 @@ def _send_fleet_mission(
 def send_transport_fleet(
     source_planet,
     target_planet,
-    ship_quantities: dict[str, int] | int,
+    ship_quantities: dict[str, int],
     cargo: ResourceAmounts,
     user,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
@@ -529,13 +528,12 @@ def send_transport_fleet(
     target_coordinates=None,
 ):
     """
-    Wysyła flotę z misją Transportu.'ship_quantities' przyjmuje słownik {'small_transporter': 5, 'recycler': 2}
-    lub zaciąga klasycznie int (liczba małych transporterów).
+    Wysyła flotę z misją transportu.
     """
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
-        ship_quantities=normalize_ship_quantities(ship_quantities),
+        ship_quantities=ship_quantities,
         cargo=cargo,
         speed_profile=speed_profile,
         user=user,
@@ -548,7 +546,7 @@ def send_transport_fleet(
 def send_stationing_fleet(
     source_planet,
     target_planet,
-    ship_quantities: dict[str, int] | int,
+    ship_quantities: dict[str, int],
     cargo: ResourceAmounts,
     user,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
@@ -556,12 +554,12 @@ def send_stationing_fleet(
     target_coordinates=None,
 ):
     """
-    Wysyła flotę z misją Stacjonowania. 'ship_quantities' przyjmuje słownik lub int.
+    Wysyła flotę z misją stacjonowania.
     """
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
-        ship_quantities=normalize_ship_quantities(ship_quantities),
+        ship_quantities=ship_quantities,
         cargo=cargo,
         speed_profile=speed_profile,
         user=user,
@@ -574,7 +572,7 @@ def send_stationing_fleet(
 def send_espionage_fleet(
     source_planet,
     target_planet,
-    ship_quantities: dict[str, int] | int,
+    ship_quantities: dict[str, int],
     cargo: ResourceAmounts,
     user,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
@@ -591,7 +589,7 @@ def send_espionage_fleet(
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
-        ship_quantities=normalize_ship_quantities(ship_quantities),
+        ship_quantities=ship_quantities,
         cargo={},
         speed_profile=speed_profile,
         user=user,
@@ -603,8 +601,8 @@ def send_espionage_fleet(
 
 def send_colonization_fleet(
     source_planet,
+    ship_quantities: dict[str, int],
     target_planet=None,
-    ship_quantities: dict[str, int] | int = None,
     cargo: ResourceAmounts = None,
     user=None,
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
@@ -614,7 +612,7 @@ def send_colonization_fleet(
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=None,
-        ship_quantities=normalize_ship_quantities(ship_quantities),
+        ship_quantities=ship_quantities,
         cargo=cargo,
         speed_profile=speed_profile,
         user=user,

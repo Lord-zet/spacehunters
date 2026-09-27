@@ -21,7 +21,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
         target_planet = self.create_planet(
@@ -31,7 +31,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
             metal=100,
             crystal=50,
             helion=0,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -39,7 +39,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
         fleet = send_stationing_fleet(
             source_planet=source_planet,
             target_planet=target_planet,
-            ship_quantities=3,
+            ship_quantities={"transporter": 3},
             cargo={
                 Resource.METAL: 1000,
                 Resource.CRYSTAL: 500,
@@ -66,7 +66,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=4,
+            ships={"transporter": 4},
             last_resource_update=start_time,
             metal_mine_level=0,
             crystal_mine_level=0,
@@ -80,7 +80,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
             metal=100,
             crystal=50,
             helion=0,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=start_time,
             metal_mine_level=0,
@@ -133,7 +133,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
         target_planet = self.create_planet(
@@ -143,7 +143,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
             metal=100,
             crystal=50,
             helion=0,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=True,
             last_resource_update=now,
         )
@@ -152,7 +152,7 @@ class StationingMissionTests(PlanetTestMixin, TestCase):
             send_stationing_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                ship_quantities=3,
+                ship_quantities={"transporter": 3},
                 cargo={
                     Resource.METAL: 1000,
                     Resource.CRYSTAL: 500,

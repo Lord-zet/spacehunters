@@ -26,7 +26,7 @@ class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
         target_planet = self.create_planet(
@@ -36,7 +36,7 @@ class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):
             metal=100,
             crystal=50,
             helion=0,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -50,7 +50,7 @@ class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):
         fleet = send_transport_fleet(
             source_planet=source_planet,
             target_planet=target_planet,
-            ship_quantities=3,
+            ship_quantities={"transporter": 3},
             cargo={
                 Resource.METAL: 1000,
                 Resource.CRYSTAL: 500,
@@ -78,7 +78,7 @@ class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=0,
-            transporter_count=10,
+            ships={"transporter": 10},
             last_resource_update=now,
         )
         target_planet = self.create_planet(
@@ -88,7 +88,7 @@ class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):
             metal=100,
             crystal=50,
             helion=0,
-            transporter_count=0,
+            ships={"transporter": 0},
             is_homeland=False,
             last_resource_update=now,
         )
@@ -97,7 +97,7 @@ class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):
             send_transport_fleet(
                 source_planet=source_planet,
                 target_planet=target_planet,
-                ship_quantities=3,
+                ship_quantities={"transporter": 3},
                 cargo={
                     Resource.METAL: 1000,
                     Resource.CRYSTAL: 500,

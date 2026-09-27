@@ -220,7 +220,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
             name="Source",
             coordinates=Coordinates(galaxy=1, system=1, position=1),
             helion=10_000,
-            transporter_count=1,
+            ships={"transporter": 1},
         )
 
         self.client.force_login(user)

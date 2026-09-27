@@ -20,10 +20,6 @@ class PlanetTestMixin:
         "building_cost_paid",
     }
 
-    SHIP_FIELDS = {
-        "transporter_count",
-    }
-
     def create_user(self, username="tester"):
         User = get_user_model()
         return User.objects.create_user(username=username, password="secret")
@@ -65,15 +61,11 @@ class PlanetTestMixin:
             "building_cost_paid": {},
         }
 
-        ships_data = {
-            "transporter_count": 0,
-        }
+        ships_data = overrides.pop("ships", {})
 
         for key in list(overrides.keys()):
             if key in self.BUILDING_FIELDS:
                 buildings_data[key] = overrides.pop(key)
-            elif key in self.SHIP_FIELDS:
-                ships_data[key] = overrides.pop(key)
 
         planet_data.update(overrides)
 
@@ -89,9 +81,7 @@ class PlanetTestMixin:
                 "helion": planet_data["helion"],
             },
             buildings=buildings_data,
-            ships={
-                "transporter": ships_data["transporter_count"],
-            },
+            ships=ships_data,
             planet_type=planet_data['planet_type'],
             radius_km=planet_data['radius_km'],
             temperature_min=planet_data['temperature_min'],

@@ -26,7 +26,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=start_time,
         )
 
@@ -74,7 +74,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=start_time,
             metal_mine_level=0,
             crystal_mine_level=0,
@@ -134,7 +134,7 @@ class ColonizationMissionTests(PlanetTestMixin, TestCase):
             metal=5000,
             crystal=3000,
             helion=500,
-            transporter_count=3,
+            ships={"transporter": 3},
             last_resource_update=start_time,
         )
 

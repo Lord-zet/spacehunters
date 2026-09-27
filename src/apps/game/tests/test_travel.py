@@ -1,7 +1,7 @@
 from django.test import SimpleTestCase
 
 from apps.game.domain.world import Coordinates
-from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
+from apps.game.domain.travel import calculate_distance, calculate_flight_time_seconds
 
 
 class TravelCalculationTests(SimpleTestCase):

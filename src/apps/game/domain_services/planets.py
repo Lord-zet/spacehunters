@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from django.db import transaction
-from apps.game.domain_services.planet_generation import generate_planet_traits
+from apps.game.domain.planet_generation import generate_planet_traits
 
 from apps.game.models import (
     Planet,

@@ -22,7 +22,7 @@ from apps.game.domain.exceptions import (
     PlanetLimitReachedError,
 )
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
-from apps.game.domain_services.travel import calculate_distance, calculate_flight_time_seconds
+from apps.game.domain.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.ships import ESPIONAGE_PROBE_CODE, SHIPS
 from apps.game.domain_services.resources import (
     synchronize_resources,

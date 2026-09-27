@@ -5,7 +5,7 @@ from apps.game.domain_services.fleet import (
     calculate_effective_fleet_speed_multiplier,
     calculate_helion_cost_for_flight,
 )
-from apps.game.domain_services.travel import calculate_flight_time_seconds
+from apps.game.domain.travel import calculate_flight_time_seconds
 from apps.game.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
 )

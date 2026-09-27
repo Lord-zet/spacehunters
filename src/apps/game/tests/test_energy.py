@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.game.buildings import calculate_resource_production
-from apps.game.domain_services.energy import (
+from apps.game.domain.energy import (
     apply_energy_efficiency_to_production,
     get_energy_balance,
     get_energy_consumption,

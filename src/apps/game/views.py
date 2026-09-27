@@ -26,7 +26,7 @@ from .domain_services.fleet import (
     send_stationing_fleet,
     send_transport_fleet,
 )
-from .domain_services.travel import calculate_flight_time_seconds
+from .domain.travel import calculate_flight_time_seconds
 from .domain_services.buildings import start_building_upgrade, cancel_building_upgrade
 from .domain_services.planets import (
     get_planet_at_coordinates,
@@ -39,7 +39,7 @@ from .domain_services.shipyard import (
     get_ship_construction_cost,
     get_ship_construction_time_seconds,
 )
-from .domain_services.energy import get_energy_balance
+from .domain.energy import get_energy_balance
 from .fleet_speed_profiles import get_fleet_fuel_multiplier
 from apps.game.domain.exceptions import DomainError
 from .selectors import (

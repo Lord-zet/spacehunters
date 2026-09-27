@@ -5,7 +5,7 @@ from apps.game.domain.world import Coordinates
 from apps.game.domain.fleet import (
     calculate_effective_fleet_speed_multiplier,
 )
-from apps.game.domain_services.fleet import (
+from apps.game.services.fleet import (
     send_espionage_fleet,
     send_transport_fleet,
 )

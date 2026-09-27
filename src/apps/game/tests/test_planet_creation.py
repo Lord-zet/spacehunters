@@ -2,7 +2,7 @@ from django.test import TestCase
 
 from apps.game.domain.exceptions import InvalidCoordinatesError, PlanetLimitReachedError
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
-from apps.game.domain_services.planets import (
+from apps.game.services.planets import (
     create_planet,
     get_planet_at_coordinates,
     get_planet_limit_status,

@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.game.domain.world import Coordinates
-from apps.game.domain_services.fleet import process_fleets_for_user
+from apps.game.services.fleet import process_fleets_for_user
 from apps.game.models import Fleet, FleetShip
 
 from .helpers import PlanetTestMixin
@@ -93,7 +93,7 @@ class FleetChronologyTests(PlanetTestMixin, TestCase):
         )
 
     def test_planet_can_advance_after_transport_arrival(self):
-        from apps.game.domain_services.sync import advance_planet_state
+        from apps.game.services.sync import advance_planet_state
 
         user = self.create_user("fleet_chrono_2")
 

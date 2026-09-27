@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from apps.game.domain.world import Coordinates
 from apps.game.domain.exceptions import InvalidStationingTargetError
-from apps.game.domain_services.fleet import send_stationing_fleet, process_fleets_for_user
+from apps.game.services.fleet import send_stationing_fleet, process_fleets_for_user
 from apps.game.domain.resources import Resource
 from apps.game.models import Fleet, FleetShip
 from .helpers import PlanetTestMixin

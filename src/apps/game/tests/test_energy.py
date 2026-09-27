@@ -12,7 +12,7 @@ from apps.game.domain.resources import (
     get_production_per_hour,
     get_raw_production_per_hour,
 )
-from apps.game.domain_services.resources import synchronize_resources
+from apps.game.services.resources import synchronize_resources
 
 from .helpers import PlanetTestMixin
 

@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.game.domain.world import Coordinates
-from apps.game.domain_services.sync import advance_user_state
+from apps.game.services.sync import advance_user_state
 from apps.game.models import Fleet, FleetShip
 
 from .helpers import PlanetTestMixin

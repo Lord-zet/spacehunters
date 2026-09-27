@@ -6,7 +6,7 @@ from apps.game.domain.exceptions import NotEnoughFuelError
 from apps.game.domain.fleet import (
     calculate_helion_cost_for_flight,
 )
-from apps.game.domain_services.fleet import (
+from apps.game.services.fleet import (
     send_transport_fleet,
 )
 from apps.game.models import Fleet

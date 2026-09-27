@@ -25,7 +25,7 @@ from .domain.fleet import (
     calculate_effective_fleet_speed_multiplier,
     calculate_helion_cost_for_flight,
 )
-from .domain_services.fleet import (
+from .services.fleet import (
     get_planet_ships_display,
     send_colonization_fleet,
     send_espionage_fleet,
@@ -33,14 +33,14 @@ from .domain_services.fleet import (
     send_transport_fleet,
 )
 from .domain.travel import calculate_flight_time_seconds
-from .domain_services.buildings import start_building_upgrade, cancel_building_upgrade
-from .domain_services.planets import (
+from .services.buildings import start_building_upgrade, cancel_building_upgrade
+from .services.planets import (
     get_planet_at_coordinates,
     get_planet_limit_status,
     rename_planet as update_planet_name,
 )
-from .domain_services.sync import advance_user_state
-from .domain_services.shipyard import start_ship_construction
+from .services.sync import advance_user_state
+from .services.shipyard import start_ship_construction
 from .domain.energy import get_energy_balance
 from .domain.fleet_speed_profiles import get_fleet_fuel_multiplier
 from apps.game.domain.exceptions import DomainError

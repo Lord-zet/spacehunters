@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 
 from apps.game.models import Planet
 from apps.game.domain.world import Coordinates
-from apps.game.domain_services.planets import create_planet
+from apps.game.services.planets import create_planet
 
 User = get_user_model()
 

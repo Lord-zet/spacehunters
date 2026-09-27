@@ -7,7 +7,7 @@ from apps.game.domain.exceptions import (
     UnknownShipError,
     UnsupportedFleetMissionError,
 )
-from apps.game.domain_services.fleet import (
+from apps.game.services.fleet import (
     _send_fleet_mission,
     send_colonization_fleet,
     send_transport_fleet,

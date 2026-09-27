@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from apps.game.domain.exceptions import FleetError
 from apps.game.domain.world import Coordinates
-from apps.game.domain_services.fleet import send_espionage_fleet, process_fleets_for_user
+from apps.game.services.fleet import send_espionage_fleet, process_fleets_for_user
 from apps.game.domain.resources import Resource
 from apps.game.forms import SendFleetForm, parse_planet_coordinates
 from apps.game.models import Fleet, PlanetShip, Report

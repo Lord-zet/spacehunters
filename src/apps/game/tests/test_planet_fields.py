@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.game.domain.exceptions import NoFreePlanetFieldsError
-from apps.game.domain_services.buildings import (
+from apps.game.services.buildings import (
     finish_building_if_ready,
     start_building_upgrade,
 )

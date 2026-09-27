@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 
 from apps.game.domain.world import Coordinates
 from apps.game.models import Planet, PlanetShip, FleetShip
-from apps.game.domain_services.planets import create_planet
+from apps.game.services.planets import create_planet
 
 
 class PlanetTestMixin:

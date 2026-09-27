@@ -10,7 +10,7 @@ from apps.game.domain.buildings import (
     get_build_cost_for_level,
     get_building_config,
 )
-from apps.game.domain_services.buildings import (
+from apps.game.services.buildings import (
     cancel_building_upgrade,
     start_building_upgrade,
 )

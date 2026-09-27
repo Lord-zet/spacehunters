@@ -14,10 +14,10 @@ from .domain.fleet import (
     MISSION_TARGET_OWN_PLANET,
 )
 from .domain.resources import Resource
-from .domain_services.fleet import (
+from .services.fleet import (
     get_mission_handler,
 )
-from .domain_services.planets import get_planet_at_coordinates
+from .services.planets import get_planet_at_coordinates
 from apps.game.domain.exceptions import InvalidCoordinatesError
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 

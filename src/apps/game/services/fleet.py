@@ -51,7 +51,7 @@ from apps.game.domain.resources import (
     transfer_resources,
     normalize_resource_amounts
 )
-from apps.game.domain_services.resources import synchronize_resources
+from apps.game.services.resources import synchronize_resources
 from .sync import advance_planet_state
 from .reports import create_espionage_report
 from apps.game.domain.fleet_speed_profiles import (

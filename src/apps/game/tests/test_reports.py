@@ -9,7 +9,7 @@ from apps.game.domain.reports import (
     build_espionage_payload,
     build_planet_intel_section,
 )
-from apps.game.domain_services.reports import (
+from apps.game.services.reports import (
     create_espionage_report,
 )
 from apps.game.models import Report

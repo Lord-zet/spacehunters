@@ -1,13 +1,13 @@
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.game.domain_services.fleet import (
+from apps.game.services.fleet import (
     process_fleets_for_user,
     send_colonization_fleet,
 )
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 from apps.game.domain.resources import Resource
-from apps.game.domain_services.planets import get_planet_at_coordinates
+from apps.game.services.planets import get_planet_at_coordinates
 from apps.game.models import Fleet
 
 from .helpers import PlanetTestMixin

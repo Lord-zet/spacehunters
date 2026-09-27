@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from apps.game.domain.world import Coordinates
 from apps.game.models import Fleet, FleetShip
-from apps.game.domain_services.fleet import send_transport_fleet, process_fleets_for_user
+from apps.game.services.fleet import send_transport_fleet, process_fleets_for_user
 from apps.game.domain.exceptions import (
     CargoCapacityExceededError,
     NotEnoughResourcesError,

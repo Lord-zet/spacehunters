@@ -4,7 +4,7 @@ from typing import TypeAlias
 
 from django.utils import timezone
 
-from ..buildings import BUILDINGS
+from apps.game.domain.buildings import BUILDINGS
 from apps.game.domain.energy import apply_energy_efficiency_to_production, get_energy_balance
 from apps.game.domain.exceptions import InvalidResourceAmountError
 

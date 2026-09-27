@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import random
 
-from apps.game.planet_types import (
+from apps.game.domain.planet_types import (
     DEFAULT_PLANET_TYPE,
     PLANET_TYPES,
     get_planet_type_config,

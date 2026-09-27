@@ -10,7 +10,7 @@ from apps.game.models import (
     PlanetShip,
     PlanetShipConstruction,
 )
-from apps.game.ships import SHIPS
+from apps.game.domain.ships import SHIPS
 from apps.game.domain.exceptions import (
     InvalidPlanetNameError,
     PlanetNameAlreadyExistsError,

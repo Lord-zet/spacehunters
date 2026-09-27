@@ -12,7 +12,7 @@ from apps.game.domain.exceptions import (
     NoBuildingInProgressError,
 )
 from apps.game.models import Planet, PlanetBuildings
-from ..buildings import BUILDINGS
+from apps.game.domain.buildings import BUILDINGS
 from .resources import synchronize_resources, RESOURCE_STATE_FIELDS, RESOURCE_FIELDS
 
 

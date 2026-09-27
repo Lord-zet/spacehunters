@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase
 
-from apps.game.ships import ESPIONAGE_PROBE_CODE, SHIPS
+from apps.game.domain.ships import ESPIONAGE_PROBE_CODE, SHIPS
 
 
 class ShipsConfigTests(SimpleTestCase):

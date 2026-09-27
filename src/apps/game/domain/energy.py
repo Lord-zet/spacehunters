@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from apps.game.buildings import BUILDINGS
+from apps.game.domain.buildings import BUILDINGS
 
 
 @dataclass(frozen=True, slots=True)

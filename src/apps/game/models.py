@@ -3,8 +3,8 @@ from django.db import models
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .buildings import BUILDINGS
-from .ships import SHIPS
+from .domain.buildings import BUILDINGS
+from .domain.ships import SHIPS
 from .domain.world import Coordinates
 
 

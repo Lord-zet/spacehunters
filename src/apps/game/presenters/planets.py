@@ -1,4 +1,4 @@
-from apps.game.planet_types import get_planet_type_config
+from apps.game.domain.planet_types import get_planet_type_config
 
 
 def get_planet_background(planet):

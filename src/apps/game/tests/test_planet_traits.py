@@ -3,7 +3,7 @@ import random
 from django.test import TestCase
 
 from apps.game.domain.planet_generation import generate_planet_traits
-from apps.game.planet_types import PLANET_TYPES, get_planet_type_config
+from apps.game.domain.planet_types import PLANET_TYPES, get_planet_type_config
 from apps.game.presenters.planets import (
     format_radius,
     format_temperature_range,

@@ -7,7 +7,7 @@ from apps.game.domain_services.resources import (
     synchronize_resources,
     get_storage_capacity_for_level,
 )
-from apps.game.buildings import calculate_resource_production
+from apps.game.domain.buildings import calculate_resource_production
 
 from .helpers import PlanetTestMixin
 

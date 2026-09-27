@@ -11,7 +11,7 @@ from apps.game.domain.exceptions import (
     UnknownShipError,
 )
 from apps.game.models import Planet, PlanetShip, PlanetShipConstruction, PlanetBuildings
-from apps.game.ships import SHIPS
+from apps.game.domain.ships import SHIPS
 from .resources import synchronize_resources, RESOURCE_STATE_FIELDS
 
 

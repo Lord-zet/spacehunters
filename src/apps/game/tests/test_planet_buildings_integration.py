@@ -15,7 +15,7 @@ from apps.game.domain_services.resources import (
 )
 from apps.game.domain.world import Coordinates
 from apps.game.models import Planet, PlanetBuildings
-from apps.game.buildings import calculate_resource_production
+from apps.game.domain.buildings import calculate_resource_production
 
 
 class PlanetBuildingsIntegrationTests(TestCase):

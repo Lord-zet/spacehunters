@@ -6,12 +6,12 @@ from apps.game.domain_services.fleet import (
     calculate_helion_cost_for_flight,
 )
 from apps.game.domain.travel import calculate_flight_time_seconds
-from apps.game.fleet_speed_profiles import (
+from apps.game.domain.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
 )
 from apps.game.domain.world import Coordinates
 from apps.game.models import Fleet
-from apps.game.ships import ESPIONAGE_PROBE_CODE
+from apps.game.domain.ships import ESPIONAGE_PROBE_CODE
 
 from .helpers import PlanetTestMixin
 

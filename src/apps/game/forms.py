@@ -2,8 +2,8 @@ from django.contrib.auth.forms import AuthenticationForm
 from django import forms
 from .models import Planet, Fleet, PLANET_NAME_MAX_LENGTH
 
-from .ships import SHIPS
-from apps.game.fleet_speed_profiles import (
+from .domain.ships import SHIPS
+from apps.game.domain.fleet_speed_profiles import (
     DEFAULT_FLEET_SPEED_PROFILE,
     get_fleet_speed_profile_choices,
 )

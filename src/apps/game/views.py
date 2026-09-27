@@ -15,8 +15,8 @@ from .forms import (
     ShipConstructionForm,
     parse_planet_coordinates,
 )
-from .buildings import BUILDINGS
-from .ships import SHIPS
+from .domain.buildings import BUILDINGS
+from .domain.ships import SHIPS
 from .domain_services.fleet import (
     calculate_effective_fleet_speed_multiplier,
     calculate_helion_cost_for_flight,
@@ -40,7 +40,7 @@ from .domain_services.shipyard import (
     get_ship_construction_time_seconds,
 )
 from .domain.energy import get_energy_balance
-from .fleet_speed_profiles import get_fleet_fuel_multiplier
+from .domain.fleet_speed_profiles import get_fleet_fuel_multiplier
 from apps.game.domain.exceptions import DomainError
 from .selectors import (
     get_active_fleets_for_user,

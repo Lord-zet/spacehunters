@@ -4,7 +4,7 @@ from django.utils import timezone
 from apps.game.domain_services.sync import advance_planet_state
 from apps.game.domain.buildings import calculate_resource_production
 from apps.game.domain.exceptions import PlanetStateTimeRegressionError
-from apps.game.domain_services.resources import (
+from apps.game.domain.resources import (
     get_storage_capacity_for_level,
 )
 

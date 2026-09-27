@@ -13,7 +13,8 @@ from apps.game.domain.exceptions import (
 )
 from apps.game.models import Planet, PlanetBuildings
 from apps.game.domain.buildings import BUILDINGS
-from .resources import synchronize_resources, RESOURCE_STATE_FIELDS, RESOURCE_FIELDS
+from apps.game.domain.resources import RESOURCE_FIELDS, RESOURCE_STATE_FIELDS
+from .resources import synchronize_resources
 
 
 EARLY_COST_MULTIPLIERS = [

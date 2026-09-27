@@ -9,7 +9,7 @@ from apps.game.domain_services.fleet import (
 )
 
 from .helpers import PlanetTestMixin
-from apps.game.domain_services.resources import Resource
+from apps.game.domain.resources import Resource
 from apps.game.models import PlanetShip
 from apps.game.domain.ships import ESPIONAGE_PROBE_CODE
 

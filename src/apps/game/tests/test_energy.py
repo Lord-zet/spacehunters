@@ -8,11 +8,11 @@ from apps.game.domain.energy import (
     get_energy_consumption,
     get_energy_production,
 )
-from apps.game.domain_services.resources import (
+from apps.game.domain.resources import (
     get_production_per_hour,
     get_raw_production_per_hour,
-    synchronize_resources,
 )
+from apps.game.domain_services.resources import synchronize_resources
 
 from .helpers import PlanetTestMixin
 

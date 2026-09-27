@@ -4,7 +4,7 @@ from apps.game.domain_services.buildings import (
     get_build_time_for_level,
     get_building_label,
 )
-from apps.game.domain_services.resources import get_storage_capacity, get_storage_capacity_for_level
+from apps.game.domain.resources import get_storage_capacity, get_storage_capacity_for_level
 
 
 def get_storage_capacities(buildings):

@@ -6,7 +6,7 @@ from apps.game.domain_services.fleet import (
     send_colonization_fleet,
 )
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
-from apps.game.domain_services.resources import Resource
+from apps.game.domain.resources import Resource
 from apps.game.domain_services.planets import get_planet_at_coordinates
 from apps.game.models import Fleet
 

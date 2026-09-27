@@ -3,12 +3,12 @@ from django.utils import timezone
 
 from apps.game.domain.world import Coordinates
 from apps.game.models import Planet
-from apps.game.domain_services.resources import (
-    synchronize_resources,
+from apps.game.domain.resources import (
     get_production_per_hour,
     get_storage_capacity,
     get_storage_capacity_for_level,
 )
+from apps.game.domain_services.resources import synchronize_resources
 from apps.game.domain.buildings import calculate_resource_production
 
 from .helpers import PlanetTestMixin

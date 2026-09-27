@@ -7,7 +7,7 @@ from apps.game.domain.fleet_speed_profiles import (
     DEFAULT_FLEET_SPEED_PROFILE,
     get_fleet_speed_profile_choices,
 )
-from .domain_services.resources import Resource
+from .domain.resources import Resource
 from .domain_services.fleet import (
     MISSION_TARGET_EMPTY_COORDINATES,
     MISSION_TARGET_EXISTING_PLANET,

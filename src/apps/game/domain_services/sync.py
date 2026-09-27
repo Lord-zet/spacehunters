@@ -12,7 +12,8 @@ from apps.game.models import (
 )
 
 from .buildings import finish_locked_building_if_ready
-from .resources import RESOURCE_STATE_FIELDS, synchronize_resources
+from apps.game.domain.resources import RESOURCE_STATE_FIELDS
+from .resources import synchronize_resources
 from .shipyard import finish_locked_ship_construction_if_ready
 
 

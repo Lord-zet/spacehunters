@@ -16,7 +16,7 @@ from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 from apps.game.models import Fleet
 
 from .helpers import PlanetTestMixin
-from apps.game.domain_services.resources import Resource
+from apps.game.domain.resources import Resource
 
 
 class FleetDomainValidationTests(PlanetTestMixin, TestCase):

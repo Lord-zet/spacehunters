@@ -12,7 +12,8 @@ from apps.game.domain.exceptions import (
 )
 from apps.game.models import Planet, PlanetShip, PlanetShipConstruction, PlanetBuildings
 from apps.game.domain.ships import SHIPS
-from .resources import synchronize_resources, RESOURCE_STATE_FIELDS
+from apps.game.domain.resources import RESOURCE_STATE_FIELDS
+from .resources import synchronize_resources
 
 
 def get_ship_config(ship_code):

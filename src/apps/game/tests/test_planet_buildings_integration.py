@@ -8,7 +8,7 @@ from apps.game.domain_services.buildings import (
     finish_building_if_ready,
     start_building_upgrade,
 )
-from apps.game.domain_services.resources import (
+from apps.game.domain.resources import (
     get_production_per_hour,
     get_storage_capacity,
     get_storage_capacity_for_level,

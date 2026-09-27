@@ -1,10 +1,10 @@
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.game.domain_services.resources import (
+from apps.game.domain.resources import (
     RESOURCE_PRECISION_MICRO,
-    synchronize_resources,
 )
+from apps.game.domain_services.resources import synchronize_resources
 
 from .helpers import PlanetTestMixin
 

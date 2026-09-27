@@ -24,8 +24,7 @@ from apps.game.domain.exceptions import (
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 from apps.game.domain.travel import calculate_distance, calculate_flight_time_seconds
 from apps.game.domain.ships import ESPIONAGE_PROBE_CODE, SHIPS
-from apps.game.domain_services.resources import (
-    synchronize_resources,
+from apps.game.domain.resources import (
     RESOURCE_STATE_FIELDS,
     Resource,
     ResourceAmounts,
@@ -37,6 +36,7 @@ from apps.game.domain_services.resources import (
     transfer_resources,
     normalize_resource_amounts
 )
+from apps.game.domain_services.resources import synchronize_resources
 from .sync import advance_planet_state
 from .reports import create_espionage_report
 from apps.game.domain.fleet_speed_profiles import (

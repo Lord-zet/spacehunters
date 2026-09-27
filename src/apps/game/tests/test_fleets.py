@@ -12,7 +12,7 @@ from apps.game.domain.exceptions import (
     InvalidResourceAmountError,
 )
 from .helpers import PlanetTestMixin
-from apps.game.domain_services.resources import Resource
+from apps.game.domain.resources import Resource
 
 
 class SendTransportFleetTests(PlanetTestMixin, TestCase):

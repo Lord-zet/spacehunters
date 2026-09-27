@@ -9,7 +9,7 @@ from apps.game.domain_services.fleet import (
 )
 from apps.game.models import Fleet
 from .helpers import PlanetTestMixin
-from apps.game.domain_services.resources import Resource
+from apps.game.domain.resources import Resource
 
 
 class FleetHelionConsumptionTests(PlanetTestMixin, TestCase):

@@ -12,7 +12,7 @@ from apps.game.domain_services.buildings import (
     get_upgrade_cost_multiplier,
     get_building_config
 )
-from apps.game.domain_services.resources import get_storage_capacity_for_level
+from apps.game.domain.resources import get_storage_capacity_for_level
 from apps.game.presenters.buildings import (
     get_building_detail_stats,
     get_building_level_row,

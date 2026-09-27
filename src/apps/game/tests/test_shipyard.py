@@ -3,9 +3,9 @@ from django.utils import timezone
 
 from apps.game.domain.world import Coordinates
 from apps.game.domain.exceptions import ShipyardRequiredError
+from apps.game.domain.ships import get_ship_construction_time_seconds
 from apps.game.domain_services.shipyard import (
     finish_ship_construction_if_ready,
-    get_ship_construction_time_seconds,
     start_ship_construction,
 )
 from .helpers import PlanetTestMixin

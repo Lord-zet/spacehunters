@@ -11,32 +11,13 @@ from apps.game.domain.exceptions import (
     UnknownShipError,
 )
 from apps.game.models import Planet, PlanetShip, PlanetShipConstruction, PlanetBuildings
-from apps.game.domain.ships import SHIPS
+from apps.game.domain.ships import (
+    get_ship_config,
+    get_ship_construction_cost,
+    get_ship_construction_time_seconds,
+)
 from apps.game.domain.resources import RESOURCE_STATE_FIELDS
 from .resources import synchronize_resources
-
-
-def get_ship_config(ship_code):
-    return SHIPS.get(ship_code)
-
-
-def get_ship_construction_cost(ship_code, quantity):
-    config = get_ship_config(ship_code)
-    if not config:
-        return None
-
-    return {
-        resource: amount * quantity
-        for resource, amount in config["base_cost"].items()
-    }
-
-
-def get_ship_construction_time_seconds(ship_code, quantity):
-    config = get_ship_config(ship_code)
-    if not config:
-        return None
-
-    return config["build_time"] * quantity
 
 
 def has_enough_resources(planet, cost):

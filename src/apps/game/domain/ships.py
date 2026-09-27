@@ -57,3 +57,26 @@ SHIPS = {
         },
     },
 }
+
+
+def get_ship_config(ship_code):
+    return SHIPS.get(ship_code)
+
+
+def get_ship_construction_cost(ship_code, quantity):
+    config = get_ship_config(ship_code)
+    if not config:
+        return None
+
+    return {
+        resource: amount * quantity
+        for resource, amount in config["base_cost"].items()
+    }
+
+
+def get_ship_construction_time_seconds(ship_code, quantity):
+    config = get_ship_config(ship_code)
+    if not config:
+        return None
+
+    return config["build_time"] * quantity

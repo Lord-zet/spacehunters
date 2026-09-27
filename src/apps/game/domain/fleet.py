@@ -32,6 +32,22 @@ class FleetTarget:
     planet: object | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class FleetEvent:
+    event_time: object
+    fleet: object
+    event_type: str
+
+
+FLEET_EVENT_ARRIVAL = "arrival"
+FLEET_EVENT_RETURN = "return"
+
+FLEET_EVENT_PRIORITY = {
+    FLEET_EVENT_ARRIVAL: 10,
+    FLEET_EVENT_RETURN: 20,
+}
+
+
 def calculate_fleet_base_fuel_burn(ship_quantities: dict[str, int]) -> int:
     total = 0
     for ship_code, quantity in ship_quantities.items():
@@ -74,6 +90,66 @@ def calculate_helion_cost_for_flight(source, target, ship_quantities: dict[str, 
     raw_cost = base_burn * distance * fuel_multiplier / HELION_DISTANCE_DIVISOR
 
     return max(MIN_HELION_COST, math.ceil(raw_cost))
+
+
+def get_fleet_flight_duration(fleet):
+    return fleet.arrival_time - fleet.departure_time
+
+
+def get_safe_fleet_event_time(event_time, *planets):
+    safe_time = event_time
+
+    for planet in planets:
+        if (
+            planet.last_resource_update
+            and planet.last_resource_update > safe_time
+        ):
+            safe_time = planet.last_resource_update
+
+    return safe_time
+
+
+def sort_fleet_events(events):
+    return sorted(events, key=lambda event: (
+        event.event_time,
+        FLEET_EVENT_PRIORITY[event.event_type],
+        event.fleet.pk)
+    )
+
+
+def get_due_fleet_events_for_fleets(fleets, *, at, outbound_status, returning_status) -> list[FleetEvent]:
+    events = []
+
+    for fleet in fleets:
+        if fleet.status == outbound_status:
+            if fleet.arrival_time and fleet.arrival_time <= at:
+                events.append(
+                    FleetEvent(
+                        event_time=fleet.arrival_time,
+                        fleet=fleet,
+                        event_type=FLEET_EVENT_ARRIVAL,
+                    )
+                )
+
+            if fleet.return_time and fleet.return_time <= at:
+                events.append(
+                    FleetEvent(
+                        event_time=fleet.return_time,
+                        fleet=fleet,
+                        event_type=FLEET_EVENT_RETURN,
+                    )
+                )
+
+        elif fleet.status == returning_status and fleet.return_time and fleet.return_time <= at:
+            events.append(
+                FleetEvent(
+                    event_time=fleet.return_time,
+                    fleet=fleet,
+                    event_type=FLEET_EVENT_RETURN,
+                )
+            )
+
+    return sort_fleet_events(events)
 
 
 def calculate_cargo_capacity(ship_quantities: dict[str, int]) -> int:

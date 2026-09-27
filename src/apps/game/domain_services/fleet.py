@@ -1,5 +1,4 @@
 from datetime import timedelta
-from dataclasses import dataclass
 
 from django.utils import timezone
 from django.db import IntegrityError, transaction
@@ -21,6 +20,8 @@ from apps.game.domain.world import Coordinates
 from apps.game.domain.travel import calculate_flight_time_seconds
 from apps.game.domain.ships import SHIPS
 from apps.game.domain.fleet import (
+    FLEET_EVENT_ARRIVAL,
+    FLEET_EVENT_RETURN,
     FleetTarget,
     MISSION_TARGET_EMPTY_COORDINATES,
     MISSION_TARGET_EXISTING_PLANET,
@@ -28,6 +29,9 @@ from apps.game.domain.fleet import (
     calculate_cargo_capacity,
     calculate_effective_fleet_speed_multiplier,
     calculate_helion_cost_for_flight,
+    get_due_fleet_events_for_fleets,
+    get_fleet_flight_duration,
+    get_safe_fleet_event_time,
     normalize_ship_quantities,
     validate_espionage_fleet_composition,
     validate_mission_fleet_composition,
@@ -181,29 +185,12 @@ def add_fleet_ships_to_planet(fleet, planet) -> None:
         PlanetShip.objects.bulk_create(ships_to_create)
 
 
-def get_fleet_flight_duration(fleet):
-    return fleet.arrival_time - fleet.departure_time
-
-
 def send_fleet_back_from_target(fleet, *, at) -> None:
     flight_duration = get_fleet_flight_duration(fleet)
 
     fleet.status = Fleet.Status.RETURNING
     fleet.return_time = at + flight_duration
     fleet.save(update_fields=["status", "return_time"])
-
-
-def get_safe_fleet_event_time(event_time, *planets):
-    safe_time = event_time
-
-    for planet in planets:
-        if (
-            planet.last_resource_update
-            and planet.last_resource_update > safe_time
-        ):
-            safe_time = planet.last_resource_update
-
-    return safe_time
 
 
 def prepare_planet_for_fleet_event(planet_id, at):
@@ -637,24 +624,7 @@ def send_colonization_fleet(
     )
 
 
-@dataclass(frozen=True, slots=True)
-class FleetEvent:
-    event_time: object
-    fleet: Fleet
-    event_type: str
-
-
-FLEET_EVENT_ARRIVAL = "arrival"
-FLEET_EVENT_RETURN = "return"
-
-FLEET_EVENT_PRIORITY = {
-    FLEET_EVENT_ARRIVAL: 10,
-    FLEET_EVENT_RETURN: 20,
-}
-
-
 def get_due_fleet_events(owner, *, at):
-    events = []
     owner_planet_ids = Planet.objects.filter(owner=owner).values("pk")
 
     fleets = list(
@@ -666,41 +636,11 @@ def get_due_fleet_events(owner, *, at):
         .order_by("pk")
     )
 
-    for fleet in fleets:
-        if fleet.status == Fleet.Status.OUTBOUND:
-            if fleet.arrival_time and fleet.arrival_time <= at:
-                events.append(
-                    FleetEvent(
-                        event_time=fleet.arrival_time,
-                        fleet=fleet,  # Przekazujemy pełny model
-                        event_type=FLEET_EVENT_ARRIVAL,
-                    )
-                )
-
-            # Ważne: jeśli użytkownik czekał aż flota zdążyła już wrócić,
-            # dodajemy też return event w tej samej rundzie.
-            if fleet.return_time and fleet.return_time <= at:
-                events.append(
-                    FleetEvent(
-                        event_time=fleet.return_time,
-                        fleet=fleet,
-                        event_type=FLEET_EVENT_RETURN,
-                    )
-                )
-
-        elif fleet.status == Fleet.Status.RETURNING and fleet.return_time and fleet.return_time <= at:
-            events.append(
-                FleetEvent(
-                    event_time=fleet.return_time,
-                    fleet=fleet,
-                    event_type=FLEET_EVENT_RETURN,
-                )
-            )
-
-    return sorted(events, key=lambda event: (
-        event.event_time,
-        FLEET_EVENT_PRIORITY[event.event_type],
-        event.fleet.pk)
+    return get_due_fleet_events_for_fleets(
+        fleets,
+        at=at,
+        outbound_status=Fleet.Status.OUTBOUND,
+        returning_status=Fleet.Status.RETURNING,
     )
 
 

@@ -8,11 +8,13 @@ from apps.game.domain.fleet_speed_profiles import (
     DEFAULT_FLEET_SPEED_PROFILE,
     get_fleet_speed_profile_choices,
 )
-from .domain.resources import Resource
-from .domain_services.fleet import (
+from .domain.fleet import (
     MISSION_TARGET_EMPTY_COORDINATES,
     MISSION_TARGET_EXISTING_PLANET,
     MISSION_TARGET_OWN_PLANET,
+)
+from .domain.resources import Resource
+from .domain_services.fleet import (
     get_mission_handler,
 )
 from .domain_services.planets import get_planet_at_coordinates

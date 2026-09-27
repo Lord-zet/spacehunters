@@ -1,17 +1,35 @@
 import math
+from dataclasses import dataclass
 
-from apps.game.domain.exceptions import FleetError, UnknownShipError
+from apps.game.domain.exceptions import (
+    FleetError,
+    InvalidCoordinatesError,
+    InvalidStationingTargetError,
+    UnknownShipError,
+    UnsupportedFleetMissionError,
+)
 from apps.game.domain.fleet_speed_profiles import (
     DEFAULT_FLEET_SPEED_PROFILE,
     get_fleet_speed_multiplier,
 )
-from apps.game.domain.ships import SHIPS
+from apps.game.domain.ships import ESPIONAGE_PROBE_CODE, SHIPS
 from apps.game.domain.travel import calculate_distance
+from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 
 
 DEFAULT_TRANSPORTER_CODE = "transporter"
 HELION_DISTANCE_DIVISOR = 1000
 MIN_HELION_COST = 1
+
+MISSION_TARGET_EXISTING_PLANET = "existing_planet"
+MISSION_TARGET_OWN_PLANET = "own_planet"
+MISSION_TARGET_EMPTY_COORDINATES = "empty_coordinates"
+
+
+@dataclass(frozen=True, slots=True)
+class FleetTarget:
+    coordinates: Coordinates
+    planet: object | None = None
 
 
 def calculate_fleet_base_fuel_burn(ship_quantities: dict[str, int]) -> int:
@@ -99,3 +117,61 @@ def normalize_ship_quantities(ship_quantities: dict[str, int] | int) -> dict[str
     if isinstance(ship_quantities, int):
         return {DEFAULT_TRANSPORTER_CODE: ship_quantities}
     return ship_quantities
+
+
+def validate_target_coordinates(coordinates: Coordinates) -> Coordinates:
+    if not isinstance(coordinates, Coordinates):
+        raise FleetError("Koordynaty celu muszą być obiektem Coordinates.")
+
+    try:
+        DEFAULT_UNIVERSE_RULES.validate_coordinates(coordinates)
+    except InvalidCoordinatesError as exc:
+        raise FleetError(str(exc)) from exc
+
+    return coordinates
+
+
+def validate_mission_target_requirement(requirement: str, target_planet, user) -> None:
+    if requirement == MISSION_TARGET_EXISTING_PLANET:
+        if target_planet is None:
+            raise FleetError("Ten typ misji wymaga istniejącej planety docelowej.")
+
+    elif requirement == MISSION_TARGET_OWN_PLANET:
+        if target_planet is None:
+            raise InvalidStationingTargetError(
+                "Misja stacjonowania jest możliwa tylko na własną planetę."
+            )
+        if target_planet.owner_id != user.id:
+            raise InvalidStationingTargetError(
+                "Misja stacjonowania jest możliwa tylko na własną planetę."
+            )
+
+    elif requirement == MISSION_TARGET_EMPTY_COORDINATES:
+        if target_planet is not None:
+            raise FleetError("Ten typ misji wymaga pustych koordynatów celu.")
+
+    else:
+        raise UnsupportedFleetMissionError("Nieobsługiwane wymaganie celu misji floty.")
+
+
+def validate_mission_fleet_composition(ship_quantities: dict[str, int], mission_type: str):
+    for ship_code, quantity in ship_quantities.items():
+        if quantity <= 0:
+            continue
+
+        allowed_missions = SHIPS[ship_code].get("allowed_missions", ())
+        if mission_type not in allowed_missions:
+            ship_label = SHIPS[ship_code].get("label", ship_code)
+            raise FleetError(f"Statek {ship_label} nie może wykonać tej misji.")
+
+
+def validate_espionage_fleet_composition(ship_quantities: dict[str, int], mission_type: str):
+    validate_mission_fleet_composition(ship_quantities, mission_type)
+
+    active_ship_codes = [
+        ship_code
+        for ship_code, quantity in ship_quantities.items()
+        if quantity > 0
+    ]
+    if active_ship_codes != [ESPIONAGE_PROBE_CODE]:
+        raise FleetError("Misja szpiegowska wymaga floty zlożonej wyłącznie z sond szpiegowskich.")

@@ -13,21 +13,27 @@ from apps.game.domain.exceptions import (
     NotEnoughTransportersError,
     SamePlanetTransportError,
     NotEnoughFuelError,
-    InvalidStationingTargetError,
     UnsupportedFleetMissionError,
     PlanetOwnershipError,
-    InvalidCoordinatesError,
     PlanetLimitReachedError,
 )
-from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
+from apps.game.domain.world import Coordinates
 from apps.game.domain.travel import calculate_flight_time_seconds
-from apps.game.domain.ships import ESPIONAGE_PROBE_CODE, SHIPS
+from apps.game.domain.ships import SHIPS
 from apps.game.domain.fleet import (
+    FleetTarget,
+    MISSION_TARGET_EMPTY_COORDINATES,
+    MISSION_TARGET_EXISTING_PLANET,
+    MISSION_TARGET_OWN_PLANET,
     calculate_cargo_capacity,
     calculate_effective_fleet_speed_multiplier,
     calculate_helion_cost_for_flight,
     normalize_ship_quantities,
+    validate_espionage_fleet_composition,
+    validate_mission_fleet_composition,
+    validate_mission_target_requirement,
     validate_ship_quantities,
+    validate_target_coordinates,
 )
 from apps.game.domain.resources import (
     RESOURCE_STATE_FIELDS,
@@ -49,17 +55,6 @@ from apps.game.domain.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
 )
 from .planets import create_planet, get_planet_at_coordinates, get_planet_limit_status
-
-
-MISSION_TARGET_EXISTING_PLANET = "existing_planet"
-MISSION_TARGET_OWN_PLANET = "own_planet"
-MISSION_TARGET_EMPTY_COORDINATES = "empty_coordinates"
-
-
-@dataclass(frozen=True, slots=True)
-class FleetTarget:
-    coordinates: Coordinates
-    planet: Planet | None = None
 
 
 def get_planet_ships_display(planet, form=None):
@@ -233,14 +228,7 @@ class BaseMission:
 
     def validate_fleet_composition(self, ship_quantities: dict[str, int], mission_type: str):
         """Sprawdza, czy wybrane statki mogą wykonać dany typ misji."""
-        for ship_code, quantity in ship_quantities.items():
-            if quantity <= 0:
-                continue
-
-            allowed_missions = SHIPS[ship_code].get("allowed_missions", ())
-            if mission_type not in allowed_missions:
-                ship_label = SHIPS[ship_code].get("label", ship_code)
-                raise FleetError(f"Statek {ship_label} nie może wykonać tej misji.")
+        validate_mission_fleet_composition(ship_quantities, mission_type)
 
     def calculate_return_time(self, arrival_time, flight_duration):
         """Oblicza czas powrotu floty (domyślnie powrót trwa tyle samo co dolot)."""
@@ -286,15 +274,7 @@ class StationMission(BaseMission):
 
 class EspionageMission(BaseMission):
     def validate_fleet_composition(self, ship_quantities: dict[str, int], mission_type: str):
-        super().validate_fleet_composition(ship_quantities, mission_type)
-
-        active_ship_codes = [
-            ship_code
-            for ship_code, quantity in ship_quantities.items()
-            if quantity > 0
-        ]
-        if active_ship_codes != [ESPIONAGE_PROBE_CODE]:
-            raise FleetError("Misja szpiegowska wymaga floty zlożonej wyłącznie z sond szpiegowskich.")
+        validate_espionage_fleet_composition(ship_quantities, mission_type)
 
     def handle_arrival(self, fleet, *, at):
         target_planet = prepare_planet_for_fleet_event(fleet.target_planet_id, at)
@@ -360,18 +340,6 @@ def get_mission_handler(mission_type: str) -> BaseMission:
     return handler
 
 
-def validate_target_coordinates(coordinates: Coordinates) -> Coordinates:
-    if not isinstance(coordinates, Coordinates):
-        raise FleetError("Koordynaty celu muszą być obiektem Coordinates.")
-
-    try:
-        DEFAULT_UNIVERSE_RULES.validate_coordinates(coordinates)
-    except InvalidCoordinatesError as exc:
-        raise FleetError(str(exc)) from exc
-
-    return coordinates
-
-
 def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> FleetTarget:
     if target_planet is None and target_coordinates is None:
         raise FleetError("Podaj koordynaty celu floty.")
@@ -403,27 +371,7 @@ def validate_mission_target(mission_handler, source_planet, target, user) -> Non
     requirement = mission_handler.target_requirement
     target_planet = target.planet
 
-    if requirement == MISSION_TARGET_EXISTING_PLANET:
-        if target_planet is None:
-            raise FleetError("Ten typ misji wymaga istniejącej planety docelowej.")
-
-    elif requirement == MISSION_TARGET_OWN_PLANET:
-        if target_planet is None:
-            raise InvalidStationingTargetError(
-                "Misja stacjonowania jest możliwa tylko na własną planetę."
-            )
-        if target_planet.owner_id != user.id:
-            raise InvalidStationingTargetError(
-                "Misja stacjonowania jest możliwa tylko na własną planetę."
-            )
-
-    elif requirement == MISSION_TARGET_EMPTY_COORDINATES:
-        if target_planet is not None:
-            raise FleetError("Ten typ misji wymaga pustych koordynatów celu.")
-
-    else:
-        raise UnsupportedFleetMissionError("Nieobsługiwane wymaganie celu misji floty.")
-
+    validate_mission_target_requirement(requirement, target_planet, user)
     mission_handler.validate_dispatch(source_planet, target_planet, user)
 
 

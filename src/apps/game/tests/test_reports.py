@@ -3,11 +3,13 @@ from django.http import Http404
 from django.urls import reverse
 
 from apps.game.domain.world import Coordinates
-from apps.game.domain_services.reports import (
+from apps.game.domain.reports import (
     ESPIONAGE_PLANET_SECTION,
     REPORT_PAYLOAD_SCHEMA_VERSION,
     build_espionage_payload,
     build_planet_intel_section,
+)
+from apps.game.domain_services.reports import (
     create_espionage_report,
 )
 from apps.game.models import Report

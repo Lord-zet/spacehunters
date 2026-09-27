@@ -21,9 +21,11 @@ from .domain.ships import (
     get_ship_construction_cost,
     get_ship_construction_time_seconds,
 )
-from .domain_services.fleet import (
+from .domain.fleet import (
     calculate_effective_fleet_speed_multiplier,
     calculate_helion_cost_for_flight,
+)
+from .domain_services.fleet import (
     get_planet_ships_display,
     send_colonization_fleet,
     send_espionage_fleet,

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from apps.game.domain_services.fleet import (
+from apps.game.domain.fleet import (
     calculate_effective_fleet_speed_multiplier,
     calculate_helion_cost_for_flight,
 )

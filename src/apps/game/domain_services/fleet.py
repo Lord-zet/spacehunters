@@ -1,4 +1,3 @@
-import math
 from datetime import timedelta
 from dataclasses import dataclass
 
@@ -16,14 +15,20 @@ from apps.game.domain.exceptions import (
     NotEnoughFuelError,
     InvalidStationingTargetError,
     UnsupportedFleetMissionError,
-    UnknownShipError,
     PlanetOwnershipError,
     InvalidCoordinatesError,
     PlanetLimitReachedError,
 )
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
-from apps.game.domain.travel import calculate_distance, calculate_flight_time_seconds
+from apps.game.domain.travel import calculate_flight_time_seconds
 from apps.game.domain.ships import ESPIONAGE_PROBE_CODE, SHIPS
+from apps.game.domain.fleet import (
+    calculate_cargo_capacity,
+    calculate_effective_fleet_speed_multiplier,
+    calculate_helion_cost_for_flight,
+    normalize_ship_quantities,
+    validate_ship_quantities,
+)
 from apps.game.domain.resources import (
     RESOURCE_STATE_FIELDS,
     Resource,
@@ -42,14 +47,9 @@ from .reports import create_espionage_report
 from apps.game.domain.fleet_speed_profiles import (
     DEFAULT_FLEET_SPEED_PROFILE,
     get_fleet_fuel_multiplier,
-    get_fleet_speed_multiplier,
 )
 from .planets import create_planet, get_planet_at_coordinates, get_planet_limit_status
 
-
-DEFAULT_TRANSPORTER_CODE = "transporter"
-HELION_DISTANCE_DIVISOR = 1000
-MIN_HELION_COST = 1
 
 MISSION_TARGET_EXISTING_PLANET = "existing_planet"
 MISSION_TARGET_OWN_PLANET = "own_planet"
@@ -86,67 +86,6 @@ def get_planet_ships_display(planet, form=None):
         result.append(ship_data)
 
     return result
-
-
-def calculate_fleet_base_fuel_burn(ship_quantities: dict[str, int]) -> int:
-    total = 0
-    for ship_code, quantity in ship_quantities.items():
-        if quantity <= 0:
-            continue
-        ship_config = SHIPS[ship_code]
-        total += ship_config["fuel_burn"] * quantity
-    return total
-
-
-def calculate_fleet_base_speed(ship_quantities: dict[str, int]) -> float:
-    active_ship_speeds = [
-        float(SHIPS[ship_code]["base_speed"])
-        for ship_code, quantity in ship_quantities.items()
-        if quantity > 0
-    ]
-
-    if not active_ship_speeds:
-        return 1.0
-    return min(active_ship_speeds)
-
-
-def calculate_effective_fleet_speed_multiplier(
-    ship_quantities: dict[str, int],
-    speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
-) -> float:
-    return (
-        calculate_fleet_base_speed(ship_quantities)
-        * get_fleet_speed_multiplier(speed_profile)
-    )
-
-
-def calculate_helion_cost_for_flight(source_planet, target_planet, ship_quantities: dict[str, int],
-                                     fuel_multiplier=1.0) -> int:
-    base_burn = calculate_fleet_base_fuel_burn(ship_quantities)
-    if base_burn <= 0:
-        return 0
-
-    distance = calculate_distance(source_planet.coordinates, target_planet.coordinates)
-    raw_cost = base_burn * distance * fuel_multiplier / HELION_DISTANCE_DIVISOR
-
-    return max(MIN_HELION_COST, math.ceil(raw_cost))
-
-
-def calculate_cargo_capacity(ship_quantities: dict[str, int]) -> int:
-    """
-    Oblicza łączną ładowność dla dowolnej mieszanki statków we flocie. Dowolny statek w konfiguracji
-    SHIPS posiadający parametr 'cargo_capacity' będzie brał udział w ładowności floty.
-    """
-    total = 0
-
-    for ship_code, quantity in ship_quantities.items():
-        if quantity <= 0:
-            continue
-
-        ship_config = SHIPS.get(ship_code, {})
-        total += ship_config.get("cargo_capacity", 0) * quantity
-
-    return total
 
 
 def check_and_get_planet_ships(planet, ship_quantities: dict[str, int]) -> list[PlanetShip]:
@@ -543,36 +482,6 @@ def ensure_source_planet_belongs_to_user(source_planet, user) -> None:
         raise PlanetOwnershipError("Planeta źródłowa nie należy do tego gracza.")
 
 
-def validate_ship_quantities(ship_quantities: dict[str, int]) -> None:
-    if not ship_quantities:
-        raise FleetError("Flota musi zawierać co najmniej jeden statek.")
-
-    has_any_ship = False
-
-    for ship_code, quantity in ship_quantities.items():
-        if ship_code not in SHIPS:
-            raise UnknownShipError("Nieznany statek.")
-
-        if quantity < 0:
-            raise FleetError("Liczba statków nie może być ujemna.")
-
-        if quantity > 0:
-            has_any_ship = True
-
-    if not has_any_ship:
-        raise FleetError("Flota musi zawierać co najmniej jeden statek.")
-
-
-def _normalize_ship_quantities(ship_quantities: dict[str, int] | int) -> dict[str, int]:
-    """
-    Pomocnicza funkcja zapewniająca wsteczną kompatybilność.
-    Jeśli stary kod lub testy przekażą int (liczba transporterów), zamienia go w słownik.
-    """
-    if isinstance(ship_quantities, int):
-        return {DEFAULT_TRANSPORTER_CODE: ship_quantities}
-    return ship_quantities
-
-
 @transaction.atomic
 def _send_fleet_mission(
     source_planet,
@@ -691,7 +600,7 @@ def send_transport_fleet(
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
-        ship_quantities=_normalize_ship_quantities(ship_quantities),
+        ship_quantities=normalize_ship_quantities(ship_quantities),
         cargo=cargo,
         speed_profile=speed_profile,
         user=user,
@@ -717,7 +626,7 @@ def send_stationing_fleet(
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
-        ship_quantities=_normalize_ship_quantities(ship_quantities),
+        ship_quantities=normalize_ship_quantities(ship_quantities),
         cargo=cargo,
         speed_profile=speed_profile,
         user=user,
@@ -747,7 +656,7 @@ def send_espionage_fleet(
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=target_planet,
-        ship_quantities=_normalize_ship_quantities(ship_quantities),
+        ship_quantities=normalize_ship_quantities(ship_quantities),
         cargo={},
         speed_profile=speed_profile,
         user=user,
@@ -770,7 +679,7 @@ def send_colonization_fleet(
     return _send_fleet_mission(
         source_planet=source_planet,
         target_planet=None,
-        ship_quantities=_normalize_ship_quantities(ship_quantities),
+        ship_quantities=normalize_ship_quantities(ship_quantities),
         cargo=cargo,
         speed_profile=speed_profile,
         user=user,

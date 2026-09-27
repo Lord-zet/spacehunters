@@ -4,11 +4,9 @@ from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .domain.buildings import BUILDINGS
+from .domain.planets import PLANET_NAME_MAX_LENGTH
 from .domain.ships import SHIPS
 from .domain.world import Coordinates
-
-
-PLANET_NAME_MAX_LENGTH = 50
 
 
 class Planet(models.Model):

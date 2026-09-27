@@ -1,57 +1,25 @@
-from dataclasses import dataclass
-
 from django.db import transaction
 from apps.game.domain.planet_generation import generate_planet_traits
 
 from apps.game.models import (
     Planet,
-    PLANET_NAME_MAX_LENGTH,
     PlanetBuildings,
     PlanetShip,
     PlanetShipConstruction,
 )
 from apps.game.domain.ships import SHIPS
 from apps.game.domain.exceptions import (
-    InvalidPlanetNameError,
     PlanetNameAlreadyExistsError,
     PlanetLimitReachedError,
 )
+from apps.game.domain.planets import (
+    DEFAULT_BUILDING_LEVELS,
+    DEFAULT_PLANET_FIELDS_TOTAL,
+    DEFAULT_PLANET_RESOURCES,
+    PlanetLimitStatus,
+    normalize_planet_name,
+)
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
-
-
-DEFAULT_PLANET_RESOURCES = {
-    "metal": 500,
-    "crystal": 200,
-    "helion": 0,
-}
-
-
-DEFAULT_BUILDING_LEVELS = {
-    "metal_mine_level": 1,
-    "crystal_mine_level": 0,
-    "helion_synthesizer_level": 0,
-    "solar_array_level": 1,
-    "metal_storage_level": 0,
-    "crystal_storage_level": 0,
-    "helion_storage_level": 0,
-    "shipyard_level": 0,
-    "building_type": "",
-    "building_ends_at": None,
-}
-
-
-@dataclass(frozen=True, slots=True)
-class PlanetLimitStatus:
-    current: int
-    maximum: int
-
-    @property
-    def remaining(self) -> int:
-        return max(self.maximum - self.current, 0)
-
-    @property
-    def is_reached(self) -> bool:
-        return self.current >= self.maximum
 
 
 def get_planet_limit_status(owner, *, lock: bool = False) -> PlanetLimitStatus:
@@ -75,13 +43,7 @@ def get_planet_at_coordinates(coordinates: Coordinates) -> Planet | None:
 
 @transaction.atomic
 def rename_planet(planet: Planet, new_name: str) -> Planet:
-    normalized_name = new_name.strip()
-
-    if not normalized_name:
-        raise InvalidPlanetNameError("Nazwa planety nie może być pusta.")
-
-    if len(normalized_name) > PLANET_NAME_MAX_LENGTH:
-        raise InvalidPlanetNameError("Nazwa planety jest zbyt długa.")
+    normalized_name = normalize_planet_name(new_name)
 
     locked_planet = Planet.objects.select_for_update().get(pk=planet.pk)
 
@@ -104,11 +66,12 @@ def rename_planet(planet: Planet, new_name: str) -> Planet:
 
 @transaction.atomic
 def create_planet(*, owner, name: str, coordinates: Coordinates, is_homeland: bool = False,
-                  planet_fields_total: int = 90, resources: dict | None = None, buildings: dict | None = None,
+                  planet_fields_total: int = DEFAULT_PLANET_FIELDS_TOTAL, resources: dict | None = None, buildings: dict | None = None,
                   ships: dict | None = None, planet_type=None, radius_km=None, temperature_min=None,
                   temperature_max=None, rng=None,) -> Planet:
 
     DEFAULT_UNIVERSE_RULES.validate_coordinates(coordinates)
+    normalized_name = normalize_planet_name(name)
 
     planet_limit = get_planet_limit_status(owner, lock=True)
     if planet_limit.is_reached:
@@ -121,7 +84,7 @@ def create_planet(*, owner, name: str, coordinates: Coordinates, is_homeland: bo
 
     planet = Planet.objects.create(
         owner=owner,
-        name=name,
+        name=normalized_name,
         **Planet.coordinate_fields(coordinates),
         is_homeland=is_homeland,
         planet_fields_total=planet_fields_total,

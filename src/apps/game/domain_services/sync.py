@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from datetime import datetime
 
 from django.db import transaction
 from django.utils import timezone
 
 from apps.game.domain.exceptions import PlanetStateTimeRegressionError
+from apps.game.domain.sync import get_next_due_planet_event_time
 from apps.game.models import (
     Planet,
     PlanetBuildings,
@@ -22,29 +22,6 @@ class PlanetStateAdvanceResult:
     planet: Planet
     building_finished: bool
     ship_construction_finished: bool
-
-
-def _get_next_due_event_time(
-    *,
-    buildings: PlanetBuildings,
-    ship_construction: PlanetShipConstruction,
-    target_time: datetime,
-) -> datetime | None:
-    candidates = []
-
-    if (
-        buildings.building_ends_at is not None
-        and buildings.building_ends_at <= target_time
-    ):
-        candidates.append(buildings.building_ends_at)
-
-    if (
-        ship_construction.ends_at is not None
-        and ship_construction.ends_at <= target_time
-    ):
-        candidates.append(ship_construction.ends_at)
-
-    return min(candidates) if candidates else None
 
 
 @transaction.atomic
@@ -82,7 +59,7 @@ def advance_planet_state(
     ship_construction_finished = False
 
     while True:
-        scheduled_event_time = _get_next_due_event_time(
+        scheduled_event_time = get_next_due_planet_event_time(
             buildings=buildings,
             ship_construction=ship_construction,
             target_time=target_time,

@@ -14,7 +14,7 @@ from .domain.fleet import (
     MISSION_TARGET_OWN_PLANET,
 )
 from .domain.resources import Resource
-from .services.fleet import (
+from .services.missions import (
     get_mission_handler,
 )
 from .services.planets import get_planet_at_coordinates

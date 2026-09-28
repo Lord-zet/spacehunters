@@ -1,41 +1,30 @@
 from datetime import timedelta
 
 from django.utils import timezone
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from django.db.models import Q
 
-from apps.game.models import Fleet, Planet, PlanetShip, FleetShip
+from apps.game.models import Fleet, Planet, PlanetShip
 from apps.game.domain.exceptions import (
     FleetError,
     CargoCapacityExceededError,
     NotEnoughResourcesError,
-    NotEnoughTransportersError,
     SamePlanetTransportError,
     NotEnoughFuelError,
-    UnsupportedFleetMissionError,
     PlanetOwnershipError,
-    PlanetLimitReachedError,
 )
-from apps.game.domain.world import Coordinates
 from apps.game.domain.travel import calculate_flight_time_seconds
 from apps.game.domain.ships import SHIPS
 from apps.game.domain.fleet import (
     FLEET_EVENT_ARRIVAL,
     FLEET_EVENT_RETURN,
     FleetTarget,
-    MISSION_TARGET_EMPTY_COORDINATES,
-    MISSION_TARGET_EXISTING_PLANET,
-    MISSION_TARGET_OWN_PLANET,
     calculate_cargo_capacity,
     calculate_effective_fleet_speed_multiplier,
     calculate_helion_cost_for_flight,
     get_due_fleet_events_for_fleets,
-    get_fleet_flight_duration,
     get_safe_fleet_event_time,
-    validate_espionage_fleet_composition,
-    validate_mission_fleet_composition,
     validate_mission_target_requirement,
-    validate_ship_quantities,
     validate_target_coordinates,
 )
 from apps.game.domain.resources import (
@@ -52,12 +41,18 @@ from apps.game.domain.resources import (
 )
 from apps.game.services.resources import synchronize_resources
 from .sync import advance_planet_state
-from .reports import create_espionage_report
 from apps.game.domain.fleet_speed_profiles import (
     DEFAULT_FLEET_SPEED_PROFILE,
     get_fleet_fuel_multiplier,
 )
-from .planets import create_planet, get_planet_at_coordinates, get_planet_limit_status
+from .fleet_ships import (
+    add_fleet_ships_to_planet,
+    check_and_get_planet_ships,
+    create_fleet_ships,
+    deduct_planet_ships_bulk,
+)
+from .missions import get_mission_handler
+from .planets import get_planet_at_coordinates
 
 
 def get_planet_ships_display(planet, form=None):
@@ -84,246 +79,6 @@ def get_planet_ships_display(planet, form=None):
         result.append(ship_data)
 
     return result
-
-
-def check_and_get_planet_ships(planet, ship_quantities: dict[str, int]) -> list[PlanetShip]:
-    """
-    Pobiera istniejące statki jednym zapytaniem i weryfikuje ich ilość.
-    Zapobiega N+1 zapytaniom występującym przy pętlach walidujących poszczególne typy.
-    """
-    validate_ship_quantities(ship_quantities)
-    active_quantities = {code: q for code, q in ship_quantities.items() if q > 0}
-
-    # Jedno zapytanie do bazy z blokadą zamiast N zapytań (dla każdego typu)
-    existing_ships = list(
-        PlanetShip.objects
-        .select_for_update()
-        .filter(planet=planet, ship_code__in=active_quantities.keys())
-    )
-    ship_map = {ship.ship_code: ship for ship in existing_ships}
-
-    for ship_code, required_quantity in active_quantities.items():
-        planet_ship = ship_map.get(ship_code)
-
-        if not planet_ship or planet_ship.quantity < required_quantity:
-            # Zachowujemy klasyczny wyjątek dla transportowców, ale uniwersalizujemy dla reszty
-            if "transporter" in ship_code:
-                raise NotEnoughTransportersError("Nie masz wystarczającej liczby transportowców.")
-            raise FleetError(f"Nie masz wystarczającej liczby statków ({ship_code}).")
-
-    return existing_ships
-
-
-def deduct_planet_ships_bulk(ships_to_update: list[PlanetShip], ship_quantities: dict[str, int]) -> None:
-    """
-    Odejmuje wartości statków w pamięci i wykonuje 1 zapytanie UPDATE (bulk_update).
-    """
-    if not ships_to_update:
-        return
-
-    for ship in ships_to_update:
-        deduction = ship_quantities.get(ship.ship_code, 0)
-        if deduction > 0:
-            ship.quantity -= deduction
-
-    PlanetShip.objects.bulk_update(ships_to_update, ["quantity"])
-
-
-def create_fleet_ships(fleet, ship_quantities: dict[str, int]) -> None:
-    fleet_ships = [
-        FleetShip(
-            fleet=fleet,
-            ship_code=ship_code,
-            quantity=quantity,
-        )
-        for ship_code, quantity in ship_quantities.items()
-        if quantity > 0
-    ]
-    if fleet_ships:
-        FleetShip.objects.bulk_create(fleet_ships)
-
-
-def add_fleet_ships_to_planet(fleet, planet) -> None:
-    """
-    Dodaje statki z floty do planety.
-
-    Przy prefetched fleet.ships wykonuje jedno zapytanie odczytujące PlanetShip oraz maksymalnie
-    jeden bulk_update i jeden bulk_create.
-    """
-    fleet_ships = [fs for fs in fleet.ships.all() if fs.quantity > 0]
-    if not fleet_ships:
-        return
-
-    ship_codes = [fs.ship_code for fs in fleet_ships]
-
-    existing_ships = list(
-        PlanetShip.objects
-        .select_for_update()
-        .filter(planet=planet, ship_code__in=ship_codes)
-    )
-    ship_map = {ship.ship_code: ship for ship in existing_ships}
-
-    ships_to_update = []
-    ships_to_create = []
-
-    for fs in fleet_ships:
-        if fs.ship_code in ship_map:
-            planet_ship = ship_map[fs.ship_code]
-            planet_ship.quantity += fs.quantity
-            ships_to_update.append(planet_ship)
-        else:
-            ships_to_create.append(PlanetShip(
-                planet=planet,
-                ship_code=fs.ship_code,
-                quantity=fs.quantity
-            ))
-
-    if ships_to_update:
-        PlanetShip.objects.bulk_update(ships_to_update, ["quantity"])
-    if ships_to_create:
-        PlanetShip.objects.bulk_create(ships_to_create)
-
-
-def send_fleet_back_from_target(fleet, *, at) -> None:
-    flight_duration = get_fleet_flight_duration(fleet)
-
-    fleet.status = Fleet.Status.RETURNING
-    fleet.return_time = at + flight_duration
-    fleet.save(update_fields=["status", "return_time"])
-
-
-def prepare_planet_for_fleet_event(planet_id, at):
-    planet = (
-        Planet.objects
-        .select_for_update()
-        .get(pk=planet_id)
-    )
-    safe_event_time = get_safe_fleet_event_time(at, planet)
-    advance_result = advance_planet_state(planet, at=safe_event_time)
-    return advance_result.planet
-
-
-class BaseMission:
-    """Klasa bazowa dla wszystkich misji flot."""
-
-    target_requirement = MISSION_TARGET_EXISTING_PLANET
-
-    def validate_dispatch(self, source_planet, target_planet, user):
-        """Specyficzna walidacja dla danego typu misji przed wylotem."""
-        pass
-
-    def validate_fleet_composition(self, ship_quantities: dict[str, int], mission_type: str):
-        """Sprawdza, czy wybrane statki mogą wykonać dany typ misji."""
-        validate_mission_fleet_composition(ship_quantities, mission_type)
-
-    def calculate_return_time(self, arrival_time, flight_duration):
-        """Oblicza czas powrotu floty (domyślnie powrót trwa tyle samo co dolot)."""
-        return arrival_time + flight_duration
-
-    def handle_arrival(self, fleet, *, at):
-        """Zdarzenie wywoływane w momencie dotarcia floty do celu."""
-        raise NotImplementedError("Subclasses must implement handle_arrival")
-
-
-class TransportMission(BaseMission):
-    def handle_arrival(self, fleet, *, at):
-        target_planet = prepare_planet_for_fleet_event(fleet.target_planet_id, at)
-
-        fleet_resource_fields, _ = transfer_resources(source=fleet, target=target_planet)
-
-        fleet.status = Fleet.Status.RETURNING
-
-        target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
-        fleet.save(update_fields=[*fleet_resource_fields, "status"])
-
-
-class StationMission(BaseMission):
-    target_requirement = MISSION_TARGET_OWN_PLANET
-
-    def calculate_return_time(self, arrival_time, flight_duration):
-        # Misja stacjonuj nie wraca
-        return None
-
-    def handle_arrival(self, fleet, *, at):
-        target_planet = prepare_planet_for_fleet_event(fleet.target_planet_id, at)
-
-        fleet_resource_fields, _ = transfer_resources(source=fleet, target=target_planet)
-
-        add_fleet_ships_to_planet(fleet, target_planet)
-
-        fleet.status = Fleet.Status.COMPLETED
-        fleet.return_time = None
-
-        target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
-        fleet.save(update_fields=[*fleet_resource_fields, "status", "return_time"])
-
-
-class EspionageMission(BaseMission):
-    def validate_fleet_composition(self, ship_quantities: dict[str, int], mission_type: str):
-        validate_espionage_fleet_composition(ship_quantities, mission_type)
-
-    def handle_arrival(self, fleet, *, at):
-        target_planet = prepare_planet_for_fleet_event(fleet.target_planet_id, at)
-
-        create_espionage_report(
-            owner=fleet.owner,
-            source_planet=fleet.source_planet,
-            target_planet=target_planet,
-            fleet=fleet,
-        )
-
-        fleet.status = Fleet.Status.RETURNING
-
-        target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
-        fleet.save(update_fields=["status"])
-
-
-class ColonizationMission(BaseMission):
-    target_requirement = MISSION_TARGET_EMPTY_COORDINATES
-
-    def validate_dispatch(self, source_planet, target_planet, user):
-        if get_planet_limit_status(user).is_reached:
-            raise FleetError("Osiągnięto maksymalną liczbę planet gracza.")
-
-    def calculate_return_time(self, arrival_time, flight_duration):
-        return None
-
-    def handle_arrival(self, fleet, *, at):
-        target_planet = create_colony_from_fleet(fleet, at=at)
-
-        if target_planet is None:
-            send_fleet_back_from_target(fleet, at=at)
-            return
-
-        fleet_resource_fields, _ = transfer_resources(source=fleet, target=target_planet)
-        add_fleet_ships_to_planet(fleet, target_planet)
-
-        fleet.target_planet = target_planet
-        fleet.status = Fleet.Status.COMPLETED
-        fleet.return_time = None
-
-        target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
-        fleet.save(update_fields=[
-            *fleet_resource_fields,
-            "target_planet",
-            "status",
-            "return_time",
-        ])
-
-
-MISSION_HANDLERS = {
-    Fleet.MissionType.TRANSPORT: TransportMission(),
-    Fleet.MissionType.STATION: StationMission(),
-    Fleet.MissionType.ESPIONAGE: EspionageMission(),
-    Fleet.MissionType.COLONIZE: ColonizationMission(),
-}
-
-
-def get_mission_handler(mission_type: str) -> BaseMission:
-    handler = MISSION_HANDLERS.get(mission_type)
-    if not handler:
-        raise UnsupportedFleetMissionError("Nieobsługiwany typ misji floty.")
-    return handler
 
 
 def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> FleetTarget:
@@ -359,31 +114,6 @@ def validate_mission_target(mission_handler, source_planet, target, user) -> Non
 
     validate_mission_target_requirement(requirement, target_planet, user)
     mission_handler.validate_dispatch(source_planet, target_planet, user)
-
-
-def create_colony_from_fleet(fleet, *, at):
-    coordinates = fleet.target_coordinates
-
-    if get_planet_at_coordinates(coordinates) is not None:
-        return None
-
-    try:
-        planet = create_planet(
-            owner=fleet.owner,
-            name=f"Kolonia {fleet.target_coordinates}",
-            is_homeland=False,
-            resources={
-                "metal": 0,
-                "crystal": 0,
-                "helion": 0,
-            },
-            coordinates=coordinates,
-        )
-    except (IntegrityError, PlanetLimitReachedError):
-        return None
-
-    planet.last_resource_update = at
-    return planet
 
 
 def handle_fleet_return(fleet, *, at) -> None:

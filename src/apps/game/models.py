@@ -161,6 +161,36 @@ class Planet(models.Model):
         return self.name
 
 
+class Moon(models.Model):
+    space_object = models.OneToOneField(
+        SpaceObject,
+        on_delete=models.CASCADE,
+        related_name="moon",
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="moons",
+    )
+    diameter = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = [
+            "space_object__location__galaxy",
+            "space_object__location__system",
+            "space_object__location__position",
+        ]
+
+    @property
+    def coordinates(self):
+        return self.space_object.coordinates
+
+    def __str__(self):
+        return f"Moon {self.coordinates}"
+
+
 class PlanetBuildings(models.Model):
     planet = models.OneToOneField(
         Planet,

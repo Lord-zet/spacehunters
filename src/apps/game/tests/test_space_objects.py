@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 
 from apps.game.domain.world import Coordinates
-from apps.game.models import SpaceLocation, SpaceObject
+from apps.game.models import Moon, SpaceLocation, SpaceObject
 
 
 class SpaceLocationTests(TestCase):
@@ -68,3 +68,24 @@ class SpaceObjectTests(TestCase):
                 location=location,
                 object_type=SpaceObject.ObjectType.MOON,
             )
+
+
+class MoonTests(TestCase):
+    def test_moon_uses_space_object_location_coordinates(self):
+        location = SpaceLocation.objects.create(galaxy=1, system=42, position=7)
+        SpaceObject.objects.create(
+            location=location,
+            object_type=SpaceObject.ObjectType.PLANET,
+        )
+        moon_object = SpaceObject.objects.create(
+            location=location,
+            object_type=SpaceObject.ObjectType.MOON,
+        )
+
+        moon = Moon.objects.create(
+            space_object=moon_object,
+            diameter=8_944,
+        )
+
+        self.assertEqual(moon.coordinates, Coordinates(galaxy=1, system=42, position=7))
+        self.assertEqual(location.space_objects.count(), 2)

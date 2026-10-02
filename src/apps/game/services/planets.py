@@ -6,6 +6,8 @@ from apps.game.models import (
     PlanetBuildings,
     PlanetShip,
     PlanetShipConstruction,
+    SpaceLocation,
+    SpaceObject,
 )
 from apps.game.domain.ships import SHIPS
 from apps.game.domain.exceptions import (
@@ -36,6 +38,7 @@ def get_planet_limit_status(owner, *, lock: bool = False) -> PlanetLimitStatus:
 def get_planet_at_coordinates(coordinates: Coordinates) -> Planet | None:
     return (
         Planet.objects
+        .select_related("space_object__location")
         .filter(**Planet.coordinate_fields(coordinates))
         .first()
     )
@@ -82,10 +85,18 @@ def create_planet(*, owner, name: str, coordinates: Coordinates, is_homeland: bo
 
     generated_traits = generate_planet_traits(planet_type=planet_type, rng=rng)
 
+    location, _ = SpaceLocation.objects.get_or_create(
+        **SpaceLocation.coordinate_fields(coordinates)
+    )
+    space_object = SpaceObject.objects.create(
+        location=location,
+        object_type=SpaceObject.ObjectType.PLANET,
+    )
+
     planet = Planet.objects.create(
+        space_object=space_object,
         owner=owner,
         name=normalized_name,
-        **Planet.coordinate_fields(coordinates),
         is_homeland=is_homeland,
         planet_fields_total=planet_fields_total,
         planet_type=(

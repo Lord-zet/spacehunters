@@ -54,7 +54,7 @@ class SpaceObject(models.Model):
     location = models.ForeignKey(
         SpaceLocation,
         on_delete=models.CASCADE,
-        related_name="objects",
+        related_name="space_objects",
     )
     object_type = models.CharField(max_length=32, choices=ObjectType.choices)
 
@@ -76,15 +76,17 @@ class SpaceObject(models.Model):
 
 
 class Planet(models.Model):
+    space_object = models.OneToOneField(
+        SpaceObject,
+        on_delete=models.CASCADE,
+        related_name="planet",
+    )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="planets"
     )
     name = models.CharField(max_length=PLANET_NAME_MAX_LENGTH)
-    galaxy = models.PositiveIntegerField(default=1)
-    system = models.PositiveIntegerField()
-    position = models.PositiveIntegerField()
 
     planet_type = models.CharField(max_length=50, default="terrestrial")
     radius_km = models.PositiveIntegerField(default=6_000)
@@ -109,12 +111,12 @@ class Planet(models.Model):
                 condition=Q(is_homeland=True),
                 name="unique_homeland_per_owner",
             ),
-            models.UniqueConstraint(
-                fields=["galaxy", "system", "position"],
-                name="unique_planet_coordinates",
-            ),
         ]
-        ordering = ["galaxy", "system", "position"]
+        ordering = [
+            "space_object__location__galaxy",
+            "space_object__location__system",
+            "space_object__location__position",
+        ]
 
     def clean(self):
         if self.is_homeland:
@@ -132,24 +134,21 @@ class Planet(models.Model):
 
     @property
     def coordinates(self):
-        return Coordinates(
-            galaxy=self.galaxy,
-            system=self.system,
-            position=self.position,
-        )
+        return self.space_object.coordinates
 
     @staticmethod
     def coordinate_fields(coordinates: Coordinates) -> dict[str, int]:
         return {
-            "galaxy": coordinates.galaxy,
-            "system": coordinates.system,
-            "position": coordinates.position,
+            "space_object__location__galaxy": coordinates.galaxy,
+            "space_object__location__system": coordinates.system,
+            "space_object__location__position": coordinates.position,
         }
 
     def set_coordinates(self, coordinates: Coordinates) -> None:
-        self.galaxy = coordinates.galaxy
-        self.system = coordinates.system
-        self.position = coordinates.position
+        location, _ = SpaceLocation.objects.get_or_create(
+            **SpaceLocation.coordinate_fields(coordinates)
+        )
+        self.space_object.location = location
 
     def get_ship_quantity(self, ship_code: str) -> int:
         ship = self.ships.filter(ship_code=ship_code).first()

@@ -13,8 +13,7 @@ from apps.game.domain.resources import (
     get_storage_capacity,
     get_storage_capacity_for_level,
 )
-from apps.game.domain.world import Coordinates
-from apps.game.models import Planet, PlanetBuildings
+from apps.game.models import Planet, PlanetBuildings, SpaceLocation, SpaceObject
 from apps.game.domain.buildings import calculate_resource_production
 
 
@@ -25,10 +24,19 @@ class PlanetBuildingsIntegrationTests(TestCase):
             username="player1",
             password="testpass123",
         )
+        location = SpaceLocation.objects.create(
+            galaxy=1,
+            system=1,
+            position=1,
+        )
+        space_object = SpaceObject.objects.create(
+            location=location,
+            object_type=SpaceObject.ObjectType.PLANET,
+        )
         self.planet = Planet.objects.create(
+            space_object=space_object,
             owner=self.user,
             name="Earth",
-            **Planet.coordinate_fields(Coordinates(galaxy=1, system=1, position=1)),
             metal=10000,
             crystal=10000,
             is_homeland=True,

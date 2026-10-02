@@ -7,6 +7,7 @@ from apps.game.services.planets import (
     get_planet_at_coordinates,
     get_planet_limit_status,
 )
+from apps.game.models import SpaceObject
 from .helpers import PlanetTestMixin
 
 
@@ -27,6 +28,22 @@ class PlanetCreationTests(PlanetTestMixin, TestCase):
         self.assertIsNotNone(planet.get_buildings())
         self.assertIsNotNone(planet.get_ship_construction())
         self.assertEqual(planet.get_ship_quantity("transporter"),2)
+
+    def test_create_planet_creates_planet_space_object(self):
+        user = self.create_user("planet_create_space_object")
+
+        planet = create_planet(
+            owner=user,
+            name="Earth",
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
+            is_homeland=True,
+        )
+
+        self.assertEqual(planet.space_object.object_type, SpaceObject.ObjectType.PLANET)
+        self.assertEqual(
+            planet.space_object.location.coordinates,
+            Coordinates(galaxy=1, system=1, position=1),
+        )
 
     def test_missing_planet_ship_record_means_zero_quantity(self):
         user = self.create_user("planet_create_2")

@@ -96,7 +96,11 @@ class PlanetTestMixin:
         return self.reload_planet(planet)
 
     def reload_planet(self, planet):
-        return Planet.objects.select_related("buildings").get(pk=planet.pk)
+        return (
+            Planet.objects
+            .select_related("buildings", "space_object__location")
+            .get(pk=planet.pk)
+        )
 
     def get_planet_ship_quantity(self, planet, ship_code):
         ship = PlanetShip.objects.filter(planet=planet, ship_code=ship_code).first()

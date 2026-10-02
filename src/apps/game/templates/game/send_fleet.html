@@ -31,6 +31,7 @@
     <!-- FORMULARZ MISJI -->
     <form action="" method="POST" class="glass-panel hud-border p-8" data-preview-url="{% url 'game:send_fleet_preview' pk=planet.pk %}" id="sendFleetForm">
         {% csrf_token %}
+        {{ form.target_type }}
         {% if form.non_field_errors %}
             <div class="mb-4 border border-red-500/40 bg-red-950/30 text-red-300 px-4 py-3 text-sm">
                 {% for error in form.non_field_errors %}

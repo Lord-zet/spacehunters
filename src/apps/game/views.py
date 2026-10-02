@@ -8,7 +8,7 @@ from django.http import Http404, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .models import Planet, Fleet
+from .models import Planet, Fleet, SpaceObject
 from .forms import (
     RenamePlanetForm,
     SendFleetForm,
@@ -205,6 +205,7 @@ def send_fleet(request, pk):
             ship_quantities = form.get_ship_quantities()
             target_planet = form.cleaned_data.get("target_planet")
             target_coordinates = form.cleaned_data["target_coordinates"]
+            target_type = form.cleaned_data["target_type"]
             cargo = form.get_cargo()
             speed_profile = form.cleaned_data["speed_profile"]
 
@@ -225,6 +226,7 @@ def send_fleet(request, pk):
                     source_planet=source_planet,
                     target_planet=target_planet,
                     target_coordinates=target_coordinates,
+                    target_type=target_type,
                     ship_quantities=ship_quantities,
                     cargo=cargo,
                     user=request.user,
@@ -270,6 +272,7 @@ def send_fleet_preview(request, pk):
     source_planet = get_user_planet_or_404(request.user, pk)
     target_coordinates = (request.POST.get("target_coordinates") or "").strip()
     target_planet_id = request.POST.get("target_planet")
+    target_type = request.POST.get("target_type") or SpaceObject.ObjectType.PLANET
 
     if not target_coordinates and target_planet_id:
         try:
@@ -279,6 +282,7 @@ def send_fleet_preview(request, pk):
 
         if selected_target is not None:
             target_coordinates = str(selected_target.coordinates)
+            target_type = SpaceObject.ObjectType.PLANET
 
     if not target_coordinates:
         return JsonResponse({"ok": False})
@@ -304,6 +308,7 @@ def send_fleet_preview(request, pk):
             mission_type=request.POST.get("mission_type", ""),
             speed_profile=speed_profile,
             ship_quantities=ship_quantities,
+            target_type=target_type,
         )
     except (DomainError, ValueError):
         return JsonResponse({"ok": False})
@@ -334,6 +339,7 @@ def _send_fleet_preview_response(
     mission_type,
     speed_profile,
     ship_quantities,
+    target_type,
 ):
     speed_multiplier = calculate_effective_fleet_speed_multiplier(
         ship_quantities,
@@ -359,6 +365,7 @@ def _send_fleet_preview_response(
             "mission_type": mission_type,
             "target_planet_id": target_planet.pk,
             "target_coordinates": str(target_planet.coordinates),
+            "target_type": target_type,
             "speed_profile": speed_profile,
             "ship_quantities": ship_quantities,
             "flight_time_seconds": flight_time_seconds,

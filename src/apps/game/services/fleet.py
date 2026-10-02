@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
 
-from apps.game.models import Fleet, Planet, PlanetShip
+from apps.game.models import Fleet, Planet, PlanetShip, SpaceObject
 from apps.game.domain.exceptions import (
     FleetError,
     CargoCapacityExceededError,
@@ -52,7 +52,7 @@ from .fleet_ships import (
     deduct_planet_ships_bulk,
 )
 from .missions import get_mission_handler
-from .planets import get_planet_at_coordinates
+from .space_objects import get_space_object_at_coordinates, normalize_space_object_type
 
 
 def get_planet_ships_display(planet, form=None):
@@ -81,13 +81,39 @@ def get_planet_ships_display(planet, form=None):
     return result
 
 
-def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> FleetTarget:
+def _get_planet_for_space_object(space_object):
+    if space_object is None:
+        return None
+
+    if space_object.object_type != SpaceObject.ObjectType.PLANET:
+        return None
+
+    try:
+        return space_object.planet
+    except Planet.DoesNotExist:
+        return None
+
+
+def resolve_fleet_target(
+    *,
+    target_planet=None,
+    target_coordinates=None,
+    target_type=SpaceObject.ObjectType.PLANET,
+) -> FleetTarget:
     if target_planet is None and target_coordinates is None:
         raise FleetError("Podaj koordynaty celu floty.")
+
+    try:
+        target_type = normalize_space_object_type(target_type)
+    except ValueError as exc:
+        raise FleetError(str(exc)) from exc
 
     if target_planet is not None:
         target_planet = Planet.objects.get(pk=target_planet.pk)
         planet_coordinates = target_planet.coordinates
+
+        if target_type != SpaceObject.ObjectType.PLANET:
+            raise FleetError("Wybrana planeta docelowa wymaga typu celu: planeta.")
 
         if target_coordinates is not None:
             requested_coordinates = validate_target_coordinates(target_coordinates)
@@ -97,14 +123,22 @@ def resolve_fleet_target(*, target_planet=None, target_coordinates=None) -> Flee
         return FleetTarget(
             coordinates=target_planet.coordinates,
             planet=target_planet,
+            space_object=target_planet.space_object,
+            object_type=SpaceObject.ObjectType.PLANET,
         )
 
     coordinates = validate_target_coordinates(target_coordinates)
-    target_planet = get_planet_at_coordinates(coordinates)
+    target_space_object = get_space_object_at_coordinates(
+        coordinates=coordinates,
+        object_type=target_type,
+    )
+    target_planet = _get_planet_for_space_object(target_space_object)
 
     return FleetTarget(
         coordinates=coordinates,
         planet=target_planet,
+        space_object=target_space_object,
+        object_type=target_type,
     )
 
 
@@ -157,6 +191,7 @@ def _send_fleet_mission(
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
     at=None,
     target_coordinates=None,
+    target_type=SpaceObject.ObjectType.PLANET,
 ):
     now = at or timezone.now()
 
@@ -169,6 +204,7 @@ def _send_fleet_mission(
     target = resolve_fleet_target(
         target_planet=target_planet,
         target_coordinates=target_coordinates,
+        target_type=target_type,
     )
 
     ensure_source_planet_belongs_to_user(source_planet, user)
@@ -256,6 +292,7 @@ def send_transport_fleet(
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
     at=None,
     target_coordinates=None,
+    target_type=SpaceObject.ObjectType.PLANET,
 ):
     """
     Wysyła flotę z misją transportu.
@@ -270,6 +307,7 @@ def send_transport_fleet(
         mission_type=Fleet.MissionType.TRANSPORT,
         at=at,
         target_coordinates=target_coordinates,
+        target_type=target_type,
     )
 
 
@@ -282,6 +320,7 @@ def send_stationing_fleet(
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
     at=None,
     target_coordinates=None,
+    target_type=SpaceObject.ObjectType.PLANET,
 ):
     """
     Wysyła flotę z misją stacjonowania.
@@ -296,6 +335,7 @@ def send_stationing_fleet(
         mission_type=Fleet.MissionType.STATION,
         at=at,
         target_coordinates=target_coordinates,
+        target_type=target_type,
     )
 
 
@@ -308,6 +348,7 @@ def send_espionage_fleet(
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
     at=None,
     target_coordinates=None,
+    target_type=SpaceObject.ObjectType.PLANET,
 ):
     """
     Wysyła flotę z misją Szpiegowania. Misja nie przewozi ładunku i wraca po skanie celu.
@@ -326,6 +367,7 @@ def send_espionage_fleet(
         mission_type=Fleet.MissionType.ESPIONAGE,
         at=at,
         target_coordinates=target_coordinates,
+        target_type=target_type,
     )
 
 
@@ -338,6 +380,7 @@ def send_colonization_fleet(
     speed_profile=DEFAULT_FLEET_SPEED_PROFILE,
     at=None,
     target_coordinates=None,
+    target_type=SpaceObject.ObjectType.PLANET,
 ):
     return _send_fleet_mission(
         source_planet=source_planet,
@@ -349,6 +392,7 @@ def send_colonization_fleet(
         mission_type=Fleet.MissionType.COLONIZE,
         at=at,
         target_coordinates=target_coordinates,
+        target_type=SpaceObject.ObjectType.PLANET,
     )
 
 

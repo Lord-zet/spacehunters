@@ -9,17 +9,100 @@ from apps.game.domain.exceptions import (
 )
 from apps.game.services.fleet import (
     _send_fleet_mission,
+    resolve_fleet_target,
     send_colonization_fleet,
     send_transport_fleet,
 )
+from apps.game.services.moons import create_moon
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
-from apps.game.models import Fleet
+from apps.game.models import Fleet, SpaceObject
 
 from .helpers import PlanetTestMixin
 from apps.game.domain.resources import Resource
 
 
 class FleetDomainValidationTests(PlanetTestMixin, TestCase):
+    def test_resolve_fleet_target_uses_planet_target_type_by_default(self):
+        user = self.create_user("fleet_resolve_planet_default")
+        target_planet = self.create_planet(
+            owner=user,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
+        )
+
+        target = resolve_fleet_target(target_coordinates=target_planet.coordinates)
+
+        self.assertEqual(target.coordinates, target_planet.coordinates)
+        self.assertEqual(target.planet, target_planet)
+        self.assertEqual(target.space_object, target_planet.space_object)
+        self.assertEqual(target.object_type, SpaceObject.ObjectType.PLANET)
+
+    def test_resolve_fleet_target_can_resolve_moon_target_type(self):
+        user = self.create_user("fleet_resolve_moon")
+        moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
+            diameter=8_944,
+        )
+
+        target = resolve_fleet_target(
+            target_coordinates=moon.coordinates,
+            target_type=SpaceObject.ObjectType.MOON,
+        )
+
+        self.assertEqual(target.coordinates, moon.coordinates)
+        self.assertIsNone(target.planet)
+        self.assertEqual(target.space_object, moon.space_object)
+        self.assertEqual(target.object_type, SpaceObject.ObjectType.MOON)
+
+    def test_resolve_fleet_target_rejects_selected_planet_with_non_planet_target_type(self):
+        user = self.create_user("fleet_resolve_planet_mismatched_type")
+        target_planet = self.create_planet(
+            owner=user,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
+        )
+
+        with self.assertRaises(FleetError):
+            resolve_fleet_target(
+                target_planet=target_planet,
+                target_type=SpaceObject.ObjectType.MOON,
+            )
+
+    def test_transport_fleet_rejects_moon_until_missions_support_space_objects(self):
+        user = self.create_user("fleet_transport_moon_target")
+        now = timezone.now()
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
+            metal=5000,
+            crystal=3000,
+            helion=500,
+            ships={"transporter": 3},
+            last_resource_update=now,
+        )
+        moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
+            diameter=8_944,
+        )
+
+        with self.assertRaises(FleetError):
+            send_transport_fleet(
+                source_planet=source_planet,
+                target_planet=None,
+                target_coordinates=moon.coordinates,
+                target_type=SpaceObject.ObjectType.MOON,
+                ship_quantities={"transporter": 1},
+                cargo={
+                    Resource.METAL: 0,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
+                user=user,
+            )
+
+        self.assertEqual(Fleet.objects.count(), 0)
+
     def test_send_fleet_rejects_source_planet_owned_by_other_user(self):
         user = self.create_user("fleet_owner_1")
         other_user = self.create_user("fleet_owner_2")
@@ -301,6 +384,45 @@ class FleetDomainValidationTests(PlanetTestMixin, TestCase):
             send_colonization_fleet(
                 source_planet=source_planet,
                 target_coordinates=target_planet.coordinates,
+                ship_quantities={"transporter": 1},
+                cargo={
+                    Resource.METAL: 0,
+                    Resource.CRYSTAL: 0,
+                    Resource.HELION: 0,
+                },
+                user=user,
+            )
+
+        self.assertEqual(Fleet.objects.count(), 0)
+        self.assertEqual(self.get_planet_ship_quantity(source_planet, "transporter"), 3)
+
+    def test_colonization_fleet_ignores_non_planet_target_type_for_occupancy(self):
+        user = self.create_user("fleet_colonization_target_type_user")
+        now = timezone.now()
+
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
+            metal=5000,
+            crystal=3000,
+            helion=500,
+            ships={"transporter": 3},
+            last_resource_update=now,
+        )
+        target_planet = self.create_planet(
+            owner=user,
+            name="Occupied",
+            coordinates=Coordinates(galaxy=1, system=2, position=2),
+            is_homeland=False,
+            last_resource_update=now,
+        )
+
+        with self.assertRaises(FleetError):
+            send_colonization_fleet(
+                source_planet=source_planet,
+                target_coordinates=target_planet.coordinates,
+                target_type=SpaceObject.ObjectType.MOON,
                 ship_quantities={"transporter": 1},
                 cargo={
                     Resource.METAL: 0,

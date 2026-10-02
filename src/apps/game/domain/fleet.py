@@ -29,6 +29,8 @@ MISSION_TARGET_EMPTY_COORDINATES = "empty_coordinates"
 class FleetTarget:
     coordinates: Coordinates
     planet: object | None = None
+    space_object: object | None = None
+    object_type: str = "planet"
 
 
 @dataclass(frozen=True, slots=True)

@@ -1,6 +1,6 @@
 from django.contrib.auth.forms import AuthenticationForm
 from django import forms
-from .models import Planet, Fleet
+from .models import Planet, Fleet, SpaceObject
 
 from .domain.planets import PLANET_NAME_MAX_LENGTH
 from .domain.ships import SHIPS
@@ -17,8 +17,8 @@ from .domain.resources import Resource
 from .services.missions import (
     get_mission_handler,
 )
-from .services.planets import get_planet_at_coordinates
-from apps.game.domain.exceptions import InvalidCoordinatesError
+from .services.fleet import resolve_fleet_target
+from apps.game.domain.exceptions import FleetError, InvalidCoordinatesError
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
 
 
@@ -150,6 +150,13 @@ class SendFleetForm(forms.Form):
         max_length=30,
         widget=forms.TextInput(),
     )
+    target_type = forms.ChoiceField(
+        choices=SpaceObject.ObjectType.choices,
+        initial=SpaceObject.ObjectType.PLANET,
+        label="Typ celu",
+        required=False,
+        widget=forms.HiddenInput(),
+    )
     speed_profile = forms.ChoiceField(
         choices=get_fleet_speed_profile_choices(),
         initial=DEFAULT_FLEET_SPEED_PROFILE,
@@ -227,36 +234,55 @@ class SendFleetForm(forms.Form):
         mission_type = cleaned_data.get("mission_type")
         target_planet = cleaned_data.get("target_planet")
         target_coordinates = (cleaned_data.get("target_coordinates") or "").strip()
+        target_type = cleaned_data.get("target_type") or SpaceObject.ObjectType.PLANET
 
         if not target_coordinates and target_planet is not None:
             target_coordinates = str(target_planet.coordinates)
             cleaned_data["target_coordinates"] = target_coordinates
+            target_type = SpaceObject.ObjectType.PLANET
 
         if not target_coordinates:
             raise forms.ValidationError("Podaj koordynaty planety docelowej.")
 
         coordinates = parse_planet_coordinates(target_coordinates)
-        target_planet = get_planet_at_coordinates(coordinates)
-
-        cleaned_data["target_planet"] = target_planet
-        cleaned_data["target_coordinates"] = coordinates
-
         if mission_type:
             mission_handler = get_mission_handler(mission_type)
             target_requirement = mission_handler.target_requirement
         else:
             target_requirement = MISSION_TARGET_EXISTING_PLANET
 
+        if target_requirement == MISSION_TARGET_EMPTY_COORDINATES:
+            target_type = SpaceObject.ObjectType.PLANET
+
+        try:
+            target = resolve_fleet_target(
+                target_planet=target_planet,
+                target_coordinates=coordinates,
+                target_type=target_type,
+            )
+        except FleetError as exc:
+            raise forms.ValidationError(str(exc)) from exc
+
+        target_planet = target.planet
+        cleaned_data["target_planet"] = target_planet
+        cleaned_data["target_coordinates"] = coordinates
+        cleaned_data["target_type"] = target.object_type
+        cleaned_data["target_space_object"] = target.space_object
+
         if (
             target_requirement == MISSION_TARGET_EXISTING_PLANET
             and target_planet is None
         ):
+            if target.space_object is not None:
+                raise forms.ValidationError("Ten typ misji wymaga celu typu planeta.")
             raise forms.ValidationError("Nie znaleziono planety o podanych koordynatach.")
 
         if (
             target_requirement == MISSION_TARGET_OWN_PLANET
             and target_planet is None
         ):
+            if target.space_object is not None:
+                raise forms.ValidationError("Ten typ misji wymaga celu typu planeta.")
             raise forms.ValidationError("Ten typ misji można wysłać tylko na własną planetę.")
 
         if (

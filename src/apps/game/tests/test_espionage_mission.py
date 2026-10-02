@@ -6,7 +6,8 @@ from apps.game.domain.world import Coordinates
 from apps.game.services.fleet import send_espionage_fleet, process_fleets_for_user
 from apps.game.domain.resources import Resource
 from apps.game.forms import SendFleetForm, parse_planet_coordinates
-from apps.game.models import Fleet, PlanetShip, Report
+from apps.game.models import Fleet, PlanetShip, Report, SpaceObject
+from apps.game.services.moons import create_moon
 from apps.game.domain.ships import ESPIONAGE_PROBE_CODE
 from .helpers import PlanetTestMixin
 
@@ -429,6 +430,38 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
             data={
                 "mission_type": Fleet.MissionType.TRANSPORT,
                 "target_coordinates": "2:98:9",
+                "speed_profile": "standard",
+                "ship_transporter": 1,
+                "metal": 0,
+                "crystal": 0,
+                "helion": 0,
+            },
+            user=user,
+            source_planet=source_planet,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("__all__", form.errors)
+
+    def test_form_rejects_moon_target_for_planet_only_missions(self):
+        user = self.create_user("coordinates_form_moon_target")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=2, system=9, position=1),
+            ships={"transporter": 1},
+        )
+        moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=2, system=98, position=9),
+            diameter=8_944,
+        )
+
+        form = SendFleetForm(
+            data={
+                "mission_type": Fleet.MissionType.TRANSPORT,
+                "target_coordinates": str(moon.coordinates),
+                "target_type": SpaceObject.ObjectType.MOON,
                 "speed_profile": "standard",
                 "ship_transporter": 1,
                 "metal": 0,

@@ -9,6 +9,72 @@ from .domain.ships import SHIPS
 from .domain.world import Coordinates
 
 
+class SpaceLocation(models.Model):
+    galaxy = models.PositiveSmallIntegerField()
+    system = models.PositiveSmallIntegerField()
+    position = models.PositiveSmallIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["galaxy", "system", "position"],
+                name="unique_space_location_coordinates",
+            ),
+        ]
+        ordering = ["galaxy", "system", "position"]
+
+    @property
+    def coordinates(self):
+        return Coordinates(
+            galaxy=self.galaxy,
+            system=self.system,
+            position=self.position,
+        )
+
+    @staticmethod
+    def coordinate_fields(coordinates: Coordinates) -> dict[str, int]:
+        return {
+            "galaxy": coordinates.galaxy,
+            "system": coordinates.system,
+            "position": coordinates.position,
+        }
+
+    def __str__(self):
+        return str(self.coordinates)
+
+
+class SpaceObject(models.Model):
+    class ObjectType(models.TextChoices):
+        PLANET = "planet", "Planet"
+        MOON = "moon", "Moon"
+        DEBRIS_FIELD = "debris", "Debris Field"
+        ASTEROID = "asteroid", "Asteroid"
+        BLACK_HOLE = "black_hole", "Black Hole"
+
+    location = models.ForeignKey(
+        SpaceLocation,
+        on_delete=models.CASCADE,
+        related_name="objects",
+    )
+    object_type = models.CharField(max_length=32, choices=ObjectType.choices)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["location", "object_type"],
+                name="unique_space_object_type_per_location",
+            ),
+        ]
+        ordering = ["location__galaxy", "location__system", "location__position", "object_type"]
+
+    @property
+    def coordinates(self):
+        return self.location.coordinates
+
+    def __str__(self):
+        return f"{self.location} / {self.object_type}"
+
+
 class Planet(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

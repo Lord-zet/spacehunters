@@ -187,6 +187,14 @@ class Moon(models.Model):
     def coordinates(self):
         return self.space_object.coordinates
 
+    @staticmethod
+    def coordinate_fields(coordinates: Coordinates) -> dict[str, int]:
+        return {
+            "space_object__location__galaxy": coordinates.galaxy,
+            "space_object__location__system": coordinates.system,
+            "space_object__location__position": coordinates.position,
+        }
+
     def __str__(self):
         return f"Moon {self.coordinates}"
 

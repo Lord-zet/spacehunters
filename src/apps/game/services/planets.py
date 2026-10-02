@@ -6,9 +6,9 @@ from apps.game.models import (
     PlanetBuildings,
     PlanetShip,
     PlanetShipConstruction,
-    SpaceLocation,
     SpaceObject,
 )
+from apps.game.services.space_objects import create_space_object
 from apps.game.domain.ships import SHIPS
 from apps.game.domain.exceptions import (
     PlanetNameAlreadyExistsError,
@@ -85,11 +85,8 @@ def create_planet(*, owner, name: str, coordinates: Coordinates, is_homeland: bo
 
     generated_traits = generate_planet_traits(planet_type=planet_type, rng=rng)
 
-    location, _ = SpaceLocation.objects.get_or_create(
-        **SpaceLocation.coordinate_fields(coordinates)
-    )
-    space_object = SpaceObject.objects.create(
-        location=location,
+    space_object = create_space_object(
+        coordinates=coordinates,
         object_type=SpaceObject.ObjectType.PLANET,
     )
 

@@ -27,6 +27,11 @@ TAILWIND_INPUT = (
     "focus:border-accent-cyan outline-none transition-all text-white"
 )
 
+FLEET_TARGET_TYPE_CHOICES = (
+    (SpaceObject.ObjectType.PLANET, "Planeta"),
+    (SpaceObject.ObjectType.MOON, "Księżyc"),
+)
+
 
 class RenamePlanetForm(forms.Form):
     name = forms.CharField(
@@ -151,11 +156,10 @@ class SendFleetForm(forms.Form):
         widget=forms.TextInput(),
     )
     target_type = forms.ChoiceField(
-        choices=SpaceObject.ObjectType.choices,
+        choices=FLEET_TARGET_TYPE_CHOICES,
         initial=SpaceObject.ObjectType.PLANET,
         label="Typ celu",
         required=False,
-        widget=forms.HiddenInput(),
     )
     speed_profile = forms.ChoiceField(
         choices=get_fleet_speed_profile_choices(),
@@ -190,6 +194,9 @@ class SendFleetForm(forms.Form):
             "class": TAILWIND_FLEET_COORDINATES_INPUT,
             "placeholder": "np. 1:42:7",
             "autocomplete": "off",
+        })
+        self.fields["target_type"].widget.attrs.update({
+            "class": TAILWIND_FLEET_TARGET_INPUT,
         })
         self.fields["speed_profile"].widget.attrs.update({
             "class": TAILWIND_FLEET_SPEED_PROFILE,
@@ -249,6 +256,7 @@ class SendFleetForm(forms.Form):
             mission_handler = get_mission_handler(mission_type)
             target_requirement = mission_handler.target_requirement
         else:
+            mission_handler = None
             target_requirement = MISSION_TARGET_EXISTING_PLANET
 
         if target_requirement == MISSION_TARGET_EMPTY_COORDINATES:
@@ -268,6 +276,12 @@ class SendFleetForm(forms.Form):
         cleaned_data["target_coordinates"] = coordinates
         cleaned_data["target_type"] = target.object_type
         cleaned_data["target_space_object"] = target.space_object
+
+        if (
+            mission_handler is not None
+            and target.object_type not in mission_handler.allowed_target_types
+        ):
+            raise forms.ValidationError("Ten typ misji nie może zostać wysłany na wybrany typ celu.")
 
         if (
             target_requirement == MISSION_TARGET_EXISTING_PLANET

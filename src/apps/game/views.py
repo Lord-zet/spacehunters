@@ -39,6 +39,7 @@ from .services.planets import (
     get_planet_limit_status,
     rename_planet as update_planet_name,
 )
+from .services.space_objects import normalize_space_object_type
 from .services.sync import advance_user_state
 from .services.shipyard import start_ship_construction
 from .domain.energy import get_energy_balance
@@ -288,11 +289,14 @@ def send_fleet_preview(request, pk):
         return JsonResponse({"ok": False})
 
     try:
+        target_type = normalize_space_object_type(target_type)
         coordinates = parse_planet_coordinates(target_coordinates)
-    except ValidationError:
+    except (ValidationError, ValueError):
         return JsonResponse({"ok": False})
 
-    target_planet = get_planet_at_coordinates(coordinates)
+    target_planet = None
+    if target_type == SpaceObject.ObjectType.PLANET:
+        target_planet = get_planet_at_coordinates(coordinates)
     if target_planet is None:
         target_planet = FleetPreviewTarget(coordinates=coordinates)
 
@@ -363,7 +367,7 @@ def _send_fleet_preview_response(
         "preview": {
             "source_planet_id": source_planet.pk,
             "mission_type": mission_type,
-            "target_planet_id": target_planet.pk,
+            "target_planet_id": getattr(target_planet, "pk", None),
             "target_coordinates": str(target_planet.coordinates),
             "target_type": target_type,
             "speed_profile": speed_profile,

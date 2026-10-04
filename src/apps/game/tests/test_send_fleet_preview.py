@@ -10,8 +10,9 @@ from apps.game.domain.fleet_speed_profiles import (
     get_fleet_fuel_multiplier,
 )
 from apps.game.domain.world import Coordinates
-from apps.game.models import Fleet
+from apps.game.models import Fleet, SpaceObject
 from apps.game.domain.ships import ESPIONAGE_PROBE_CODE
+from apps.game.services.moons import create_moon
 
 from .helpers import PlanetTestMixin
 
@@ -80,6 +81,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
                 "mission_type": "transport",
                 "target_planet_id": target.pk,
                 "target_coordinates": str(target.coordinates),
+                "target_type": SpaceObject.ObjectType.PLANET,
                 "speed_profile": speed_profile,
                 "ship_quantities": ship_quantities,
                 "flight_time_seconds": expected_flight_time_seconds,
@@ -155,6 +157,7 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["preview"]["target_planet_id"], target.pk)
         self.assertEqual(payload["preview"]["target_coordinates"], str(target.coordinates))
+        self.assertEqual(payload["preview"]["target_type"], SpaceObject.ObjectType.PLANET)
         self.assertGreater(payload["preview"]["flight_time_seconds"], 0)
         self.assertGreater(payload["preview"]["helion_cost"], 0)
 
@@ -209,6 +212,51 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         self.assertTrue(payload["ok"])
         self.assertIsNone(payload["preview"]["target_planet_id"])
         self.assertEqual(payload["preview"]["target_coordinates"], str(target_coordinates))
+        self.assertEqual(payload["preview"]["target_type"], SpaceObject.ObjectType.PLANET)
+        self.assertGreater(payload["preview"]["flight_time_seconds"], 0)
+        self.assertGreater(payload["preview"]["helion_cost"], 0)
+
+    def test_send_fleet_preview_respects_moon_target_type_at_planet_coordinates(self):
+        user = self.create_user("preview_moon_target_type_user")
+        target_coordinates = Coordinates(galaxy=1, system=42, position=7)
+        source = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
+        )
+        self.create_planet(
+            owner=user,
+            name="Target",
+            coordinates=target_coordinates,
+            is_homeland=False,
+        )
+        create_moon(
+            owner=user,
+            coordinates=target_coordinates,
+            diameter=8_500,
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("game:send_fleet_preview", kwargs={"pk": source.pk}),
+            data={
+                "mission_type": "espionage",
+                "target_coordinates": str(target_coordinates),
+                "target_type": SpaceObject.ObjectType.MOON,
+                "speed_profile": "standard",
+                f"ship_{ESPIONAGE_PROBE_CODE}": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+
+        self.assertTrue(payload["ok"])
+        self.assertIsNone(payload["preview"]["target_planet_id"])
+        self.assertEqual(payload["preview"]["target_coordinates"], str(target_coordinates))
+        self.assertEqual(payload["preview"]["target_type"], SpaceObject.ObjectType.MOON)
         self.assertGreater(payload["preview"]["flight_time_seconds"], 0)
         self.assertGreater(payload["preview"]["helion_cost"], 0)
 

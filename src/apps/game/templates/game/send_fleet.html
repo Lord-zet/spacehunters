@@ -31,7 +31,6 @@
     <!-- FORMULARZ MISJI -->
     <form action="" method="POST" class="glass-panel hud-border p-8" data-preview-url="{% url 'game:send_fleet_preview' pk=planet.pk %}" id="sendFleetForm">
         {% csrf_token %}
-        {{ form.target_type }}
         {% if form.non_field_errors %}
             <div class="mb-4 border border-red-500/40 bg-red-950/30 text-red-300 px-4 py-3 text-sm">
                 {% for error in form.non_field_errors %}
@@ -73,7 +72,11 @@
                         {{ form.mission_type }}
                     </div>
                     <div>
-                        <label class="block text-[10px] text-white/40 uppercase mb-1">Planeta Docelowa</label>
+                        <label class="block text-[10px] text-white/40 uppercase mb-1">Typ celu</label>
+                        {{ form.target_type }}
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-white/40 uppercase mb-1">Szybki wybór planety</label>
                         {{ form.target_planet }}
                     </div>
                     <div>
@@ -177,6 +180,7 @@
     const sendFleetForm = document.getElementById("sendFleetForm");
     const targetPlanetSelect = document.getElementById("id_target_planet");
     const targetCoordinatesInput = document.getElementById("id_target_coordinates");
+    const targetTypeSelect = document.getElementById("id_target_type");
     const flightPreviewTime = document.querySelector("[data-flight-preview-time]");
     const flightPreviewCost = document.querySelector("[data-flight-preview-cost]");
     let flightPreviewTimeout = null;
@@ -240,8 +244,19 @@
 
             if (match) {
                 targetCoordinatesInput.value = match[1];
+                if (targetTypeSelect) {
+                    targetTypeSelect.value = "planet";
+                }
             }
 
+        });
+    }
+
+    if (targetTypeSelect && targetPlanetSelect) {
+        targetTypeSelect.addEventListener("change", () => {
+            if (targetTypeSelect.value !== "planet") {
+                targetPlanetSelect.value = "";
+            }
         });
     }
 

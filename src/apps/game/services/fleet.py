@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
 
-from apps.game.models import Fleet, Planet, PlanetShip, SpaceObject
+from apps.game.models import Fleet, Moon, Planet, PlanetShip, SpaceObject
 from apps.game.domain.exceptions import (
     FleetError,
     CargoCapacityExceededError,
@@ -146,7 +146,8 @@ def validate_mission_target(mission_handler, source_planet, target, user) -> Non
     requirement = mission_handler.target_requirement
     target_planet = target.planet
 
-    validate_mission_target_requirement(requirement, target_planet, user)
+    mission_handler.validate_target_type(target)
+    validate_mission_target_requirement(requirement, target, user)
     mission_handler.validate_dispatch(source_planet, target_planet, user)
 
 
@@ -267,6 +268,8 @@ def _send_fleet_mission(
         owner=user,
         source_planet=source_planet,
         target_planet=target.planet,
+        target_object=target.space_object,
+        target_object_type=target.object_type,
         **Fleet.target_coordinate_fields(target.coordinates),
         helion_cost=helion_cost,
         mission_type=mission_type,
@@ -398,12 +401,19 @@ def send_colonization_fleet(
 
 def get_due_fleet_events(owner, *, at):
     owner_planet_ids = Planet.objects.filter(owner=owner).values("pk")
+    owner_planet_object_ids = Planet.objects.filter(owner=owner).values("space_object_id")
+    owner_moon_object_ids = Moon.objects.filter(owner=owner).values("space_object_id")
 
     fleets = list(
         Fleet.objects
         .select_for_update()
         .prefetch_related("ships")
-        .filter(Q(owner=owner) | Q(target_planet_id__in=owner_planet_ids))
+        .filter(
+            Q(owner=owner)
+            | Q(target_planet_id__in=owner_planet_ids)
+            | Q(target_object_id__in=owner_planet_object_ids)
+            | Q(target_object_id__in=owner_moon_object_ids)
+        )
         .exclude(status=Fleet.Status.COMPLETED)
         .order_by("pk")
     )

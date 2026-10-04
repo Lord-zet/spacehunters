@@ -21,6 +21,7 @@ HELION_DISTANCE_DIVISOR = 1000
 MIN_HELION_COST = 1
 
 MISSION_TARGET_EXISTING_PLANET = "existing_planet"
+MISSION_TARGET_EXISTING_OBJECT = "existing_object"
 MISSION_TARGET_OWN_PLANET = "own_planet"
 MISSION_TARGET_EMPTY_COORDINATES = "empty_coordinates"
 
@@ -202,10 +203,17 @@ def validate_target_coordinates(coordinates: Coordinates) -> Coordinates:
     return coordinates
 
 
-def validate_mission_target_requirement(requirement: str, target_planet, user) -> None:
+def validate_mission_target_requirement(requirement: str, target, user) -> None:
+    target_planet = target.planet
+    target_object = target.space_object
+
     if requirement == MISSION_TARGET_EXISTING_PLANET:
         if target_planet is None:
             raise FleetError("Ten typ misji wymaga istniejącej planety docelowej.")
+
+    elif requirement == MISSION_TARGET_EXISTING_OBJECT:
+        if target_object is None:
+            raise FleetError("Ten typ misji wymaga istniejącego celu.")
 
     elif requirement == MISSION_TARGET_OWN_PLANET:
         if target_planet is None:

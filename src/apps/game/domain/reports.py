@@ -3,6 +3,7 @@ from collections.abc import Iterable
 
 REPORT_PAYLOAD_SCHEMA_VERSION = 1
 ESPIONAGE_PLANET_SECTION = "planet"
+ESPIONAGE_MOON_SECTION = "moon"
 
 
 def build_planet_intel_section(planet) -> dict:
@@ -14,10 +15,29 @@ def build_planet_intel_section(planet) -> dict:
     }
 
 
-def build_espionage_payload(*, target_planet, sections: Iterable[str] | None = None) -> dict:
-    section_builders = {
-        ESPIONAGE_PLANET_SECTION: lambda: build_planet_intel_section(target_planet),
+def build_moon_intel_section(moon) -> dict:
+    return {
+        "diameter": moon.diameter,
     }
+
+
+def build_espionage_payload(
+    *,
+    target_planet=None,
+    target_moon=None,
+    sections: Iterable[str] | None = None,
+) -> dict:
+    section_builders = {}
+
+    if target_planet is not None:
+        section_builders[ESPIONAGE_PLANET_SECTION] = (
+            lambda: build_planet_intel_section(target_planet)
+        )
+
+    if target_moon is not None:
+        section_builders[ESPIONAGE_MOON_SECTION] = (
+            lambda: build_moon_intel_section(target_moon)
+        )
 
     selected_sections = tuple(sections or section_builders.keys())
     unknown_sections = [

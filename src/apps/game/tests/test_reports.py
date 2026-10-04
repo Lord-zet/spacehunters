@@ -4,15 +4,18 @@ from django.urls import reverse
 
 from apps.game.domain.world import Coordinates
 from apps.game.domain.reports import (
+    ESPIONAGE_MOON_SECTION,
     ESPIONAGE_PLANET_SECTION,
     REPORT_PAYLOAD_SCHEMA_VERSION,
     build_espionage_payload,
+    build_moon_intel_section,
     build_planet_intel_section,
 )
 from apps.game.services.reports import (
     create_espionage_report,
 )
 from apps.game.models import Report
+from apps.game.services.moons import create_moon
 from apps.game.selectors.reports import (
     get_unread_reports_count,
     get_user_report_or_404,
@@ -41,6 +44,18 @@ class ReportServiceTests(PlanetTestMixin, TestCase):
             "temperature_min": -90,
             "temperature_max": -30,
         })
+
+    def test_build_moon_intel_section_contains_basic_moon_traits(self):
+        user = self.create_user("report_moon_traits")
+        moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=1, system=42, position=7),
+            diameter=8_944,
+        )
+
+        section = build_moon_intel_section(moon)
+
+        self.assertEqual(section, {"diameter": 8_944})
 
     def test_build_espionage_payload_wraps_sections_with_schema_version(self):
         user = self.create_user("report_payload")
@@ -75,6 +90,19 @@ class ReportServiceTests(PlanetTestMixin, TestCase):
                 target_planet=target_planet,
                 sections=["unknown"],
             )
+
+    def test_build_espionage_payload_supports_moon_section(self):
+        user = self.create_user("report_moon_payload")
+        moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=1, system=42, position=7),
+            diameter=8_944,
+        )
+
+        payload = build_espionage_payload(target_moon=moon)
+
+        self.assertEqual(payload["schema_version"], REPORT_PAYLOAD_SCHEMA_VERSION)
+        self.assertEqual(payload["sections"][ESPIONAGE_MOON_SECTION], {"diameter": 8_944})
 
     def test_create_espionage_report_saves_report_with_payload_and_context(self):
         owner = self.create_user("report_owner")
@@ -118,6 +146,31 @@ class ReportServiceTests(PlanetTestMixin, TestCase):
                 "temperature_max": 35,
             },
         )
+
+    def test_create_espionage_report_saves_moon_target_object(self):
+        owner = self.create_user("report_moon_owner")
+        target_owner = self.create_user("report_moon_target_owner")
+        source_planet = self.create_planet(
+            owner=owner,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
+        )
+        moon = create_moon(
+            owner=target_owner,
+            coordinates=Coordinates(galaxy=1, system=2, position=1),
+            diameter=8_944,
+        )
+
+        report = create_espionage_report(
+            owner=owner,
+            source_planet=source_planet,
+            target_object=moon.space_object,
+        )
+
+        self.assertEqual(report.report_type, Report.ReportType.MOON_SCAN)
+        self.assertIsNone(report.target_planet)
+        self.assertEqual(report.target_object, moon.space_object)
+        self.assertEqual(report.payload["sections"][ESPIONAGE_MOON_SECTION], {"diameter": 8_944})
 
 
 class ReportSelectorTests(PlanetTestMixin, TestCase):

@@ -116,6 +116,87 @@ class EspionageMissionTests(PlanetTestMixin, TestCase):
             },
         )
 
+    def test_send_espionage_fleet_can_target_moon(self):
+        user = self.create_user("espionage_moon_sender")
+        target_owner = self.create_user("espionage_moon_owner")
+        now = timezone.now()
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=11, position=1),
+            helion=10_000,
+            last_resource_update=now,
+        )
+        self.add_espionage_probes(source_planet, 3)
+        moon = create_moon(
+            owner=target_owner,
+            coordinates=Coordinates(galaxy=1, system=12, position=1),
+            diameter=8_944,
+        )
+
+        fleet = send_espionage_fleet(
+            source_planet=source_planet,
+            target_planet=None,
+            target_coordinates=moon.coordinates,
+            target_type=SpaceObject.ObjectType.MOON,
+            ship_quantities={ESPIONAGE_PROBE_CODE: 1},
+            cargo={},
+            user=user,
+            at=now,
+        )
+
+        self.assertIsNone(fleet.target_planet)
+        self.assertEqual(fleet.target_object, moon.space_object)
+        self.assertEqual(fleet.target_object_type, SpaceObject.ObjectType.MOON)
+        self.assertEqual(fleet.target_coordinates, moon.coordinates)
+
+    def test_process_espionage_arrival_creates_moon_report(self):
+        user = self.create_user("espionage_moon_report_sender")
+        target_owner = self.create_user("espionage_moon_report_owner")
+        now = timezone.now()
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=13, position=1),
+            helion=10_000,
+            last_resource_update=now,
+        )
+        self.add_espionage_probes(source_planet, 3)
+        moon = create_moon(
+            owner=target_owner,
+            coordinates=Coordinates(galaxy=1, system=14, position=1),
+            diameter=8_944,
+        )
+        fleet = send_espionage_fleet(
+            source_planet=source_planet,
+            target_planet=None,
+            target_coordinates=moon.coordinates,
+            target_type=SpaceObject.ObjectType.MOON,
+            ship_quantities={ESPIONAGE_PROBE_CODE: 1},
+            cargo={},
+            user=user,
+            at=now,
+        )
+
+        process_fleets_for_user(user, at=fleet.arrival_time)
+
+        fleet.refresh_from_db()
+        report = Report.objects.get(owner=user)
+
+        self.assertEqual(fleet.status, Fleet.Status.RETURNING)
+        self.assertEqual(report.category, Report.Category.ESPIONAGE)
+        self.assertEqual(report.report_type, Report.ReportType.MOON_SCAN)
+        self.assertEqual(report.fleet, fleet)
+        self.assertEqual(report.source_planet, source_planet)
+        self.assertIsNone(report.target_planet)
+        self.assertEqual(report.target_object, moon.space_object)
+        self.assertEqual(
+            report.payload["sections"]["moon"],
+            {
+                "diameter": 8_944,
+            },
+        )
+
     def test_process_espionage_return_restores_ships_to_source_planet(self):
         user = self.create_user("espionage_return_sender")
         target_owner = self.create_user("espionage_return_target_owner")
@@ -474,6 +555,40 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("__all__", form.errors)
+
+    def test_form_allows_espionage_moon_target(self):
+        user = self.create_user("coordinates_form_espionage_moon_target")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=2, system=9, position=1),
+            ships={"transporter": 1},
+        )
+        moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=2, system=98, position=9),
+            diameter=8_944,
+        )
+
+        form = SendFleetForm(
+            data={
+                "mission_type": Fleet.MissionType.ESPIONAGE,
+                "target_coordinates": str(moon.coordinates),
+                "target_type": SpaceObject.ObjectType.MOON,
+                "speed_profile": "standard",
+                f"ship_{ESPIONAGE_PROBE_CODE}": 1,
+                "metal": 0,
+                "crystal": 0,
+                "helion": 0,
+            },
+            user=user,
+            source_planet=source_planet,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertIsNone(form.cleaned_data["target_planet"])
+        self.assertEqual(form.cleaned_data["target_space_object"], moon.space_object)
+        self.assertEqual(form.cleaned_data["target_type"], SpaceObject.ObjectType.MOON)
 
     def test_form_rejects_target_coordinates_outside_universe(self):
         user = self.create_user("coordinates_form_outside_universe")

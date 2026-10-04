@@ -1,6 +1,6 @@
 from django.db import IntegrityError
 
-from apps.game.models import Fleet, Planet
+from apps.game.models import Fleet, Planet, SpaceObject
 from apps.game.domain.exceptions import (
     FleetError,
     PlanetLimitReachedError,
@@ -8,6 +8,7 @@ from apps.game.domain.exceptions import (
 )
 from apps.game.domain.fleet import (
     MISSION_TARGET_EMPTY_COORDINATES,
+    MISSION_TARGET_EXISTING_OBJECT,
     MISSION_TARGET_EXISTING_PLANET,
     MISSION_TARGET_OWN_PLANET,
     get_fleet_flight_duration,
@@ -70,6 +71,11 @@ class BaseMission:
     """Klasa bazowa dla wszystkich misji flot."""
 
     target_requirement = MISSION_TARGET_EXISTING_PLANET
+    allowed_target_types = (SpaceObject.ObjectType.PLANET,)
+
+    def validate_target_type(self, target):
+        if target.object_type not in self.allowed_target_types:
+            raise FleetError("Ten typ misji nie może zostać wysłany na wybrany typ celu.")
 
     def validate_dispatch(self, source_planet, target_planet, user):
         """Specyficzna walidacja dla danego typu misji przed wylotem."""
@@ -122,22 +128,35 @@ class StationMission(BaseMission):
 
 
 class EspionageMission(BaseMission):
+    target_requirement = MISSION_TARGET_EXISTING_OBJECT
+    allowed_target_types = (
+        SpaceObject.ObjectType.PLANET,
+        SpaceObject.ObjectType.MOON,
+    )
+
     def validate_fleet_composition(self, ship_quantities: dict[str, int], mission_type: str):
         validate_espionage_fleet_composition(ship_quantities, mission_type)
 
     def handle_arrival(self, fleet, *, at):
-        target_planet = prepare_planet_for_fleet_event(fleet.target_planet_id, at)
+        target_planet = None
+        target_object = fleet.target_object
+
+        if fleet.target_object_type == SpaceObject.ObjectType.PLANET:
+            target_planet = prepare_planet_for_fleet_event(fleet.target_planet_id, at)
+            target_object = target_planet.space_object
 
         create_espionage_report(
             owner=fleet.owner,
             source_planet=fleet.source_planet,
             target_planet=target_planet,
+            target_object=target_object,
             fleet=fleet,
         )
 
         fleet.status = Fleet.Status.RETURNING
 
-        target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
+        if target_planet is not None:
+            target_planet.save(update_fields=RESOURCE_STATE_FIELDS)
         fleet.save(update_fields=["status"])
 
 

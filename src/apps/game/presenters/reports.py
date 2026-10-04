@@ -33,11 +33,18 @@ def get_valid_report_category(category: str | None) -> str:
 
 
 def get_report_planet_intel_rows(report: Report) -> list[dict]:
-    planet_section = (
-        report.payload
-        .get("sections", {})
-        .get("planet", {})
-    )
+    sections = report.payload.get("sections", {})
+    moon_section = sections.get("moon")
+
+    if moon_section is not None:
+        return [
+            {
+                "label": "Średnica",
+                "value": f"{moon_section.get('diameter', '-')} km",
+            },
+        ]
+
+    planet_section = sections.get("planet", {})
 
     return [
         {

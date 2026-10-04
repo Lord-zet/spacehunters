@@ -337,6 +337,18 @@ class Fleet(models.Model):
         blank=True,
         related_name="incoming_fleets"
     )
+    target_object = models.ForeignKey(
+        SpaceObject,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="incoming_fleets",
+    )
+    target_object_type = models.CharField(
+        max_length=32,
+        choices=SpaceObject.ObjectType.choices,
+        default=SpaceObject.ObjectType.PLANET,
+    )
     target_galaxy = models.PositiveIntegerField()
     target_system = models.PositiveIntegerField()
     target_position = models.PositiveIntegerField()
@@ -383,6 +395,8 @@ class Fleet(models.Model):
     def target_display_name(self):
         if self.target_planet_id and self.target_planet is not None:
             return self.target_planet.name
+        if self.target_object_type == SpaceObject.ObjectType.MOON:
+            return f"Moon {self.target_coordinates}"
         return str(self.target_coordinates)
 
     @property
@@ -422,6 +436,16 @@ class Fleet(models.Model):
         return f"{self.source_planet} -> {self.target_display_name}"
 
     def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+
+        if self.target_planet_id and self.target_object_id is None:
+            target_planet = self.target_planet
+            self.target_object = target_planet.space_object
+            self.target_object_type = SpaceObject.ObjectType.PLANET
+
+            if update_fields is not None:
+                update_fields = set(update_fields) | {"target_object", "target_object_type"}
+
         if self.target_planet_id and not all((
             self.target_galaxy,
             self.target_system,
@@ -430,12 +454,29 @@ class Fleet(models.Model):
             target_planet = self.target_planet
             self.set_target_coordinates(target_planet.coordinates)
 
-            update_fields = kwargs.get("update_fields")
             if update_fields is not None:
-                kwargs["update_fields"] = (
-                    set(update_fields)
-                    | set(self.target_coordinate_fields(target_planet.coordinates))
+                update_fields = set(update_fields) | set(
+                    self.target_coordinate_fields(target_planet.coordinates)
                 )
+
+        if self.target_object_id and not all((
+            self.target_galaxy,
+            self.target_system,
+            self.target_position,
+        )):
+            target_object = self.target_object
+            self.set_target_coordinates(target_object.coordinates)
+            self.target_object_type = target_object.object_type
+
+            if update_fields is not None:
+                update_fields = (
+                    set(update_fields)
+                    | set(self.target_coordinate_fields(target_object.coordinates))
+                    | {"target_object_type"}
+                )
+
+        if update_fields is not None:
+            kwargs["update_fields"] = update_fields
 
         super().save(*args, **kwargs)
 
@@ -468,6 +509,7 @@ class Report(models.Model):
 
     class ReportType(models.TextChoices):
         PLANET_SCAN = "planet_scan", "Skan planety"
+        MOON_SCAN = "moon_scan", "Skan księżyca"
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -499,6 +541,13 @@ class Report(models.Model):
         blank=True,
         related_name="target_reports",
     )
+    target_object = models.ForeignKey(
+        SpaceObject,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="target_reports",
+    )
     fleet = models.ForeignKey(
         Fleet,
         on_delete=models.SET_NULL,
@@ -522,6 +571,16 @@ class Report(models.Model):
     @property
     def is_read(self):
         return self.read_at is not None
+
+    @property
+    def target_display_name(self):
+        if self.target_planet_id and self.target_planet is not None:
+            return f"{self.target_planet.name} [{self.target_planet.coordinates}]"
+        if self.target_object_id and self.target_object is not None:
+            if self.target_object.object_type == SpaceObject.ObjectType.MOON:
+                return f"Moon [{self.target_object.coordinates}]"
+            return f"{self.target_object.object_type} [{self.target_object.coordinates}]"
+        return "-"
 
     def __str__(self):
         return self.title

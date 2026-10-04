@@ -58,11 +58,7 @@
                                 </div>
                             </td>
                             <td class="p-4 font-mono text-white/80">
-                                {% if report.target_planet %}
-                                    {{ report.target_planet.name }} [{{ report.target_planet.coordinates }}]
-                                {% else %}
-                                    -
-                                {% endif %}
+                                {{ report.target_display_name }}
                             </td>
                             <td class="p-4 text-accent-orange font-bold font-mono">
                                 {{ report.created_at|date:"m.d H:i:s" }}

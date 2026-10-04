@@ -33,18 +33,14 @@
         <div class="glass-panel p-4 border-l-2 border-accent-cyan">
             <p class="text-[10px] text-white/40 uppercase mb-1">Cel</p>
             <p class="text-sm text-white/80">
-                {% if report.target_planet %}
-                    {{ report.target_planet.name }} [{{ report.target_planet.coordinates }}]
-                {% else %}
-                    -
-                {% endif %}
+                {{ report.target_display_name }}
             </p>
         </div>
     </div>
 
     <div class="glass-panel overflow-hidden border-t-2 border-accent-cyan/50 shadow-2xl">
         <div class="bg-accent-cyan/10 px-6 py-3 flex justify-between items-center border-b border-white/10">
-            <span class="text-xs font-scifi tracking-widest uppercase text-accent-cyan">Parametry planety</span>
+            <span class="text-xs font-scifi tracking-widest uppercase text-accent-cyan">Parametry celu</span>
             <span class="text-[10px] text-white/40 uppercase">{{ report.created_at|date:"m.d H:i:s" }}</span>
         </div>
 

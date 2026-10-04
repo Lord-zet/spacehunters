@@ -7,7 +7,7 @@ def get_user_reports(user, *, category: str | None = None):
     reports = (
         Report.objects
         .filter(owner=user)
-        .select_related("source_planet", "target_planet", "fleet")
+        .select_related("source_planet", "target_planet", "target_object__location", "fleet")
         .order_by("-created_at")
     )
 
@@ -19,7 +19,7 @@ def get_user_reports(user, *, category: str | None = None):
 
 def get_user_report_or_404(user, pk):
     return get_object_or_404(
-        Report.objects.select_related("source_planet", "target_planet", "fleet"),
+        Report.objects.select_related("source_planet", "target_planet", "target_object__location", "fleet"),
         owner=user,
         pk=pk,
     )

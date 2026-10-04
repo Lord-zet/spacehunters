@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.game.domain.world import Coordinates, DEFAULT_UNIVERSE_RULES
+from apps.game.models import Fleet, SpaceObject
 
 from .helpers import PlanetTestMixin
 
@@ -51,4 +52,12 @@ class PlanetLimitViewTests(PlanetTestMixin, TestCase):
         self.assertContains(
             response,
             f"galaktyka 1-{DEFAULT_UNIVERSE_RULES.galaxy_count}",
+        )
+        self.assertEqual(
+            response.context["mission_target_type_rules"][Fleet.MissionType.TRANSPORT],
+            [SpaceObject.ObjectType.PLANET],
+        )
+        self.assertEqual(
+            response.context["mission_target_type_rules"][Fleet.MissionType.ESPIONAGE],
+            [SpaceObject.ObjectType.PLANET, SpaceObject.ObjectType.MOON],
         )

@@ -32,6 +32,7 @@ from .services.fleet import (
     send_stationing_fleet,
     send_transport_fleet,
 )
+from .services.missions import get_mission_target_type_rules
 from .domain.travel import calculate_flight_time_seconds
 from .services.buildings import start_building_upgrade, cancel_building_upgrade
 from .services.planets import (
@@ -263,6 +264,7 @@ def send_fleet(request, pk):
         "planet_ships": get_planet_ships_display(source_planet, form),
         "planet_limit": get_planet_limit_status(request.user),
         "universe_coordinate_hint": get_universe_coordinate_hint(),
+        "mission_target_type_rules": get_mission_target_type_rules(),
     }
     return render(request, "game/send_fleet.html", context)
 

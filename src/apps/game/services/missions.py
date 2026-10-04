@@ -206,3 +206,10 @@ def get_mission_handler(mission_type: str) -> BaseMission:
     if not handler:
         raise UnsupportedFleetMissionError("Nieobsługiwany typ misji floty.")
     return handler
+
+
+def get_mission_target_type_rules() -> dict[str, list[str]]:
+    return {
+        mission_type: list(handler.allowed_target_types)
+        for mission_type, handler in MISSION_HANDLERS.items()
+    }

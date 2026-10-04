@@ -176,11 +176,18 @@
 
 </div>
 
+{{ mission_target_type_rules|json_script:"mission-target-type-rules" }}
+
 <script>
     const sendFleetForm = document.getElementById("sendFleetForm");
+    const missionTypeSelect = document.getElementById("id_mission_type");
     const targetPlanetSelect = document.getElementById("id_target_planet");
     const targetCoordinatesInput = document.getElementById("id_target_coordinates");
     const targetTypeSelect = document.getElementById("id_target_type");
+    const missionTargetTypeRulesElement = document.getElementById("mission-target-type-rules");
+    const missionTargetTypeRules = missionTargetTypeRulesElement
+        ? JSON.parse(missionTargetTypeRulesElement.textContent)
+        : {};
     const flightPreviewTime = document.querySelector("[data-flight-preview-time]");
     const flightPreviewCost = document.querySelector("[data-flight-preview-cost]");
     let flightPreviewTimeout = null;
@@ -237,6 +244,44 @@
         flightPreviewTimeout = setTimeout(updateFlightPreview, 250);
     }
 
+    function getAllowedTargetTypes() {
+        if (!missionTypeSelect) {
+            return [];
+        }
+        return missionTargetTypeRules[missionTypeSelect.value] || [];
+    }
+
+    function applyMissionTargetTypeRules() {
+        if (!targetTypeSelect) {
+            return;
+        }
+
+        const allowedTargetTypes = getAllowedTargetTypes();
+        let firstAllowedOption = null;
+
+        Array.from(targetTypeSelect.options).forEach((option) => {
+            const isAllowed = allowedTargetTypes.length === 0 || allowedTargetTypes.includes(option.value);
+            option.disabled = !isAllowed;
+            option.hidden = !isAllowed;
+
+            if (isAllowed && firstAllowedOption === null) {
+                firstAllowedOption = option;
+            }
+        });
+
+        if (
+            firstAllowedOption
+            && allowedTargetTypes.length > 0
+            && !allowedTargetTypes.includes(targetTypeSelect.value)
+        ) {
+            targetTypeSelect.value = firstAllowedOption.value;
+        }
+
+        if (targetPlanetSelect && targetTypeSelect.value !== "planet") {
+            targetPlanetSelect.value = "";
+        }
+    }
+
     if (targetPlanetSelect && targetCoordinatesInput) {
         targetPlanetSelect.addEventListener("change", () => {
             const selectedOption = targetPlanetSelect.options[targetPlanetSelect.selectedIndex];
@@ -260,7 +305,12 @@
         });
     }
 
+    if (missionTypeSelect) {
+        missionTypeSelect.addEventListener("change", applyMissionTargetTypeRules);
+    }
+
     if (sendFleetForm) {
+        applyMissionTargetTypeRules();
         sendFleetForm.addEventListener("input", scheduleFlightPreviewUpdate);
         sendFleetForm.addEventListener("change", scheduleFlightPreviewUpdate);
     }

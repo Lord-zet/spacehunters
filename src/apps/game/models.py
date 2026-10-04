@@ -595,9 +595,15 @@ class Report(models.Model):
         if self.target_planet_id and self.target_planet is not None:
             return f"{self.target_planet.name} [{self.target_planet.coordinates}]"
         if self.target_object_id and self.target_object is not None:
-            if self.target_object.object_type == SpaceObject.ObjectType.MOON:
-                return f"Moon [{self.target_object.coordinates}]"
-            return f"{self.target_object.object_type} [{self.target_object.coordinates}]"
+            return f"{self.target_type_display_name} [{self.target_object.coordinates}]"
+        return "-"
+
+    @property
+    def target_type_display_name(self):
+        if self.target_planet_id and self.target_planet is not None:
+            return SpaceObject.get_object_type_display_name(SpaceObject.ObjectType.PLANET)
+        if self.target_object_id and self.target_object is not None:
+            return self.target_object.object_type_display_name
         return "-"
 
     def __str__(self):

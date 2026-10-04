@@ -170,6 +170,9 @@ class ReportServiceTests(PlanetTestMixin, TestCase):
         self.assertEqual(report.report_type, Report.ReportType.MOON_SCAN)
         self.assertIsNone(report.target_planet)
         self.assertEqual(report.target_object, moon.space_object)
+        self.assertIn("Księżyc", report.title)
+        self.assertEqual(report.target_display_name, f"Księżyc [{moon.coordinates}]")
+        self.assertEqual(report.target_type_display_name, "Księżyc")
         self.assertEqual(report.payload["sections"][ESPIONAGE_MOON_SECTION], {"diameter": 8_944})
 
 
@@ -282,6 +285,32 @@ class ReportViewTests(PlanetTestMixin, TestCase):
         self.assertContains(response, "Visible Target")
         self.assertNotContains(response, "Hidden Target")
 
+    def test_reports_view_renders_moon_target_type(self):
+        owner = self.create_user("view_report_moon_owner")
+        target_owner = self.create_user("view_report_moon_target_owner")
+        source_planet = self.create_planet(
+            owner=owner,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=34, position=1),
+        )
+        moon = create_moon(
+            owner=target_owner,
+            coordinates=Coordinates(galaxy=1, system=35, position=1),
+            diameter=8_944,
+        )
+        create_espionage_report(
+            owner=owner,
+            source_planet=source_planet,
+            target_object=moon.space_object,
+        )
+        self.client.force_login(owner)
+
+        response = self.client.get(reverse("game:reports", kwargs={"pk": source_planet.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"Księżyc [{moon.coordinates}]")
+        self.assertContains(response, "Księżyc")
+
     def test_report_detail_marks_report_as_read(self):
         owner = self.create_user("view_report_detail_owner")
         target_owner = self.create_user("view_report_detail_target_owner")
@@ -313,3 +342,34 @@ class ReportViewTests(PlanetTestMixin, TestCase):
         report.refresh_from_db()
         self.assertEqual(response.status_code, 200)
         self.assertTrue(report.is_read)
+
+    def test_report_detail_renders_moon_target_type(self):
+        owner = self.create_user("view_report_detail_moon_owner")
+        target_owner = self.create_user("view_report_detail_moon_target_owner")
+        source_planet = self.create_planet(
+            owner=owner,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=42, position=1),
+        )
+        moon = create_moon(
+            owner=target_owner,
+            coordinates=Coordinates(galaxy=1, system=43, position=1),
+            diameter=8_944,
+        )
+        report = create_espionage_report(
+            owner=owner,
+            source_planet=source_planet,
+            target_object=moon.space_object,
+        )
+        self.client.force_login(owner)
+
+        response = self.client.get(
+            reverse(
+                "game:report_detail",
+                kwargs={"pk": source_planet.pk, "report_id": report.pk},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"Księżyc [{moon.coordinates}]")
+        self.assertContains(response, "Księżyc")

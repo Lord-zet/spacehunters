@@ -55,15 +55,18 @@ def create_espionage_report(
 
     if target_planet is not None:
         target_label = f"{target_planet.name} [{target_planet.coordinates}]"
-        summary = "Skan podstawowych parametrow planety zakonczony."
+        summary = "Skan podstawowych parametrów planety zakończony."
         report_type = Report.ReportType.PLANET_SCAN
     elif target_moon is not None:
-        target_label = f"Moon [{target_moon.coordinates}]"
-        summary = "Skan podstawowych parametrow ksiezyca zakonczony."
+        target_label = (
+            f"{SpaceObject.get_object_type_display_name(SpaceObject.ObjectType.MOON)} "
+            f"[{target_moon.coordinates}]"
+        )
+        summary = "Skan podstawowych parametrów księżyca zakończony."
         report_type = Report.ReportType.MOON_SCAN
     else:
         target_label = "Nieznany cel"
-        summary = "Skan celu zakonczony."
+        summary = "Skan celu zakończony."
         report_type = Report.ReportType.PLANET_SCAN
 
     title = f"Raport szpiegowski: {target_label}"

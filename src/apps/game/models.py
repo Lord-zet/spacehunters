@@ -58,6 +58,14 @@ class SpaceObject(models.Model):
     )
     object_type = models.CharField(max_length=32, choices=ObjectType.choices)
 
+    OBJECT_TYPE_DISPLAY_NAMES = {
+        ObjectType.PLANET: "Planeta",
+        ObjectType.MOON: "Księżyc",
+        ObjectType.DEBRIS_FIELD: "Pole zniszczeń",
+        ObjectType.ASTEROID: "Asteroida",
+        ObjectType.BLACK_HOLE: "Czarna dziura",
+    }
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -70,6 +78,14 @@ class SpaceObject(models.Model):
     @property
     def coordinates(self):
         return self.location.coordinates
+
+    @classmethod
+    def get_object_type_display_name(cls, object_type):
+        return cls.OBJECT_TYPE_DISPLAY_NAMES.get(object_type, object_type)
+
+    @property
+    def object_type_display_name(self):
+        return self.get_object_type_display_name(self.object_type)
 
     def __str__(self):
         return f"{self.location} / {self.object_type}"
@@ -394,10 +410,12 @@ class Fleet(models.Model):
     @property
     def target_display_name(self):
         if self.target_planet_id and self.target_planet is not None:
-            return self.target_planet.name
-        if self.target_object_type == SpaceObject.ObjectType.MOON:
-            return f"Moon {self.target_coordinates}"
-        return str(self.target_coordinates)
+            return f"{self.target_planet.name} [{self.target_planet.coordinates}]"
+        return f"{self.target_type_display_name} [{self.target_coordinates}]"
+
+    @property
+    def target_type_display_name(self):
+        return SpaceObject.get_object_type_display_name(self.target_object_type)
 
     @property
     def next_event_at(self):

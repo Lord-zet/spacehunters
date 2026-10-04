@@ -3,7 +3,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.game.domain.world import Coordinates
-from apps.game.models import Fleet, FleetShip
+from apps.game.models import Fleet, FleetShip, SpaceObject
+from apps.game.services.moons import create_moon
 
 from .helpers import PlanetTestMixin
 
@@ -57,6 +58,68 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, str(fleet.target_coordinates))
 
+    def test_planet_detail_renders_moon_target_type_for_active_fleet(self):
+        user = self.create_user("nullable_moon_dashboard_user")
+        now = timezone.now()
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
+            last_resource_update=now,
+        )
+        moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=1, system=42, position=7),
+            diameter=8_500,
+        )
+        fleet = self.create_fleet_to_moon(
+            owner=user,
+            source_planet=source_planet,
+            moon=moon,
+            now=now,
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.get(
+            reverse("game:planet_detail", kwargs={"pk": source_planet.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, fleet.target_display_name)
+        self.assertContains(response, "Księżyc")
+
+    def test_fleet_list_renders_moon_target_type(self):
+        user = self.create_user("nullable_moon_fleet_list_user")
+        now = timezone.now()
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
+            last_resource_update=now,
+        )
+        moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=1, system=42, position=7),
+            diameter=8_500,
+        )
+        fleet = self.create_fleet_to_moon(
+            owner=user,
+            source_planet=source_planet,
+            moon=moon,
+            now=now,
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.get(
+            reverse("game:fleet_list", kwargs={"pk": source_planet.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, fleet.target_display_name)
+        self.assertContains(response, "Księżyc")
+
     def create_fleet_without_target_planet(self, *, owner, source_planet, now):
         fleet = Fleet.objects.create(
             owner=owner,
@@ -74,6 +137,27 @@ class NullableFleetTargetViewTests(PlanetTestMixin, TestCase):
         FleetShip.objects.create(
             fleet=fleet,
             ship_code="transporter",
+            quantity=1,
+        )
+        return fleet
+
+    def create_fleet_to_moon(self, *, owner, source_planet, moon, now):
+        fleet = Fleet.objects.create(
+            owner=owner,
+            source_planet=source_planet,
+            target_planet=None,
+            target_object=moon.space_object,
+            target_object_type=SpaceObject.ObjectType.MOON,
+            **Fleet.target_coordinate_fields(moon.coordinates),
+            mission_type=Fleet.MissionType.ESPIONAGE,
+            status=Fleet.Status.OUTBOUND,
+            departure_time=now,
+            arrival_time=now + timezone.timedelta(days=1),
+            return_time=now + timezone.timedelta(days=2),
+        )
+        FleetShip.objects.create(
+            fleet=fleet,
+            ship_code="espionage_probe",
             quantity=1,
         )
         return fleet

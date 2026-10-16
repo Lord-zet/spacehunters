@@ -75,9 +75,13 @@
                         <label class="block text-[10px] text-white/40 uppercase mb-1">Typ celu</label>
                         {{ form.target_type }}
                     </div>
-                    <div>
+                    <div data-target-picker="planet">
                         <label class="block text-[10px] text-white/40 uppercase mb-1">Szybki wybór planety</label>
                         {{ form.target_planet }}
+                    </div>
+                    <div data-target-picker="moon">
+                        <label class="block text-[10px] text-white/40 uppercase mb-1">Szybki wybór księżyca</label>
+                        {{ form.target_moon }}
                     </div>
                     <div>
                         <label class="block text-[10px] text-white/40 uppercase mb-1">Koordynaty celu</label>
@@ -182,8 +186,11 @@
     const sendFleetForm = document.getElementById("sendFleetForm");
     const missionTypeSelect = document.getElementById("id_mission_type");
     const targetPlanetSelect = document.getElementById("id_target_planet");
+    const targetMoonSelect = document.getElementById("id_target_moon");
     const targetCoordinatesInput = document.getElementById("id_target_coordinates");
     const targetTypeSelect = document.getElementById("id_target_type");
+    const targetPlanetPicker = document.querySelector('[data-target-picker="planet"]');
+    const targetMoonPicker = document.querySelector('[data-target-picker="moon"]');
     const missionTargetTypeRulesElement = document.getElementById("mission-target-type-rules");
     const missionTargetTypeRules = missionTargetTypeRulesElement
         ? JSON.parse(missionTargetTypeRulesElement.textContent)
@@ -251,6 +258,19 @@
         return missionTargetTypeRules[missionTypeSelect.value] || [];
     }
 
+    function syncTargetPickers() {
+        if (!targetTypeSelect) {
+            return;
+        }
+
+        if (targetPlanetPicker) {
+            targetPlanetPicker.classList.toggle("hidden", targetTypeSelect.value !== "planet");
+        }
+        if (targetMoonPicker) {
+            targetMoonPicker.classList.toggle("hidden", targetTypeSelect.value !== "moon");
+        }
+    }
+
     function applyMissionTargetTypeRules() {
         if (!targetTypeSelect) {
             return;
@@ -262,7 +282,6 @@
         Array.from(targetTypeSelect.options).forEach((option) => {
             const isAllowed = allowedTargetTypes.length === 0 || allowedTargetTypes.includes(option.value);
             option.disabled = !isAllowed;
-            option.hidden = !isAllowed;
 
             if (isAllowed && firstAllowedOption === null) {
                 firstAllowedOption = option;
@@ -280,6 +299,11 @@
         if (targetPlanetSelect && targetTypeSelect.value !== "planet") {
             targetPlanetSelect.value = "";
         }
+        if (targetMoonSelect && targetTypeSelect.value !== "moon") {
+            targetMoonSelect.value = "";
+        }
+
+        syncTargetPickers();
     }
 
     if (targetPlanetSelect && targetCoordinatesInput) {
@@ -292,16 +316,42 @@
                 if (targetTypeSelect) {
                     targetTypeSelect.value = "planet";
                 }
+                if (targetMoonSelect) {
+                    targetMoonSelect.value = "";
+                }
+                syncTargetPickers();
             }
 
         });
     }
 
-    if (targetTypeSelect && targetPlanetSelect) {
+    if (targetMoonSelect && targetCoordinatesInput) {
+        targetMoonSelect.addEventListener("change", () => {
+            const selectedOption = targetMoonSelect.options[targetMoonSelect.selectedIndex];
+            const match = selectedOption.textContent.match(/\[(\d+:\d+:\d+)\]/);
+
+            if (match) {
+                targetCoordinatesInput.value = match[1];
+                if (targetTypeSelect) {
+                    targetTypeSelect.value = "moon";
+                }
+                if (targetPlanetSelect) {
+                    targetPlanetSelect.value = "";
+                }
+                syncTargetPickers();
+            }
+        });
+    }
+
+    if (targetTypeSelect) {
         targetTypeSelect.addEventListener("change", () => {
-            if (targetTypeSelect.value !== "planet") {
+            if (targetPlanetSelect && targetTypeSelect.value !== "planet") {
                 targetPlanetSelect.value = "";
             }
+            if (targetMoonSelect && targetTypeSelect.value !== "moon") {
+                targetMoonSelect.value = "";
+            }
+            syncTargetPickers();
         });
     }
 

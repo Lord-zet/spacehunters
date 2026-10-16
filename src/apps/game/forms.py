@@ -1,6 +1,6 @@
 from django.contrib.auth.forms import AuthenticationForm
 from django import forms
-from .models import Planet, Fleet, SpaceObject
+from .models import Fleet, Moon, Planet, SpaceObject
 
 from .domain.planets import PLANET_NAME_MAX_LENGTH
 from .domain.ships import SHIPS
@@ -149,6 +149,12 @@ class SendFleetForm(forms.Form):
         empty_label="Wybierz planetę",
         required=False,
     )
+    target_moon = forms.ModelChoiceField(
+        queryset=Moon.objects.none(),
+        label="Księżyc docelowy",
+        empty_label="Wybierz księżyc",
+        required=False,
+    )
     target_coordinates = forms.CharField(
         label="Koordynaty celu",
         required=False,
@@ -190,6 +196,10 @@ class SendFleetForm(forms.Form):
             "class": TAILWIND_FLEET_TARGET_INPUT,
             "placeholder": "0",
         })
+        self.fields["target_moon"].widget.attrs.update({
+            "class": TAILWIND_FLEET_TARGET_INPUT,
+            "placeholder": "0",
+        })
         self.fields["target_coordinates"].widget.attrs.update({
             "class": TAILWIND_FLEET_COORDINATES_INPUT,
             "placeholder": "np. 1:42:7",
@@ -211,6 +221,16 @@ class SendFleetForm(forms.Form):
         self.fields["target_planet"].queryset = queryset
         self.fields["target_planet"].label_from_instance = (
             lambda planet: f"{planet.name} [{planet.coordinates}]"
+        )
+
+        moon_queryset = Moon.objects.none()
+        if user is not None:
+            moon_queryset = Moon.objects.filter(owner=user).select_related(
+                "space_object__location"
+            )
+        self.fields["target_moon"].queryset = moon_queryset
+        self.fields["target_moon"].label_from_instance = (
+            lambda moon: f"Księżyc [{moon.coordinates}]"
         )
         self.user = user
         self.source_planet = source_planet
@@ -240,18 +260,33 @@ class SendFleetForm(forms.Form):
         cleaned_data = super().clean()
         mission_type = cleaned_data.get("mission_type")
         target_planet = cleaned_data.get("target_planet")
+        target_moon = cleaned_data.get("target_moon")
         target_coordinates = (cleaned_data.get("target_coordinates") or "").strip()
         target_type = cleaned_data.get("target_type") or SpaceObject.ObjectType.PLANET
+
+        if target_planet is not None and target_moon is not None:
+            raise forms.ValidationError("Wybierz tylko jeden szybki cel floty.")
 
         if not target_coordinates and target_planet is not None:
             target_coordinates = str(target_planet.coordinates)
             cleaned_data["target_coordinates"] = target_coordinates
             target_type = SpaceObject.ObjectType.PLANET
 
+        if target_moon is not None:
+            if not target_coordinates:
+                target_coordinates = str(target_moon.coordinates)
+                cleaned_data["target_coordinates"] = target_coordinates
+            target_type = SpaceObject.ObjectType.MOON
+
         if not target_coordinates:
-            raise forms.ValidationError("Podaj koordynaty planety docelowej.")
+            raise forms.ValidationError("Podaj koordynaty celu.")
 
         coordinates = parse_planet_coordinates(target_coordinates)
+        if target_moon is not None and coordinates != target_moon.coordinates:
+            raise forms.ValidationError(
+                "Księżyc docelowy nie pasuje do podanych koordynatów."
+            )
+
         if mission_type:
             mission_handler = get_mission_handler(mission_type)
             target_requirement = mission_handler.target_requirement

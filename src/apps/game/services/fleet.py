@@ -210,7 +210,11 @@ def _send_fleet_mission(
 
     ensure_source_planet_belongs_to_user(source_planet, user)
 
-    if source_planet.coordinates == target.coordinates:
+    if (
+        target.object_type == SpaceObject.ObjectType.PLANET
+        and target.space_object is not None
+        and target.space_object.pk == source_planet.space_object_id
+    ):
         raise SamePlanetTransportError("Nie można wysłać floty na tę samą planetę.")
 
     validate_mission_target(mission_handler, source_planet, target, user)

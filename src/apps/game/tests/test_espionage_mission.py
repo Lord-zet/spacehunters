@@ -490,6 +490,74 @@ class SendFleetEspionageFormTests(PlanetTestMixin, TestCase):
         self.assertEqual(form.cleaned_data["target_planet"], target_planet)
         self.assertEqual(form.cleaned_data["target_coordinates"], target_planet.coordinates)
 
+    def test_form_resolves_selected_own_moon_to_coordinates(self):
+        user = self.create_user("coordinates_form_moon_sender")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=2, system=7, position=1),
+            ships={ESPIONAGE_PROBE_CODE: 1},
+        )
+        moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=2, system=8, position=1),
+            diameter=8_944,
+        )
+
+        form = SendFleetForm(
+            data={
+                "mission_type": Fleet.MissionType.ESPIONAGE,
+                "target_moon": moon.pk,
+                "target_coordinates": "",
+                "speed_profile": "standard",
+                f"ship_{ESPIONAGE_PROBE_CODE}": 1,
+                "metal": 0,
+                "crystal": 0,
+                "helion": 0,
+            },
+            user=user,
+            source_planet=source_planet,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["target_moon"], moon)
+        self.assertIsNone(form.cleaned_data["target_planet"])
+        self.assertEqual(form.cleaned_data["target_coordinates"], moon.coordinates)
+        self.assertEqual(form.cleaned_data["target_type"], SpaceObject.ObjectType.MOON)
+        self.assertEqual(form.cleaned_data["target_space_object"], moon.space_object)
+
+    def test_form_moon_quick_choices_include_only_owned_moons(self):
+        user = self.create_user("coordinates_form_moon_choices_owner")
+        other_user = self.create_user("coordinates_form_moon_choices_other")
+        source_planet = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=2, system=7, position=1),
+        )
+        local_moon = create_moon(
+            owner=user,
+            coordinates=source_planet.coordinates,
+            diameter=7_500,
+        )
+        remote_moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=2, system=8, position=1),
+            diameter=8_944,
+        )
+        other_moon = create_moon(
+            owner=other_user,
+            coordinates=Coordinates(galaxy=2, system=9, position=1),
+            diameter=8_100,
+        )
+
+        form = SendFleetForm(user=user, source_planet=source_planet)
+        moon_ids = set(
+            form.fields["target_moon"].queryset.values_list("pk", flat=True)
+        )
+
+        self.assertEqual(moon_ids, {local_moon.pk, remote_moon.pk})
+        self.assertNotIn(other_moon.pk, moon_ids)
+
     def test_parse_planet_coordinates_rejects_invalid_format(self):
         with self.assertRaisesMessage(Exception, "format"):
             parse_planet_coordinates("2-8-1")

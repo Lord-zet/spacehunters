@@ -32,7 +32,7 @@ from .services.fleet import (
     send_stationing_fleet,
     send_transport_fleet,
 )
-from .services.missions import get_mission_target_type_rules
+from .services.missions import get_mission_handler, get_mission_target_type_rules
 from .domain.travel import calculate_flight_time_seconds
 from .services.buildings import start_building_upgrade, cancel_building_upgrade
 from .services.planets import (
@@ -273,6 +273,7 @@ def send_fleet(request, pk):
 @require_POST
 def send_fleet_preview(request, pk):
     source_planet = get_user_planet_or_404(request.user, pk)
+    mission_type = request.POST.get("mission_type", "")
     target_coordinates = (request.POST.get("target_coordinates") or "").strip()
     target_planet_id = request.POST.get("target_planet")
     target_type = request.POST.get("target_type") or SpaceObject.ObjectType.PLANET
@@ -292,8 +293,10 @@ def send_fleet_preview(request, pk):
 
     try:
         target_type = normalize_space_object_type(target_type)
+        mission_handler = get_mission_handler(mission_type)
+        mission_handler.validate_target_object_type(target_type)
         coordinates = parse_planet_coordinates(target_coordinates)
-    except (ValidationError, ValueError):
+    except (DomainError, ValidationError, ValueError):
         return JsonResponse({"ok": False})
 
     target_planet = None
@@ -311,7 +314,7 @@ def send_fleet_preview(request, pk):
         return _send_fleet_preview_response(
             source_planet=source_planet,
             target_planet=target_planet,
-            mission_type=request.POST.get("mission_type", ""),
+            mission_type=mission_type,
             speed_profile=speed_profile,
             ship_quantities=ship_quantities,
             target_type=target_type,

@@ -74,7 +74,10 @@ class BaseMission:
     allowed_target_types = (SpaceObject.ObjectType.PLANET,)
 
     def validate_target_type(self, target):
-        if target.object_type not in self.allowed_target_types:
+        self.validate_target_object_type(target.object_type)
+
+    def validate_target_object_type(self, object_type):
+        if object_type not in self.allowed_target_types:
             raise FleetError("Ten typ misji nie może zostać wysłany na wybrany typ celu.")
 
     def validate_dispatch(self, source_planet, target_planet, user):

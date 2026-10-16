@@ -260,6 +260,35 @@ class SendFleetPreviewViewTests(PlanetTestMixin, TestCase):
         self.assertGreater(payload["preview"]["flight_time_seconds"], 0)
         self.assertGreater(payload["preview"]["helion_cost"], 0)
 
+    def test_send_fleet_preview_rejects_moon_for_planet_only_mission(self):
+        user = self.create_user("preview_invalid_moon_target_type_user")
+        source = self.create_planet(
+            owner=user,
+            name="Source",
+            coordinates=Coordinates(galaxy=1, system=1, position=1),
+        )
+        moon = create_moon(
+            owner=user,
+            coordinates=Coordinates(galaxy=1, system=42, position=7),
+            diameter=8_500,
+        )
+
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("game:send_fleet_preview", kwargs={"pk": source.pk}),
+            data={
+                "mission_type": Fleet.MissionType.TRANSPORT,
+                "target_coordinates": str(moon.coordinates),
+                "target_type": SpaceObject.ObjectType.MOON,
+                "speed_profile": "standard",
+                "ship_transporter": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"ok": False})
+
     def test_send_fleet_still_rejects_unoccupied_coordinates(self):
         user = self.create_user("send_unoccupied_coordinates_user")
         target_coordinates = Coordinates(galaxy=1, system=99, position=9)
